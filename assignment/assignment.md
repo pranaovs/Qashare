@@ -6,11 +6,6 @@
 >
 > Current splitwise application is riddled with ads and is not open source.
 
-### Teammates
-
-1. 24011103052 - Kavinthra S S
-2. 24011103051 - Pranaov S
-
 ### Basic Idea
 
 * Add accounts of users to share a particular set of expense
