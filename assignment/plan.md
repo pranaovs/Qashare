@@ -193,56 +193,48 @@ but others can also.
 Creation of database in MySQL:
 
 ```sql
-CREATE TABLE USERS (
-    user_id VARCHAR(36) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE users (
+    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 
-CREATE TABLE GROUPS (
-    group_id VARCHAR(36) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
+CREATE TABLE groups (
+    group_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    group_name TEXT NOT NULL,
     description TEXT,
-    created_by VARCHAR(36) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(created_by) REFERENCES USERS(user_id) ON DELETE SET NULL
+    created_by UUID REFERENCES users (user_id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 
-CREATE TABLE GROUP_MEMBERS (
-    user_id VARCHAR(36) NOT NULL,
-    group_id VARCHAR(36) NOT NULL,
-    joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id, group_id),
-    FOREIGN KEY(user_id) REFERENCES USERS(user_id) ON DELETE CASCADE,
-    FOREIGN KEY(group_id) REFERENCES GROUPS(group_id) ON DELETE CASCADE
+CREATE TABLE group_members (
+    user_id UUID REFERENCES users (user_id) ON DELETE CASCADE,
+    group_id UUID REFERENCES groups (group_id) ON DELETE CASCADE,
+    joined_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    PRIMARY KEY (user_id, group_id)
 );
 
-CREATE TABLE EXPENSES (
-    expense_id VARCHAR(36) PRIMARY KEY,
-    group_id VARCHAR(36) NOT NULL,
-    added_by VARCHAR(36) NOT NULL,
-    title VARCHAR(255) NOT NULL,
+CREATE TABLE expenses (
+    expense_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    group_id UUID REFERENCES groups (group_id) ON DELETE CASCADE,
+    added_by UUID REFERENCES users (user_id) ON DELETE SET NULL,
+    title TEXT NOT NULL,
     description TEXT,
-    amount DECIMAL(10, 2) NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    is_incomplete_amount BOOLEAN NOT NULL DEFAULT 0,
-    is_incomplete_split BOOLEAN NOT NULL DEFAULT 0,
-    latitude DECIMAL(9, 6),
-    longitude DECIMAL(9, 6),
-    FOREIGN KEY(group_id) REFERENCES GROUPS(group_id) ON DELETE CASCADE,
-    FOREIGN KEY(added_by) REFERENCES USERS(user_id) ON DELETE SET NULL
+    created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+    amount DOUBLE PRECISION NOT NULL,
+    is_incomplete_amount BOOLEAN DEFAULT FALSE,
+    is_incomplete_split BOOLEAN DEFAULT FALSE,
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION
 );
 
-CREATE TABLE EXPENSE_SPLITS (
-    expense_id VARCHAR(36) NOT NULL,
-    user_id VARCHAR(36) NOT NULL,
-    role VARCHAR(10) NOT NULL,
-    amount DECIMAL(10, 2) NOT NULL,
-    PRIMARY KEY (expense_id, user_id, role),
-    FOREIGN KEY(expense_id) REFERENCES EXPENSES(expense_id) ON DELETE CASCADE,
-    FOREIGN KEY(user_id) REFERENCES USERS(user_id) ON DELETE CASCADE,
-    CONSTRAINT chk_role CHECK (role IN ('paid', 'owes'))
+CREATE TABLE expense_splits (
+    expense_id UUID REFERENCES expenses (expense_id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users (user_id) ON DELETE CASCADE,
+    amount DOUBLE PRECISION NOT NULL,
+    user_role TEXT CHECK (user_role IN ('paid', 'owes')),
+    PRIMARY KEY (expense_id, user_id)
 );
 ```
