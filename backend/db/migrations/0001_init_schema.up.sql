@@ -48,8 +48,3 @@ CREATE TABLE IF NOT EXISTS expense_splits (
     user_role TEXT CHECK (user_role IN ('paid', 'owes')),
     PRIMARY KEY (expense_id, user_id)
 );
-
--- INDEXES
-CREATE INDEX idx_group_members_group_id ON group_members (group_id);
-CREATE INDEX idx_expenses_group_id ON expenses (group_id);
-CREATE INDEX idx_expense_splits_expense_id ON expense_splits (expense_id);
