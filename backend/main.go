@@ -5,7 +5,10 @@ import (
 	"os"
 
 	"shared-expenses-app/db"
+	"shared-expenses-app/routes"
 	"shared-expenses-app/utils"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -20,6 +23,15 @@ func main() {
 
 	// Run Migrations
 	if err := db.Migrate(pool, os.Getenv("DB_MIGRATIONS_DIR")); err != nil {
+		log.Fatal(err)
+	}
+
+	router := gin.Default()
+	routes.RegisterRoutes(router, pool)
+
+	port := utils.Getenv("API_PORT", "8080")
+	log.Println("Server running on port", port)
+	if err := router.Run(":" + port); err != nil {
 		log.Fatal(err)
 	}
 }
