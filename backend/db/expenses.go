@@ -71,20 +71,18 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expen
 	if expense.Amount <= 0 {
 		return errors.New("invalid amount")
 	}
-	err := pool.QueryRow(
+	_, err := pool.Exec(
 		ctx,
 		`UPDATE expenses
 			SET title = COALESCE($2, title),
 			description = COALESCE($3, description),
 			amount = COALESCE($4, amount),
 			added_by = COALESCE($5, added_by),
-			latitude = COALESCE($6, latitude),
-			longitude = COALESCE($7, longitude)
-			WHERE expense_id = $1
-			RETURNING expense_id, group_id, added_by, title, description,
-			extract(epoch from created_at)::bigint, amount,
-			is_incomplete_amount, is_incomplete_split, latitude, longitude`,
-
+			is_incomplete_amount = COALESCE($6, is_incomplete_amount),
+			is_incomplete_split = COALESCE($7, is_incomplete_split),
+			latitude = COALESCE($8, latitude),
+			longitude = COALESCE($9, longitude)
+			WHERE expense_id = $1`,
 		expense.ExpenseID,
 		expense.GroupID,
 		expense.Title,
@@ -94,8 +92,7 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expen
 		expense.IsIncompleteSplit,
 		expense.Latitude,
 		expense.Longitude,
-	).Scan()
-
+	)
 	if err == pgx.ErrNoRows {
 		return errors.New("expense not found")
 	}
