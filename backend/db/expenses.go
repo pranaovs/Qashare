@@ -118,20 +118,21 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 			is_incomplete_split,
 			latitude,
 			longitude
+			FROM expenses
 			WHERE expense_id = $1`,
 		expenseID,
 	).Scan(
 		&expense.ExpenseID,
-		expense.GroupID,
-		expense.AddedBy,
-		expense.Title,
-		expense.Description,
-		expense.CreatedAt,
-		expense.Amount,
-		expense.IsIncompleteAmount,
-		expense.IsIncompleteSplit,
-		expense.Latitude,
-		expense.Longitude,
+		&expense.GroupID,
+		&expense.AddedBy,
+		&expense.Title,
+		&expense.Description,
+		&expense.CreatedAt,
+		&expense.Amount,
+		&expense.IsIncompleteAmount,
+		&expense.IsIncompleteSplit,
+		&expense.Latitude,
+		&expense.Longitude,
 	)
 	if err == pgx.ErrNoRows {
 		return models.Expense{}, errors.New("expense not found")
