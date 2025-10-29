@@ -45,7 +45,7 @@ func RegisterUsersRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 	})
 
 	// User details from email
-	router.GET(":email", func(c *gin.Context) {
+	router.GET("/by-email/:email", func(c *gin.Context) {
 		// Authenticate requester
 		_, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
