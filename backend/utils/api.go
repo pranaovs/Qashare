@@ -14,6 +14,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+func init() {
+	Loadenv()
+}
+
 // Passwords
 
 // HashPassword hashes a plaintext password using bcrypt.
