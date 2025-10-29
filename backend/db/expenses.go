@@ -15,15 +15,15 @@ func CreateExpense(
 	ctx context.Context,
 	pool *pgxpool.Pool,
 	expense models.Expense,
-) (models.Expense, error) {
+) (string, error) {
 	if expense.Title == "" {
-		return models.Expense{}, errors.New("title required")
+		return "", errors.New("title required")
 	}
 	if expense.Amount <= 0 {
-		return models.Expense{}, errors.New("invalid amount")
+		return "", errors.New("invalid amount")
 	}
 
-	var exp models.Expense
+	var expenseID string
 	err := pool.QueryRow(
 		ctx,
 		`INSERT INTO expenses (
@@ -31,9 +31,7 @@ func CreateExpense(
 			is_incomplete_amount, is_incomplete_split, latitude, longitude, created_at
 		)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-		RETURNING expense_id, group_id, added_by, title, description,
-		          extract(epoch from created_at)::bigint, amount, is_incomplete_amount, is_incomplete_split,
-		          latitude, longitude`,
+		RETURNING expense_id`,
 		expense.GroupID,
 		expense.AddedBy,
 		expense.Title,
@@ -44,24 +42,12 @@ func CreateExpense(
 		expense.Latitude,
 		expense.Longitude,
 		time.Now(),
-	).Scan(
-		&exp.ExpenseID,
-		&exp.GroupID,
-		&exp.AddedBy,
-		&exp.Title,
-		&exp.Description,
-		&exp.CreatedAt,
-		&exp.Amount,
-		&exp.IsIncompleteAmount,
-		&exp.IsIncompleteSplit,
-		&exp.Latitude,
-		&exp.Longitude,
-	)
+	).Scan(&expenseID)
 	if err != nil {
-		return models.Expense{}, err
+		return "", err
 	}
 
-	return exp, nil
+	return expenseID, nil
 }
 
 func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expense) error {

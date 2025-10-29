@@ -12,10 +12,10 @@ import (
 )
 
 // CreateGroup inserts a new group into the database and adds the owner as a member.
-func CreateGroup(ctx context.Context, pool *pgxpool.Pool, name, description, ownerUserID string) (models.Group, error) {
+func CreateGroup(ctx context.Context, pool *pgxpool.Pool, name, description, ownerUserID string) (string, error) {
 	tx, err := pool.Begin(ctx)
 	if err != nil {
-		return models.Group{}, err
+		return "", err
 	}
 
 	defer func() {
@@ -24,34 +24,51 @@ func CreateGroup(ctx context.Context, pool *pgxpool.Pool, name, description, own
 		}
 	}()
 
-	var group models.Group
+	var groupID string
 
 	err = tx.QueryRow(
 		ctx,
 		`INSERT INTO groups (group_name, description, created_by, created_at)
 		 VALUES ($1, $2, $3, $4)
-		 RETURNING group_id, group_name, description, created_by, extract(epoch from created_at)::bigint`,
+		 RETURNING group_id`,
 		name, description, ownerUserID, time.Now(),
-	).Scan(&group.GroupID, &group.Name, &group.Description, &group.CreatedBy, &group.CreatedAt)
+	).Scan(&groupID)
 	if err != nil {
-		return models.Group{}, err
+		return "", err
 	}
 
 	_, err = tx.Exec(
 		ctx,
 		`INSERT INTO group_members (user_id, group_id, joined_at)
 		 VALUES ($1, $2, $3)`,
-		ownerUserID, group.GroupID, time.Now(),
+		ownerUserID, groupID, time.Now(),
 	)
 	if err != nil {
-		return models.Group{}, err
+		return "", err
 	}
 
 	if err = tx.Commit(ctx); err != nil {
-		return models.Group{}, err
+		return "", err
 	}
 
-	return group, nil
+	return groupID, nil
+}
+
+// GetGroupCreator returns only the creator ID of a group.
+func GetGroupCreator(ctx context.Context, pool *pgxpool.Pool, groupID string) (string, error) {
+	var creatorID string
+	err := pool.QueryRow(
+		ctx,
+		`SELECT created_by FROM groups WHERE group_id = $1`,
+		groupID,
+	).Scan(&creatorID)
+	if err == pgx.ErrNoRows {
+		return "", errors.New("group not found")
+	}
+	if err != nil {
+		return "", err
+	}
+	return creatorID, nil
 }
 
 func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.Group, error) {

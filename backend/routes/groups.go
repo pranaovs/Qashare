@@ -67,13 +67,13 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 		}
 
 		// At this point, all inputs are valid
-		group, err := db.CreateGroup(c.Request.Context(), pool, name, request.Description, userID)
+		groupID, err := db.CreateGroup(c.Request.Context(), pool, name, request.Description, userID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, group)
+		c.JSON(http.StatusOK, gin.H{"group_id": groupID})
 	})
 
 	// List groups the user is a member of
@@ -165,12 +165,12 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 		}
 
 		// Ensure requester is the admin (creator) of the group
-		group, err := db.GetGroup(c, pool, groupID)
+		groupCreator, err := db.GetGroupCreator(c, pool, groupID)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "group not found"})
 			return
 		}
-		if group.CreatedBy != userID {
+		if groupCreator != userID {
 			c.JSON(http.StatusForbidden, gin.H{"error": "only group admin can add members"})
 			return
 		}
@@ -232,16 +232,16 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 		}
 
 		// Ensure requester is the admin (creator) of the group
-		group, err := db.GetGroup(c, pool, groupID)
+		groupCreator, err := db.GetGroupCreator(c, pool, groupID)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "group not found"})
 			return
 		}
-		if group.CreatedBy != userID {
+		if groupCreator != userID {
 			c.JSON(http.StatusForbidden, gin.H{"error": "only group admin can remove members"})
 			return
 		}
-		if slices.Contains(req.UserIDs, group.CreatedBy) {
+		if slices.Contains(req.UserIDs, groupCreator) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "cannot remove group admin"})
 			return
 		}
