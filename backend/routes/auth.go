@@ -62,7 +62,7 @@ func RegisterAuthRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 	})
 
 	// POST /auth - Login endpoint
-	router.POST("", func(c *gin.Context) {
+	router.POST("login", func(c *gin.Context) {
 		var request struct {
 			Email    string `json:"email" binding:"required,email"`
 			Password string `json:"password" binding:"required"`
