@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"context"
 	"net/http"
+	"slices"
 
 	"shared-expenses-app/db"
 	"shared-expenses-app/models"
@@ -15,7 +15,7 @@ import (
 func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 	// BUG: Remove it from production
 	router.GET("list", func(c *gin.Context) {
-		rows, err := pool.Query(context.Background(),
+		rows, err := pool.Query(c.Request.Context(),
 			`SELECT group_id, group_name, description, created_by, extract(epoch from created_at)::bigint
 			 FROM groups ORDER BY created_at DESC`)
 		if err != nil {
@@ -65,10 +65,10 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 		}
 
 		// At this point, all inputs are valid
-
-		group, err := db.CreateGroup(context.Background(), pool, name, request.Description, userID)
+		group, err := db.CreateGroup(c.Request.Context(), pool, name, request.Description, userID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
 
 		c.JSON(http.StatusOK, group)
