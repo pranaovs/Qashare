@@ -144,7 +144,7 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 	return expense, nil
 }
 
-func DeleteExpense(ctx context.Context, pool *pgxpool.Pool, expenseID, userID string) error {
+func DeleteExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) error {
 	cmd, err := pool.Exec(ctx, `DELETE FROM expenses WHERE expense_id = $1`, expenseID)
 	if err != nil {
 		return err
