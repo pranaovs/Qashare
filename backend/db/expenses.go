@@ -199,12 +199,6 @@ func DeleteExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) er
 	}
 	defer tx.Rollback(ctx)
 
-	// Delete splits
-	_, err = tx.Exec(ctx, `DELETE FROM expense_splits WHERE expense_id = $1`, expenseID)
-	if err != nil {
-		return err
-	}
-
 	// Delete Expense
 	cmd, err := tx.Exec(ctx, `DELETE FROM expenses WHERE expense_id = $1`, expenseID)
 	if err != nil {
