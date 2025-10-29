@@ -49,7 +49,7 @@ func RegisterUsersRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 		// At this point, all inputs are valid
 
 		// Create new user
-		userID, err := db.CreateUser(context.Background(), pool, name, email, passwordHash)
+		user, err := db.CreateUser(context.Background(), pool, name, email, passwordHash)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -57,7 +57,7 @@ func RegisterUsersRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 
 		c.JSON(http.StatusOK, gin.H{
 			"message": "user registered successfully",
-			"user_id": userID,
+			"User":    user,
 		})
 	})
 
