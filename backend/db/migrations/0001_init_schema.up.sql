@@ -45,6 +45,6 @@ CREATE TABLE IF NOT EXISTS expense_splits (
     expense_id UUID REFERENCES expenses (expense_id) ON DELETE CASCADE,
     user_id UUID REFERENCES users (user_id) ON DELETE CASCADE,
     amount DOUBLE PRECISION NOT NULL,
-    user_role TEXT CHECK (user_role IN ('paid', 'owes')),
+    is_paid BOOLEAN DEFAULT FALSE,
     PRIMARY KEY (expense_id, user_id)
 );

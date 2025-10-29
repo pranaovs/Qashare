@@ -47,11 +47,13 @@ type Expense struct {
 	IsIncompleteSplit  bool    `json:"is_incomplete_split" db:"is_incomplete_split"`
 	Latitude           float64 `json:"latitude,omitempty" db:"latitude"`
 	Longitude          float64 `json:"longitude,omitempty" db:"longitude"`
+
+	Splits []ExpenseSplit `json:"splits" db:"-"`
 }
 
 type ExpenseSplit struct {
-	ExpenseID string  `json:"expense_id" db:"expense_id"`
+	ExpenseID string  `json:"-" db:"expense_id"`
 	UserID    string  `json:"user_id" db:"user_id"`
 	Amount    float64 `json:"amount" db:"amount"`
-	Role      string  `json:"role" db:"user_role"` // "paid" or "owes"
+	IsPaid    bool    `json:"is_paid" db:"is_paid"` // "paid" or "owes"
 }
