@@ -12,49 +12,47 @@ import (
 )
 
 // CreateUser inserts a new user into the database and returns the new user's ID.
-func CreateUser(ctx context.Context, pool *pgxpool.Pool, name, email, password string) (string, error) {
+func CreateUser(ctx context.Context, pool *pgxpool.Pool, name, email, password string) (models.User, error) {
 	// Check if user already exists
-	ok, _, err := GetUserIDFromEmail(ctx, pool, email)
+	_, err := GetUserFromEmail(ctx, pool, email)
 	if err != nil {
-		return "", err
-	}
-
-	if ok {
-		return "", errors.New("user already exists")
+		return models.User{}, err
 	}
 
 	// Add user to database
-	var userID string
+	var newUser models.User
 	err = pool.QueryRow(
 		ctx,
 		`INSERT INTO users (user_name, email, password_hash, created_at)
-			 VALUES ($1, $2, $3, $4)
-			 RETURNING user_id`,
+		VALUES ($1, $2, $3, $4)
+		RETURNING user_id, user_name, email, is_guest, extract(epoch from created_at)::bigint`,
 		name, email, password, time.Now(),
-	).Scan(&userID)
+	).Scan(&newUser.UserID, &newUser.Name, &newUser.Email, &newUser.Guest, &newUser.CreatedAt)
 	if err != nil {
-		return "", err
+		return models.User{}, err
 	}
 	// Return the new user's ID
-	return userID, nil
+	return newUser, nil
 }
 
-// GetUserIDFromEmail checks if a user with the given email exists.
+// GetUserFromEmail checks if a user with the given email exists.
 // Returns (exists bool, userId string, err error). If user does not exist, userId will be empty string.
-func GetUserIDFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (bool, string, error) {
-	var userID string
+func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (models.User, error) {
+	var user models.User
 	err := pool.QueryRow(ctx,
-		`SELECT user_id FROM users WHERE email = $1`,
+		`SELECT user_id, user_name, email, is_guest, extract(epoch from created_at)::bigint
+		FROM users
+		WHERE email = $1`,
 		email,
-	).Scan(&userID)
+	).Scan(&user.UserID, &user.Name, &user.Email, &user.Guest, &user.CreatedAt)
 	if err == pgx.ErrNoRows {
-		return false, "", nil // user not found
+		return models.User{}, errors.New("email not registered") // email does not exist
 	}
 	if err != nil {
-		return false, "", err // database error
+		return models.User{}, err // database error
 	}
 
-	return true, userID, nil // user exists
+	return user, nil // user exists
 }
 
 func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (string, string, error) {
