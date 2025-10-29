@@ -30,7 +30,7 @@ func CreateExpense(
 
 	// Insert expense details
 	var expenseID string
-	err = pool.QueryRow(
+	err = tx.QueryRow(
 		ctx,
 		`INSERT INTO expenses (
 			group_id, added_by, title, description, amount,
