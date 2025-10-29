@@ -47,13 +47,13 @@ func GetUserIDFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (
 		`SELECT user_id FROM users WHERE email = $1`,
 		email,
 	).Scan(&userID)
-
 	if err == pgx.ErrNoRows {
 		return false, "", nil // user not found
 	}
 	if err != nil {
 		return false, "", err // database error
 	}
+
 	return true, userID, nil // user exists
 }
 
@@ -64,7 +64,6 @@ func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (
 		`select user_id, password_hash from users where email = $1`,
 		email,
 	).Scan(&userID, &passwordHash)
-
 	if err == pgx.ErrNoRows {
 		return "", "", errors.New("email not registered")
 	}
@@ -91,4 +90,22 @@ func GetUser(ctx context.Context, pool *pgxpool.Pool, userID string) (models.Use
 	}
 
 	return user, nil
+}
+
+func UsersRelated(ctx context.Context, pool *pgxpool.Pool, userID1, userID2 string) (bool, error) {
+	var areRelated bool
+	err := pool.QueryRow(ctx, `
+    SELECT EXISTS (
+        SELECT 1
+        FROM group_members gm1
+        JOIN group_members gm2
+        ON gm1.group_id = gm2.group_id
+        WHERE gm1.user_id = $1
+        AND gm2.user_id = $2
+    )`, userID1, userID2).Scan(&areRelated)
+	if err != nil {
+		return false, err
+	}
+
+	return areRelated, nil
 }

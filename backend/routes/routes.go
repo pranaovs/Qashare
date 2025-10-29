@@ -13,5 +13,5 @@ func RegisterRoutes(router *gin.Engine, pool *pgxpool.Pool) {
 		c.String(http.StatusOK, "ok")
 	})
 
-	RegisterUserRoutes(router.Group("/users"), pool)
+	RegisterUsersRoutes(router.Group("/users"), pool)
 }

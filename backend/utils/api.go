@@ -84,3 +84,17 @@ func ExtractClaims(authHeader string) (jwt.MapClaims, error) {
 
 	return claims, nil
 }
+
+func ExtractUserID(authHeader string) (string, error) {
+	claims, err := ExtractClaims(authHeader)
+	if err != nil {
+		return "", err
+	}
+
+	userID, ok := claims["user_id"].(string)
+	if !ok {
+		return "", errors.New("invalid token claims")
+	}
+
+	return userID, nil
+}

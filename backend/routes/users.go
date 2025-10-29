@@ -12,7 +12,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func RegisterUserRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
+func RegisterUsersRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
+	// BUG: REMOVE THIS ROUTE IN PRODUCTION - ONLY FOR TESTING PURPOSES
 	router.GET("list", func(c *gin.Context) {
 		rows, err := pool.Query(context.Background(),
 			`SELECT user_id, user_name, email, is_guest, password_hash, extract(epoch from created_at)::bigint
@@ -84,6 +85,7 @@ func RegisterUserRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 		})
 	})
 
+	// Login user
 	router.POST("login", func(c *gin.Context) {
 		var request struct {
 			Email    string `json:"email" binding:"required,email"`
@@ -129,17 +131,11 @@ func RegisterUserRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 		})
 	})
 
+	// Logged in user details
 	router.GET("me", func(c *gin.Context) {
-		header := c.GetHeader("Authorization")
-		claims, err := utils.ExtractClaims(header)
+		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-			return
-		}
-
-		userID, ok := claims["user_id"].(string)
-		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token claims"})
 			return
 		}
 
@@ -152,5 +148,33 @@ func RegisterUserRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 		}
 
 		c.JSON(http.StatusOK, user)
+	})
+
+	// User details
+	router.GET(":id", func(c *gin.Context) {
+		qUserID := c.Param("id")
+
+		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		}
+
+		ok, err := db.UsersRelated(context.Background(), pool, userID, qUserID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+
+		if !ok {
+			c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		}
+
+		// At this point, users are related
+
+		result, err := db.GetUser(context.Background(), pool, qUserID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+
+		c.JSON(http.StatusOK, result)
 	})
 }
