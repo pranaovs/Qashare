@@ -71,11 +71,11 @@ func ExtractClaims(authHeader string) (jwt.MapClaims, error) {
 		}
 		return []byte(jwtSecret), nil
 	})
-	if err != nil || !token.Valid {
+	if err != nil {
 		return nil, errors.New("invalid token")
 	}
 	if !token.Valid {
-		return nil, errors.New("invalid or expired token")
+		return nil, errors.New("expired token")
 	}
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
