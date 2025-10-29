@@ -18,32 +18,32 @@ var (
 	ErrUsersNotRelated = errors.New("users not related")
 )
 
-// CreateUser inserts a new user into the database and returns the newly created user's struct.
-func CreateUser(ctx context.Context, pool *pgxpool.Pool, name, email, password string) (models.User, error) {
+// CreateUser inserts a new user into the database and returns the newly created user's ID.
+func CreateUser(ctx context.Context, pool *pgxpool.Pool, name, email, password string) (string, error) {
 	// Check if user already exists
 	_, err := GetUserFromEmail(ctx, pool, email)
 	if err == nil {
 		// User already exists
-		return models.User{}, errors.New("user with this email already exists")
+		return "", errors.New("user with this email already exists")
 	} else if err != nil && err.Error() != "email not registered" {
 		// Some other database error
-		return models.User{}, err
+		return "", err
 	}
 
 	// Add user to database
-	var newUser models.User
+	var userID string
 	err = pool.QueryRow(
 		ctx,
 		`INSERT INTO users (user_name, email, password_hash, created_at)
 		VALUES ($1, $2, $3, $4)
-		RETURNING user_id, user_name, email, is_guest, extract(epoch from created_at)::bigint`,
+		RETURNING user_id`,
 		name, email, password, time.Now(),
-	).Scan(&newUser.UserID, &newUser.Name, &newUser.Email, &newUser.Guest, &newUser.CreatedAt)
+	).Scan(&userID)
 	if err != nil {
-		return models.User{}, err
+		return "", err
 	}
 	// Return the new user's ID
-	return newUser, nil
+	return userID, nil
 }
 
 // GetUserFromEmail retrieves the user with the given email.

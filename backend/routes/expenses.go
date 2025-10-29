@@ -2,7 +2,6 @@ package routes
 
 import (
 	"net/http"
-
 	"shared-expenses-app/db"
 	"shared-expenses-app/models"
 	"shared-expenses-app/utils"
@@ -11,11 +10,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func RegisterExpenseRoutes(router *gin.Engine, pool *pgxpool.Pool) {
-	expenses := router.Group("/expense")
-
+func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 	// Create expense
-	expenses.POST("create", func(c *gin.Context) {
+	router.POST("/", func(c *gin.Context) {
 		// Authenticate user
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
@@ -35,17 +32,17 @@ func RegisterExpenseRoutes(router *gin.Engine, pool *pgxpool.Pool) {
 			return
 		}
 
-		expense, err = db.CreateExpense(c, pool, expense)
+		expenseID, err := db.CreateExpense(c, pool, expense)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, expense)
+		c.JSON(http.StatusOK, gin.H{"expense_id": expenseID})
 	})
 
 	// Get expense by ID
-	expenses.GET("get", func(c *gin.Context) {
+	router.GET("/:id", func(c *gin.Context) {
 		// Authenticate user
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
@@ -53,7 +50,7 @@ func RegisterExpenseRoutes(router *gin.Engine, pool *pgxpool.Pool) {
 			return
 		}
 
-		expenseID := c.Query("id")
+		expenseID := c.Param("id")
 		expense, err := db.GetExpense(c, pool, expenseID)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -69,7 +66,7 @@ func RegisterExpenseRoutes(router *gin.Engine, pool *pgxpool.Pool) {
 	})
 
 	// Update expense
-	expenses.PUT("edit", func(c *gin.Context) {
+	router.PUT("/:id", func(c *gin.Context) {
 		// Authenticate user
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
@@ -77,7 +74,7 @@ func RegisterExpenseRoutes(router *gin.Engine, pool *pgxpool.Pool) {
 			return
 		}
 
-		expenseID := c.Query("id")
+		expenseID := c.Param("id")
 		if expenseID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "missing expense id"})
 			return
@@ -97,15 +94,15 @@ func RegisterExpenseRoutes(router *gin.Engine, pool *pgxpool.Pool) {
 			return
 		}
 
-		// Get group info to verify ownership
-		group, err := db.GetGroup(c, pool, exp.GroupID)
+		// Get group creator to verify ownership
+		groupCreator, err := db.GetGroupCreator(c, pool, exp.GroupID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch group"})
 			return
 		}
 
 		// Authorization: only original adder or group owner can edit
-		if userID != exp.AddedBy && userID != group.CreatedBy {
+		if userID != exp.AddedBy && userID != groupCreator {
 			c.JSON(http.StatusForbidden, gin.H{"error": "not authorized. only adder or owner can edit"})
 			return
 		}
@@ -119,7 +116,7 @@ func RegisterExpenseRoutes(router *gin.Engine, pool *pgxpool.Pool) {
 	})
 
 	// Delete expense
-	expenses.POST("delete", func(c *gin.Context) {
+	router.DELETE("/:id", func(c *gin.Context) {
 		// Authenticate user
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
@@ -127,7 +124,7 @@ func RegisterExpenseRoutes(router *gin.Engine, pool *pgxpool.Pool) {
 			return
 		}
 
-		expenseID := c.Query("id")
+		expenseID := c.Param("id")
 		if expenseID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "missing expense id"})
 			return
@@ -139,15 +136,15 @@ func RegisterExpenseRoutes(router *gin.Engine, pool *pgxpool.Pool) {
 			return
 		}
 
-		// Get group info to verify ownership
-		group, err := db.GetGroup(c, pool, expense.GroupID)
+		// Get group creator to verify ownership
+		groupCreator, err := db.GetGroupCreator(c, pool, expense.GroupID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch group"})
 			return
 		}
 
 		// Authorization: only adder or owner
-		if userID != expense.AddedBy && userID != group.CreatedBy {
+		if userID != expense.AddedBy && userID != groupCreator {
 			c.JSON(http.StatusForbidden, gin.H{"error": "not authorized"})
 			return
 		}
