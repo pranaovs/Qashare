@@ -103,23 +103,69 @@ func AddGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, us
 		return errors.New("no user IDs provided")
 	}
 
-	validUserIDs := make([]string, 0, len(userIDs))
-	for _, userID := range userIDs {
-		exists, err := UserExists(ctx, pool, userID)
-		if err != nil {
-			return err
-		}
-		if exists {
-			validUserIDs = append(validUserIDs, userID)
-		}
-	}
-
 	batch := &pgx.Batch{}
-	for _, userID := range validUserIDs {
+	for _, userID := range userIDs {
 		batch.Queue(
 			`INSERT INTO group_members (user_id, group_id)
 			 VALUES ($1, $2)
 			 ON CONFLICT DO NOTHING`,
+			userID, groupID,
+		)
+	}
+
+	br := pool.SendBatch(ctx, batch)
+	defer br.Close()
+
+	for range userIDs {
+		_, err := br.Exec()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// AddGroupMember adds a single user to a group
+func AddGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID string) error {
+	_, err := pool.Exec(
+		ctx,
+		`INSERT INTO group_members (user_id, group_id)
+		VALUES ($1, $2)
+		ON CONFLICT DO NOTHING`,
+		userID, groupID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func RemoveGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID string) error {
+	_, err := pool.Exec(
+		ctx,
+		`DELETE FROM group_members
+	WHERE user_id = $1 AND group_id = $2`,
+		userID, groupID)
+	if err == pgx.ErrNoRows {
+		return errors.New("member not found in group")
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// RemoveGroupMembers removes multiple users from a group.
+func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, userIDs []string) error {
+	if len(userIDs) == 0 {
+		return errors.New("no user IDs provided")
+	}
+
+	batch := &pgx.Batch{}
+	for _, userID := range userIDs {
+		batch.Queue(
+			`DELETE FROM group_members
+			 WHERE user_id = $1 AND group_id = $2`,
 			userID, groupID,
 		)
 	}
