@@ -82,7 +82,7 @@ func RegisterUsersRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 
 		c.JSON(http.StatusOK, gin.H{
 			"message": "user registered successfully",
-			"user_id": user.UserID,
+			"User":    user,
 		})
 	})
 
