@@ -110,7 +110,7 @@ func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 		}
 		payload.ExpenseID = expenseID
 
-		// Fetch exp expense
+		// Fetch existing expense
 		exp, err := db.GetExpense(c, pool, expenseID)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "expense not found"})
