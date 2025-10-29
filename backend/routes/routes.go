@@ -14,4 +14,5 @@ func RegisterRoutes(router *gin.Engine, pool *pgxpool.Pool) {
 	})
 
 	RegisterUsersRoutes(router.Group("/users"), pool)
+	RegisterGroupsRoutes(router.Group("/groups"), pool)
 }
