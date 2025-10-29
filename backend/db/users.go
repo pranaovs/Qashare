@@ -39,8 +39,8 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, name, email, password s
 	return newUser, nil
 }
 
-// GetUserFromEmail checks if a user with the given email exists.
-// Returns (exists bool, userId string, err error). If user does not exist, userId will be empty string.
+// GetUserFromEmail retrieves the user with the given email.
+// Returns (models.User, error). If the user does not exist, returns an empty models.User and an error.
 func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (models.User, error) {
 	var user models.User
 	err := pool.QueryRow(ctx,
