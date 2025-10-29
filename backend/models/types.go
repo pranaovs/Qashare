@@ -16,7 +16,7 @@ type Group struct {
 	Description string      `json:"description,omitempty" db:"description"`
 	CreatedBy   string      `json:"created_by" db:"created_by"`
 	CreatedAt   int64       `json:"created_at" db:"created_at"`
-	Members     []GroupUser `json:"members" db:"-"` // NOTE: Be careful with this
+	Members     []GroupUser `json:"members" db:"-"` // NOTE: Be careful with this, not a part of DB schema
 }
 
 type GroupMember struct {
@@ -25,8 +25,9 @@ type GroupMember struct {
 	JoinedAt int64  `json:"joined_at" db:"joined_at"`
 }
 
-// Not a part of DB schema, used for responses
 type GroupUser struct {
+	// Not a part of DB schema, used for responses
+	// Should be used in Group.Members
 	UserID   string `json:"user_id"`
 	Name     string `json:"name"`
 	Email    string `json:"email"`
