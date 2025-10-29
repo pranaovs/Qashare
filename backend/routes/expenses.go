@@ -13,7 +13,7 @@ import (
 
 func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 	// Create expense
-	expenses.POST("create", func(c *gin.Context) {
+	router.POST("/", func(c *gin.Context) {
 		// Authenticate user
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
@@ -43,7 +43,7 @@ func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 	})
 
 	// Get expense by ID
-	expenses.GET("get", func(c *gin.Context) {
+	router.GET("/:id", func(c *gin.Context) {
 		// Authenticate user
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
@@ -51,7 +51,7 @@ func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 			return
 		}
 
-		expenseID := c.Query("id")
+		expenseID := c.Param("id")
 		expense, err := db.GetExpense(c, pool, expenseID)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -67,7 +67,7 @@ func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 	})
 
 	// Update expense
-	expenses.PUT("edit", func(c *gin.Context) {
+	router.PUT("/:id", func(c *gin.Context) {
 		// Authenticate user
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
@@ -75,7 +75,7 @@ func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 			return
 		}
 
-		expenseID := c.Query("id")
+		expenseID := c.Param("id")
 		if expenseID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "missing expense id"})
 			return
@@ -117,7 +117,7 @@ func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 	})
 
 	// Delete expense
-	expenses.POST("delete", func(c *gin.Context) {
+	router.DELETE("/:id", func(c *gin.Context) {
 		// Authenticate user
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
@@ -125,7 +125,7 @@ func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 			return
 		}
 
-		expenseID := c.Query("id")
+		expenseID := c.Param("id")
 		if expenseID == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "missing expense id"})
 			return

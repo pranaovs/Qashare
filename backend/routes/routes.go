@@ -13,6 +13,7 @@ func RegisterRoutes(router *gin.Engine, pool *pgxpool.Pool) {
 		c.String(http.StatusOK, "ok")
 	})
 
+	RegisterAuthRoutes(router.Group("/auth"), pool)
 	RegisterUsersRoutes(router.Group("/users"), pool)
 	RegisterGroupsRoutes(router.Group("/groups"), pool)
 	RegisterExpensesRoutes(router.Group("/expenses"), pool)

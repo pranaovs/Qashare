@@ -39,7 +39,8 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 	// 	c.JSON(http.StatusOK, groups)
 	// })
 
-	router.POST("create", func(c *gin.Context) {
+	// Create Group
+	router.POST("/", func(c *gin.Context) {
 		// Authenticate user
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
@@ -75,7 +76,8 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 		c.JSON(http.StatusOK, group)
 	})
 
-	router.GET("list", func(c *gin.Context) {
+	// List groups the user is a member of
+	router.GET("/me", func(c *gin.Context) {
 		// Authenticate user
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
@@ -91,7 +93,8 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 		c.JSON(http.StatusOK, groups)
 	})
 
-	router.GET("admin_of", func(c *gin.Context) {
+	// List groups the user is admin of
+	router.GET("/admin", func(c *gin.Context) {
 		// Authenticate user
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
@@ -107,7 +110,8 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 		c.JSON(http.StatusOK, groups)
 	})
 
-	router.GET("get/:group_id", func(c *gin.Context) {
+	// Get group by ID
+	router.GET("/:id", func(c *gin.Context) {
 		// Authenticate user
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
@@ -115,10 +119,10 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 			return
 		}
 
-		qGroupID := c.Param("group_id")
+		groupID := c.Param("id")
 
 		// Check membership in that group
-		err = db.MemberOfGroup(c, pool, userID, qGroupID)
+		err = db.MemberOfGroup(c, pool, userID, groupID)
 		if err != nil {
 			if errors.Is(err, db.ErrNotMember) {
 				c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
@@ -129,7 +133,7 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 		}
 
 		// Retrieve group details
-		group, err := db.GetGroup(c, pool, qGroupID)
+		group, err := db.GetGroup(c, pool, groupID)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
@@ -140,9 +144,10 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 	})
 
 	// Add members to a group
-	router.POST("add_members", func(c *gin.Context) {
+	router.POST("/:id/members", func(c *gin.Context) {
+		groupID := c.Param("id")
+
 		type request struct {
-			GroupID string   `json:"group_id" binding:"required"`
 			UserIDs []string `json:"user_ids" binding:"required,min=1"`
 		}
 
@@ -160,7 +165,7 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 		}
 
 		// Ensure requester is the admin (creator) of the group
-		group, err := db.GetGroup(c, pool, req.GroupID)
+		group, err := db.GetGroup(c, pool, groupID)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "group not found"})
 			return
@@ -193,7 +198,7 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 		}
 
 		// Add members
-		err = db.AddGroupMembers(c, pool, req.GroupID, validUserIDs)
+		err = db.AddGroupMembers(c, pool, groupID, validUserIDs)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to add members"})
 			return
@@ -206,9 +211,10 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 	})
 
 	// Remove members from a group
-	router.POST("remove_members", func(c *gin.Context) {
+	router.DELETE("/:id/members", func(c *gin.Context) {
+		groupID := c.Param("id")
+
 		type request struct {
-			GroupID string   `json:"group_id" binding:"required"`
 			UserIDs []string `json:"user_ids" binding:"required,min=1"`
 		}
 
@@ -226,7 +232,7 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 		}
 
 		// Ensure requester is the admin (creator) of the group
-		group, err := db.GetGroup(c, pool, req.GroupID)
+		group, err := db.GetGroup(c, pool, groupID)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "group not found"})
 			return
@@ -241,7 +247,7 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 		}
 
 		// Remove members
-		err = db.RemoveGroupMembers(c, pool, req.GroupID, req.UserIDs)
+		err = db.RemoveGroupMembers(c, pool, groupID, req.UserIDs)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to remove members"})
 			return
