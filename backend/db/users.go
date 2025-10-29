@@ -15,7 +15,11 @@ import (
 func CreateUser(ctx context.Context, pool *pgxpool.Pool, name, email, password string) (models.User, error) {
 	// Check if user already exists
 	_, err := GetUserFromEmail(ctx, pool, email)
-	if err != nil {
+	if err == nil {
+		// User already exists
+		return models.User{}, errors.New("user with this email already exists")
+	} else if err != nil && err.Error() != "email not registered" {
+		// Some other database error
 		return models.User{}, err
 	}
 

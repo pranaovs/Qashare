@@ -52,7 +52,11 @@ func randB64() string {
 var jwtSecret = []byte(Getenv("JWT_SECRET", randB64()))
 
 func GenerateJWT(userID string) (string, error) {
-	expiryHours, _ := strconv.Atoi(Getenv("JWT_EXPIRY", "24"))
+	expiryStr := Getenv("JWT_EXPIRY", "24")
+	expiryHours, err := strconv.Atoi(expiryStr)
+	if err != nil || expiryHours <= 0 {
+		return "", fmt.Errorf("invalid JWT_EXPIRY value: %q, must be a positive integer", expiryStr)
+	}
 	claims := jwt.MapClaims{
 		"user_id": userID,
 		"exp":     time.Now().Add(time.Duration(expiryHours) * time.Hour).Unix(),
