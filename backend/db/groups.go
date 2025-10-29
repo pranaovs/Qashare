@@ -45,5 +45,57 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.G
 	if err != nil {
 		return models.Group{}, err
 	}
+
+	// Fetch group members
+	rows, err := pool.Query(
+		ctx,
+		`SELECT u.user_id, u.user_name, u.email, u.is_guest, gm.joined_at
+		 FROM group_members gm
+		 JOIN users u ON gm.user_id = u.user_id
+		 WHERE gm.group_id = $1`,
+		groupID,
+	)
+	if err != nil {
+		return models.Group{}, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var member models.GroupUser
+		err := rows.Scan(&member.UserID, &member.Name, &member.Email, &member.Guest, &member.JoinedAt)
+		if err != nil {
+			return models.Group{}, err
+		}
+		group.Members = append(group.Members, member)
+	}
+
 	return group, nil
+}
+
+func AddGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, userIDs []string) error {
+	if len(userIDs) == 0 {
+		return errors.New("no user IDs provided")
+	}
+
+	batch := &pgx.Batch{}
+	for _, userID := range userIDs {
+		batch.Queue(
+			`INSERT INTO group_members (user_id, group_id)
+			 VALUES ($1, $2)
+			 ON CONFLICT DO NOTHING`,
+			userID, groupID,
+		)
+	}
+
+	br := pool.SendBatch(ctx, batch)
+	defer br.Close()
+
+	for range userIDs {
+		_, err := br.Exec()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
