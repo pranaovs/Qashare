@@ -211,3 +211,30 @@ func MemberOfGroup(ctx context.Context, pool *pgxpool.Pool, userID, groupID stri
 
 	return nil
 }
+
+// AllMembersOfGroup checks if all users in the provided userIDs slice are members of the group.
+// Returns nil if all users are members, or an error if any user is not a member.
+func AllMembersOfGroup(ctx context.Context, pool *pgxpool.Pool, userIDs []string, groupID string) error {
+	if len(userIDs) == 0 {
+		return nil
+	}
+
+	// Query to count how many of the provided userIDs are actually members
+	var count int
+	err := pool.QueryRow(ctx,
+		`SELECT COUNT(DISTINCT user_id) 
+		 FROM group_members 
+		 WHERE group_id = $1 AND user_id = ANY($2)`,
+		groupID, userIDs,
+	).Scan(&count)
+	if err != nil {
+		return err
+	}
+
+	// If count doesn't match the number of userIDs, some users are not members
+	if count != len(userIDs) {
+		return ErrNotMember
+	}
+
+	return nil
+}

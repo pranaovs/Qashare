@@ -42,14 +42,18 @@ func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 			return
 		}
 
+		// Collect user IDs from splits and calculate total
+		splitUserIDs := make([]string, 0, len(expense.Splits))
 		var total float64
 		for _, s := range expense.Splits {
-			// Check split user is in group
-			if err := db.MemberOfGroup(c, pool, s.UserID, expense.GroupID); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "split user not in group"})
-				return
-			}
+			splitUserIDs = append(splitUserIDs, s.UserID)
 			total += s.Amount
+		}
+
+		// Check all split users are in group (single DB call)
+		if err := db.AllMembersOfGroup(c, pool, splitUserIDs, expense.GroupID); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "split user not in group"})
+			return
 		}
 
 		tolerance, err := strconv.ParseFloat(utils.Getenv("SPLIT_TOLERANCE", "0.01"), 64)
@@ -143,13 +147,18 @@ func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 			return
 		}
 
+		// Collect user IDs from splits and calculate total
+		splitUserIDs := make([]string, 0, len(payload.Splits))
 		var total float64
 		for _, s := range payload.Splits {
-			if err := db.MemberOfGroup(c, pool, s.UserID, exp.GroupID); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "split user not in group"})
-				return
-			}
+			splitUserIDs = append(splitUserIDs, s.UserID)
 			total += s.Amount
+		}
+
+		// Check all split users are in group (single DB call)
+		if err := db.AllMembersOfGroup(c, pool, splitUserIDs, exp.GroupID); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "split user not in group"})
+			return
 		}
 
 		tolerance, err := strconv.ParseFloat(utils.Getenv("SPLIT_TOLERANCE", "0.01"), 64)
