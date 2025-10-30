@@ -42,12 +42,16 @@ func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 			return
 		}
 
-		// Collect user IDs from splits and calculate total
+		// Collect user IDs and calculate paid/owed totals
 		splitUserIDs := make([]string, 0, len(expense.Splits))
-		var total float64
+		var paidTotal, owedTotal float64
 		for _, s := range expense.Splits {
 			splitUserIDs = append(splitUserIDs, s.UserID)
-			total += s.Amount
+			if s.IsPaid {
+				paidTotal += s.Amount
+			} else {
+				owedTotal += s.Amount
+			}
 		}
 
 		// Check all split users are in group (single DB call)
@@ -147,12 +151,16 @@ func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 			return
 		}
 
-		// Collect user IDs from splits and calculate total
+		// Collect user IDs and calculate paid/owed totals
 		splitUserIDs := make([]string, 0, len(payload.Splits))
-		var total float64
+		var paidTotal, owedTotal float64
 		for _, s := range payload.Splits {
 			splitUserIDs = append(splitUserIDs, s.UserID)
-			total += s.Amount
+			if s.IsPaid {
+				paidTotal += s.Amount
+			} else {
+				owedTotal += s.Amount
+			}
 		}
 
 		// Check all split users are in group (single DB call)
