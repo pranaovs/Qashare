@@ -47,7 +47,14 @@ class _MyExpensesScreenState extends State<MyExpensesScreen> {
 
   double get totalSpent {
     if (_expenses == null) return 0;
-    return _expenses!.fold(0, (sum, expense) => sum + expense.amountOwed);
+    return _expenses!
+        .where((e) => e.amountOwed > 0)
+        .fold(0, (sum, expense) => sum + expense.amountOwed);
+  }
+
+  List<UserExpenseBreakdown> get _filteredExpenses {
+    if (_expenses == null) return [];
+    return _expenses!.where((e) => e.amountOwed > 0).toList();
   }
 
   @override
@@ -84,7 +91,7 @@ class _MyExpensesScreenState extends State<MyExpensesScreen> {
                     ),
                   ),
                 )
-              : _expenses == null || _expenses!.isEmpty
+              : _filteredExpenses.isEmpty
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -165,9 +172,9 @@ class _MyExpensesScreenState extends State<MyExpensesScreen> {
                         Expanded(
                           child: ListView.builder(
                             padding: const EdgeInsets.all(16),
-                            itemCount: _expenses!.length,
+                            itemCount: _filteredExpenses.length,
                             itemBuilder: (context, index) {
-                              final expense = _expenses![index];
+                              final expense = _filteredExpenses[index];
                               
                               return Card(
                                 margin: const EdgeInsets.only(bottom: 12),
