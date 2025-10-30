@@ -63,13 +63,22 @@ func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 			return
 		}
 
-		tolerance, err := strconv.ParseFloat(utils.Getenv("SPLIT_TOLERANCE", "0.01"), 64)
-		if err != nil {
-			tolerance = 0.01
-		}
-		if math.Abs(total-expense.Amount) > tolerance {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "split total does not match expense amount"})
-			return
+		// Skip amount validation if incomplete flags are set
+		if !expense.IsIncompleteAmount && !expense.IsIncompleteSplit {
+			tolerance, err := strconv.ParseFloat(utils.Getenv("SPLIT_TOLERANCE", "0.01"), 64)
+			if err != nil {
+				tolerance = 0.01
+			}
+			// Validate: paid amounts should equal expense amount
+			if math.Abs(paidTotal-expense.Amount) > tolerance {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "paid split total does not match expense amount"})
+				return
+			}
+			// Validate: owed amounts should equal expense amount
+			if math.Abs(owedTotal-expense.Amount) > tolerance {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "owed split total does not match expense amount"})
+				return
+			}
 		}
 
 		// Create expense
@@ -175,13 +184,22 @@ func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 			return
 		}
 
-		tolerance, err := strconv.ParseFloat(utils.Getenv("SPLIT_TOLERANCE", "0.01"), 64)
-		if err != nil {
-			tolerance = 0.01
-		}
-		if math.Abs(total-payload.Amount) > tolerance {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "split total does not match expense amount"})
-			return
+		// Skip amount validation if incomplete flags are set
+		if !payload.IsIncompleteAmount && !payload.IsIncompleteSplit {
+			tolerance, err := strconv.ParseFloat(utils.Getenv("SPLIT_TOLERANCE", "0.01"), 64)
+			if err != nil {
+				tolerance = 0.01
+			}
+			// Validate: paid amounts should equal expense amount
+			if math.Abs(paidTotal-payload.Amount) > tolerance {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "paid split total does not match expense amount"})
+				return
+			}
+			// Validate: owed amounts should equal expense amount
+			if math.Abs(owedTotal-payload.Amount) > tolerance {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "owed split total does not match expense amount"})
+				return
+			}
 		}
 
 		if err := db.UpdateExpense(c, pool, payload); err != nil {

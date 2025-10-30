@@ -18,7 +18,7 @@ func CreateExpense(
 	if expense.Title == "" {
 		return "", errors.New("title required")
 	}
-	if expense.Amount <= 0 {
+	if !expense.IsIncompleteAmount && expense.Amount <= 0 {
 		return "", errors.New("invalid amount")
 	}
 
@@ -64,7 +64,7 @@ func CreateExpense(
 		}
 		br := tx.SendBatch(ctx, batch)
 		defer br.Close()
-		
+
 		// Execute all batched queries and check for errors
 		for i := 0; i < len(expense.Splits); i++ {
 			_, err = br.Exec()
@@ -88,7 +88,7 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expen
 	if expense.Title == "" {
 		return errors.New("title required")
 	}
-	if expense.Amount <= 0 {
+	if !expense.IsIncompleteAmount && expense.Amount <= 0 {
 		return errors.New("invalid amount")
 	}
 
@@ -142,7 +142,7 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expen
 		}
 		br := tx.SendBatch(ctx, batch)
 		defer br.Close()
-		
+
 		// Execute all batched queries and check for errors
 		for i := 0; i < len(expense.Splits); i++ {
 			_, err = br.Exec()
