@@ -175,11 +175,8 @@ func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 			}
 		}
 
-		// Get unique user IDs (same user can appear multiple times with different is_paid values)
-		uniqueUserIDs := utils.GetUniqueUserIDs(splitUserIDs)
-
-		// Check all split users are in group (single DB call)
-		if err := db.AllMembersOfGroup(c, pool, uniqueUserIDs, exp.GroupID); err != nil {
+		// Check all split users are in group
+		if err := db.AllMembersOfGroup(c, pool, splitUserIDs, exp.GroupID); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "split user not in group"})
 			return
 		}
