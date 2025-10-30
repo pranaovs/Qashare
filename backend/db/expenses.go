@@ -63,15 +63,17 @@ func CreateExpense(
 			`, expenseID, split.UserID, split.Amount, split.IsPaid)
 		}
 		br := tx.SendBatch(ctx, batch)
-		defer br.Close()
+
 
 		// Execute all batched queries and check for errors
 		for i := 0; i < len(expense.Splits); i++ {
 			_, err = br.Exec()
 			if err != nil {
+				br.Close()
 				return "", err
 			}
 		}
+		br.Close()
 	}
 	err = tx.Commit(ctx)
 	if err != nil {
@@ -141,14 +143,17 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expen
 			`, expense.ExpenseID, split.UserID, split.Amount, split.IsPaid)
 		}
 		br := tx.SendBatch(ctx, batch)
-		defer br.Close()
 
 		// Execute all batched queries and check for errors
 		for i := 0; i < len(expense.Splits); i++ {
 			_, err = br.Exec()
 			if err != nil {
+				br.Close()
 				return err
 			}
+		}
+		if err := br.Close(); err != nil {
+			return err
 		}
 	}
 
