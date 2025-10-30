@@ -209,7 +209,10 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 	for rows.Next() {
 		var split models.ExpenseSplit
 		err = rows.Scan(&split.UserID, &split.Amount, &split.IsPaid)
-		if err != nil {
+
+	if err := rows.Err(); err != nil {
+		return models.Expense{}, err
+	}
 			return models.Expense{}, err
 		}
 		expense.Splits = append(expense.Splits, split)
