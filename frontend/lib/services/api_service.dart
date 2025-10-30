@@ -113,6 +113,9 @@ class ApiService {
   Future<List<Group>> getMyGroups() async {
     try {
       final response = await _dio.get(ApiConfig.myGroups);
+      if (response.data == null) {
+        return [];
+      }
       return (response.data as List)
           .map((g) => Group.fromJson(g as Map<String, dynamic>))
           .toList();
@@ -124,6 +127,9 @@ class ApiService {
   Future<List<Group>> getAdminGroups() async {
     try {
       final response = await _dio.get(ApiConfig.adminGroups);
+      if (response.data == null) {
+        return [];
+      }
       return (response.data as List)
           .map((g) => Group.fromJson(g as Map<String, dynamic>))
           .toList();

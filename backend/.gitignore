@@ -140,3 +140,4 @@ vite.config.ts.timestamp-*
 
 # Go build artifacts
 backend/shared-expenses-app
+shared-expenses-backend
