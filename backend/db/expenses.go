@@ -53,13 +53,24 @@ func CreateExpense(
 		return "", err
 	}
 
-	for _, split := range expense.Splits {
-		_, err = tx.Exec(ctx, `
-			INSERT INTO expense_splits (expense_id, user_id, amount, is_paid)
-			VALUES ($1, $2, $3, $4)
-		`, expenseID, split.UserID, split.Amount, split.IsPaid)
-		if err != nil {
-			return "", err
+	// Batch insert splits for better performance
+	if len(expense.Splits) > 0 {
+		batch := &pgx.Batch{}
+		for _, split := range expense.Splits {
+			batch.Queue(`
+				INSERT INTO expense_splits (expense_id, user_id, amount, is_paid)
+				VALUES ($1, $2, $3, $4)
+			`, expenseID, split.UserID, split.Amount, split.IsPaid)
+		}
+		br := tx.SendBatch(ctx, batch)
+		defer br.Close()
+		
+		// Execute all batched queries and check for errors
+		for i := 0; i < len(expense.Splits); i++ {
+			_, err = br.Exec()
+			if err != nil {
+				return "", err
+			}
 		}
 	}
 	err = tx.Commit(ctx)
@@ -120,14 +131,24 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expen
 		return err
 	}
 
-	// Reinsert updated splits
-	for _, split := range expense.Splits {
-		_, err = tx.Exec(ctx, `
-			INSERT INTO expense_splits (expense_id, user_id, amount, is_paid)
-			VALUES ($1, $2, $3, $4)
-		`, expense.ExpenseID, split.UserID, split.Amount, split.IsPaid)
-		if err != nil {
-			return err
+	// Batch insert updated splits for better performance
+	if len(expense.Splits) > 0 {
+		batch := &pgx.Batch{}
+		for _, split := range expense.Splits {
+			batch.Queue(`
+				INSERT INTO expense_splits (expense_id, user_id, amount, is_paid)
+				VALUES ($1, $2, $3, $4)
+			`, expense.ExpenseID, split.UserID, split.Amount, split.IsPaid)
+		}
+		br := tx.SendBatch(ctx, batch)
+		defer br.Close()
+		
+		// Execute all batched queries and check for errors
+		for i := 0; i < len(expense.Splits); i++ {
+			_, err = br.Exec()
+			if err != nil {
+				return err
+			}
 		}
 	}
 
