@@ -47,7 +47,7 @@ func GetUserExpensesInGroup(ctx context.Context, pool *pgxpool.Pool, groupID, us
 			amount_owed,
 			(amount_paid - amount_owed) as net_spending
 		FROM user_splits
-		WHERE amount_owed > 0
+		WHERE amount_owed > 0 AND title != 'Settlement'
 		ORDER BY created_at DESC
 	`, groupID, userID)
 	if err != nil {
