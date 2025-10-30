@@ -3,6 +3,7 @@ import '../config/api_config.dart';
 import '../models/user.dart';
 import '../models/group.dart';
 import '../models/expense.dart';
+import '../models/settlement.dart';
 import 'storage_service.dart';
 
 class ApiService {
@@ -193,6 +194,20 @@ class ApiService {
       await _dio.delete(ApiConfig.groupMembers(groupId), data: {
         'user_ids': userIds,
       });
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<Settlement>> getGroupSettlements(String groupId) async {
+    try {
+      final response = await _dio.get(ApiConfig.groupSettlements(groupId));
+      if (response.data == null) {
+        return [];
+      }
+      return (response.data as List)
+          .map((s) => Settlement.fromJson(s as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       rethrow;
     }

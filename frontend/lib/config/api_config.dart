@@ -19,6 +19,7 @@ class ApiConfig {
   static const String adminGroups = '/groups/admin';
   static String groupById(String id) => '/groups/$id';
   static String groupMembers(String id) => '/groups/$id/members';
+  static String groupSettlements(String id) => '/groups/$id/settlements';
   
   // Expense endpoints
   static const String expenses = '/expenses';

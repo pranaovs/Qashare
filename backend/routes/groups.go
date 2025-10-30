@@ -258,4 +258,36 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 			"removed_members": req.UserIDs,
 		})
 	})
+
+	// Get settlements for a group
+	router.GET("/:id/settlements", func(c *gin.Context) {
+		groupID := c.Param("id")
+
+		// Authenticate the requester
+		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Check if user is a member of the group
+		err = db.MemberOfGroup(c, pool, userID, groupID)
+		if err != nil {
+			if errors.Is(err, db.ErrNotMember) {
+				c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to verify membership"})
+			}
+			return
+		}
+
+		// Calculate settlements
+		settlements, err := db.CalculateSettlements(c.Request.Context(), pool, groupID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to calculate settlements"})
+			return
+		}
+
+		c.JSON(http.StatusOK, settlements)
+	})
 }

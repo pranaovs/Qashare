@@ -159,6 +159,18 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                           Text(Formatters.formatDate(group.createdAtDateTime)),
                         ],
                       ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () => context.push('/groups/${widget.groupId}/settlements'),
+                          icon: const Icon(Icons.account_balance_wallet),
+                          label: const Text('Settle Expenses'),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
