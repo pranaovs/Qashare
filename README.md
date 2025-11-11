@@ -191,7 +191,7 @@ Repo Link: [https://github.com/pranaovs/shared-expenses-app](https://github.com/
 [discussions-url]: https://github.com/pranaovs/shared-expenses-app/discussions
 [license-badge]: https://img.shields.io/github/license/pranaovs/shared-expenses-app
 [license-url]: https://github.com/pranaovs/shared-expenses-app/blob/main/LICENSE
-[flutter-badge]: https://img.shields.io/badge/Flutter-02569B?logo=flutter&logoColor=white
+[flutter-badge]: https://img.shields.io/badge/Flutter-027DFD?logo=flutter&logoColor=white
 [flutter-url]: https://flutter.dev/
 [go-badge]: https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white
 [go-url]: https://go.dev/
