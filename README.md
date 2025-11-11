@@ -145,6 +145,11 @@ To set up the project locally, follow these instructions for both the client and
 - [ ] Guest Users
 - [ ] Permission management
 - [ ] Edit history
+- [ ] Data import/export
+- [ ] Statements generation
+- [ ] Bundle server in client for fully-local usage
+  - [ ] Upload to cloud option
+  - [ ] Open embedded server to LAN
 
 <!-- CONTRIBUTING -->
 ## Contributing
