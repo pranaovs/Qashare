@@ -48,7 +48,7 @@ A full-stack application designed to help users track shared expenses and split 
 
 The other day, my friends and I went to a water park. Once the trip was over, we wanted to settle our expenses.
 While walking on the street, my friend installed the \[wise-expense-splitting-app\] and started adding expenses. But it was riddled with ads. The worst part, we couldn't add more than 5 expenses without some limitation (I think it was an ad-break, or a delay asking us to upgrade).
-I also didn't want my expenses to be stored on some third-party server for who knows when and for what other purpose.
+I also didn't want my expenses to be stored on some server for who knows how long and for what other purpose.
 
 That's where the idea of building a simple cross-platform self-hosted app came to me.
 In a few weeks, I had to prepare a "project" for my Database Management Course. I decided to use that as an excuse to kickstart this idea.
