@@ -169,10 +169,10 @@ Don't forget to give the project a star! Thanks again!
 
 Distributed under the AGPL-3.0 License. See [`LICENSE`](https://github.com/pranaovs/shared-expenses-app/blob/main/LICENSE) for more information.
 
-## Contributors
+## Maintainers
 
-Sasvat S R - [@sasvat007](https://github.com/sasvat007)
-S S Kavinthra - [@kav1nthra](https://github.com/kav1nthra)
+- Sasvat S R - [@sasvat007](https://github.com/sasvat007)
+- S S Kavinthra - [@kav1nthra](https://github.com/kav1nthra)
 
 ## Contact
 
