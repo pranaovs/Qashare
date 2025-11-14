@@ -176,7 +176,7 @@ Distributed under the AGPL-3.0 License. See [`LICENSE`](https://github.com/prana
 
 ## Contact
 
-Pranaov S - [@pranaovs](mailto://contact.anoinihooqaq@pranaovs.me)
+Pranaov S - [@pranaovs](mailto:contact.anoinihooqaq@pranaovs.me)
 
 Repo Link: [https://github.com/pranaovs/shared-expenses-app](https://github.com/pranaovs/shared-expenses-app)
 
