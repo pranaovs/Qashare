@@ -29,7 +29,7 @@ func GetUserID(c *gin.Context) (string, bool) {
 	if !exists {
 		return "", false
 	}
-	
+
 	id, ok := userID.(string)
 	return id, ok
 }
