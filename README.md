@@ -1,10 +1,10 @@
 <div align="center">
-  <a href="https://github.com/pranaovs/shared-expenses-app">  </a>
+  <a href="https://github.com/pranaovs/qashare">  </a>
 
-<h1 align="center">Shared Expenses App (Name Tentative)</h1>
+<h1 align="center">Qashare</h1>
 
   <p align="center">
-    A mobile app to track shared expenses and split bills easily.
+    A (mobile) app to track shared expenses and split bills easily.
 
 [![Stargazers][stars-badge]][stars-url]
 [![Forks][forks-badge]][forks-url]
@@ -15,9 +15,9 @@
 
   </p>
     <p align="center">
-    <a href="https://github.com/pranaovs/shared-expenses-app"></a>
-    <a href="https://github.com/pranaovs/shared-expenses-app/issues">Report Bug</a>
-    <a href="https://github.com/pranaovs/shared-expenses-app/wiki">View Docs</a>
+    <a href="https://github.com/pranaovs/qashare"></a>
+    <a href="https://github.com/pranaovs/qashare/issues">Report Bug</a>
+    <a href="https://github.com/pranaovs/qashare/wiki">View Docs</a>
   </p>
 </div>
 
@@ -42,16 +42,9 @@
 
 ## About The Project
 
+> Pronounced: Cash-Share
+
 A full-stack application designed to help users track shared expenses and split bills easily. The app features a Flutter mobile client and a Go backend with PostgreSQL database.
-
-### Inspiration
-
-The other day, my friends and I went to a water park. Once the trip was over, we wanted to settle our expenses.
-While walking on the street, my friend installed the \[wise-expense-splitting-app\] and started adding expenses. But it was riddled with ads. The worst part, we couldn't add more than 5 expenses without some limitation (I think it was an ad-break, or a delay asking us to upgrade).
-I also didn't want my expenses to be stored on some server for who knows how long and for what other purpose.
-
-That's where the idea of building a simple cross-platform self-hosted app came to me.
-In a few weeks, I had to prepare a "project" for my Database Management Course. I decided to use that as an excuse to kickstart this idea.
 
 ### Built Using
 
@@ -80,13 +73,13 @@ To set up the project locally, follow these instructions for both the client and
 1. Clone the repo
 
    ```sh
-   git clone https://github.com/pranaovs/shared-expenses-app.git
+   git clone https://github.com/pranaovs/qashare.git
    ```
 
 2. Switch to the directory
 
     ```sh
-    cd shared-expenses-app
+    cd qashare
     ```
 
 #### Running the Server
@@ -167,7 +160,7 @@ Don't forget to give the project a star! Thanks again!
 
 ## License
 
-Distributed under the AGPL-3.0 License. See [`LICENSE`](https://github.com/pranaovs/shared-expenses-app/blob/main/LICENSE) for more information.
+Distributed under the AGPL-3.0 License. See [`LICENSE`](https://github.com/pranaovs/qashare/blob/main/LICENSE) for more information.
 
 ## Maintainers
 
@@ -178,24 +171,24 @@ Distributed under the AGPL-3.0 License. See [`LICENSE`](https://github.com/prana
 
 Pranaov S - [@pranaovs](mailto:contact.anoinihooqaq@pranaovs.me)
 
-Repo Link: [https://github.com/pranaovs/shared-expenses-app](https://github.com/pranaovs/shared-expenses-app)
+Repo Link: [https://github.com/pranaovs/qashare](https://github.com/pranaovs/qashare)
 
 ## Acknowledgments
 
 - [othneildrew (README Template)](https://github.com/othneildrew/Best-README-Template)
 
 <!-- MARKDOWN LINKS & IMAGES -->
-[forks-badge]: https://img.shields.io/github/forks/pranaovs/shared-expenses-app
-[forks-url]: https://github.com/pranaovs/shared-expenses-app/network/members
-[stars-badge]: https://img.shields.io/github/stars/pranaovs/shared-expenses-app
-[stars-url]: https://github.com/pranaovs/shared-expenses-app/stargazers
-[last-commit-badge]: https://img.shields.io/github/last-commit/pranaovs/shared-expenses-app/main
-[issues-badge]: https://img.shields.io/github/issues/pranaovs/shared-expenses-app
-[issues-url]: https://github.com/pranaovs/shared-expenses-app/issues
-[discussions-badge]: https://img.shields.io/github/discussions/pranaovs/shared-expenses-app
-[discussions-url]: https://github.com/pranaovs/shared-expenses-app/discussions
-[license-badge]: https://img.shields.io/github/license/pranaovs/shared-expenses-app
-[license-url]: https://github.com/pranaovs/shared-expenses-app/blob/main/LICENSE
+[forks-badge]: https://img.shields.io/github/forks/pranaovs/qashare
+[forks-url]: https://github.com/pranaovs/qashare/network/members
+[stars-badge]: https://img.shields.io/github/stars/pranaovs/qashare
+[stars-url]: https://github.com/pranaovs/qashare/stargazers
+[last-commit-badge]: https://img.shields.io/github/last-commit/pranaovs/qashare/main
+[issues-badge]: https://img.shields.io/github/issues/pranaovs/qashare
+[issues-url]: https://github.com/pranaovs/qashare/issues
+[discussions-badge]: https://img.shields.io/github/discussions/pranaovs/qashare
+[discussions-url]: https://github.com/pranaovs/qashare/discussions
+[license-badge]: https://img.shields.io/github/license/pranaovs/qashare
+[license-url]: https://github.com/pranaovs/qashare/blob/main/LICENSE
 [flutter-badge]: https://img.shields.io/badge/Flutter-027DFD?logo=flutter&logoColor=white
 [flutter-url]: https://flutter.dev/
 [go-badge]: https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white
