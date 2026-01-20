@@ -3,9 +3,9 @@ package main
 import (
 	"log"
 
-	"shared-expenses-app/db"
-	"shared-expenses-app/routes"
-	"shared-expenses-app/utils"
+	"github.com/pranaovs/qashare/db"
+	"github.com/pranaovs/qashare/routes"
+	"github.com/pranaovs/qashare/utils"
 
 	"github.com/gin-gonic/gin"
 )

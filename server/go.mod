@@ -1,4 +1,4 @@
-module shared-expenses-app
+module github.com/pranaovs/qashare
 
 go 1.25.3
 

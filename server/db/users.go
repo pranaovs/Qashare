@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"shared-expenses-app/models"
-	"shared-expenses-app/utils"
+	"github.com/pranaovs/qashare/models"
+	"github.com/pranaovs/qashare/utils"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"

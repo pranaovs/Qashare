@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"slices"
 
-	"shared-expenses-app/db"
-	"shared-expenses-app/utils"
+	"github.com/pranaovs/qashare/db"
+	"github.com/pranaovs/qashare/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"

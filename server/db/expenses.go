@@ -3,7 +3,7 @@ package db
 import (
 	"context"
 	"errors"
-	"shared-expenses-app/models"
+	"github.com/pranaovs/qashare/models"
 	"time"
 
 	"github.com/jackc/pgx/v5"
