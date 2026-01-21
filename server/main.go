@@ -47,7 +47,7 @@ func initDatabase() (*pgxpool.Pool, error) {
 
 	// Get database configuration from environment
 	dbURL := utils.Getenv("DB_URL", "postgres://postgres:postgres@localhost:5432/shared_expenses")
-	
+
 	// Create database config with optional environment overrides
 	config := createDBConfig(dbURL)
 
@@ -60,7 +60,7 @@ func initDatabase() (*pgxpool.Pool, error) {
 	// Perform health check
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	if err := db.HealthCheck(ctx, pool); err != nil {
 		db.Close(pool)
 		return nil, err

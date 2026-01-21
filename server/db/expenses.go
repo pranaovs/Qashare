@@ -40,7 +40,7 @@ func CreateExpense(
 		return "", ErrInvalidAmount
 	}
 
-	log.Printf("[DB] Creating expense: %s (amount: %.2f, group: %s)", 
+	log.Printf("[DB] Creating expense: %s (amount: %.2f, group: %s)",
 		expense.Title, expense.Amount, expense.GroupID)
 
 	var expenseID string
@@ -54,7 +54,7 @@ func CreateExpense(
 		)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING expense_id`
-		
+
 		err := tx.QueryRow(
 			ctx,
 			insertQuery,
@@ -78,11 +78,11 @@ func CreateExpense(
 			batch := &pgx.Batch{}
 			splitQuery := `INSERT INTO expense_splits (expense_id, user_id, amount, is_paid)
 				VALUES ($1, $2, $3, $4)`
-			
+
 			for _, split := range expense.Splits {
 				batch.Queue(splitQuery, expenseID, split.UserID, split.Amount, split.IsPaid)
 			}
-			
+
 			br := tx.SendBatch(ctx, batch)
 			defer br.Close()
 
@@ -141,7 +141,7 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expen
 				latitude = $8,
 				longitude = $9
 			WHERE expense_id = $1`
-		
+
 		result, err := tx.Exec(
 			ctx,
 			updateQuery,
@@ -175,11 +175,11 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expen
 			batch := &pgx.Batch{}
 			splitQuery := `INSERT INTO expense_splits (expense_id, user_id, amount, is_paid)
 				VALUES ($1, $2, $3, $4)`
-			
+
 			for _, split := range expense.Splits {
 				batch.Queue(splitQuery, expense.ExpenseID, split.UserID, split.Amount, split.IsPaid)
 			}
-			
+
 			br := tx.SendBatch(ctx, batch)
 			defer br.Close()
 
@@ -226,7 +226,7 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 		longitude
 	FROM expenses
 	WHERE expense_id = $1`
-	
+
 	err := pool.QueryRow(ctx, expenseQuery, expenseID).Scan(
 		&expense.ExpenseID,
 		&expense.GroupID,
@@ -253,7 +253,7 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 		FROM expense_splits 
 		WHERE expense_id = $1
 		ORDER BY is_paid DESC, user_id`
-	
+
 	rows, err := pool.Query(ctx, splitsQuery, expenseID)
 	if err != nil {
 		return models.Expense{}, NewDBError("GetExpense", err, "failed to query splits")
@@ -292,7 +292,7 @@ func DeleteExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) er
 	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
 		// Delete the expense (splits will be cascade deleted)
 		deleteQuery := `DELETE FROM expenses WHERE expense_id = $1`
-		
+
 		result, err := tx.Exec(ctx, deleteQuery, expenseID)
 		if err != nil {
 			return fmt.Errorf("failed to delete expense: %w", err)

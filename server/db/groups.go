@@ -29,14 +29,14 @@ func CreateGroup(ctx context.Context, pool *pgxpool.Pool, name, description, own
 	log.Printf("[DB] Creating new group: %s (owner: %s)", name, ownerUserID)
 
 	var groupID string
-	
+
 	// Use WithTransaction helper for consistent transaction management
 	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
 		// Insert the group
 		query := `INSERT INTO groups (group_name, description, created_by, created_at)
 			VALUES ($1, $2, $3, $4)
 			RETURNING group_id`
-		
+
 		err := tx.QueryRow(ctx, query, name, description, ownerUserID, time.Now()).Scan(&groupID)
 		if err != nil {
 			return fmt.Errorf("failed to insert group: %w", err)
@@ -45,7 +45,7 @@ func CreateGroup(ctx context.Context, pool *pgxpool.Pool, name, description, own
 		// Add creator as the first member
 		memberQuery := `INSERT INTO group_members (user_id, group_id, joined_at)
 			VALUES ($1, $2, $3)`
-		
+
 		_, err = tx.Exec(ctx, memberQuery, ownerUserID, groupID, time.Now())
 		if err != nil {
 			return fmt.Errorf("failed to add creator as member: %w", err)
@@ -70,7 +70,7 @@ func GetGroupCreator(ctx context.Context, pool *pgxpool.Pool, groupID string) (s
 
 	var creatorID string
 	query := `SELECT created_by FROM groups WHERE group_id = $1`
-	
+
 	err := pool.QueryRow(ctx, query, groupID).Scan(&creatorID)
 	if err == pgx.ErrNoRows {
 		log.Printf("[DB] Group not found: %s", groupID)
@@ -96,7 +96,7 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.G
 	groupQuery := `SELECT group_id, group_name, description, created_by, extract(epoch from created_at)::bigint
 		FROM groups
 		WHERE group_id = $1`
-	
+
 	err := pool.QueryRow(ctx, groupQuery, groupID).Scan(
 		&group.GroupID, &group.Name, &group.Description, &group.CreatedBy, &group.CreatedAt,
 	)
@@ -114,7 +114,7 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.G
 		JOIN users u ON gm.user_id = u.user_id
 		WHERE gm.group_id = $1
 		ORDER BY gm.joined_at ASC`
-	
+
 	rows, err := pool.Query(ctx, membersQuery, groupID)
 	if err != nil {
 		return models.Group{}, NewDBError("GetGroup", err, "failed to query group members")
@@ -157,7 +157,7 @@ func AddGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, us
 	insertQuery := `INSERT INTO group_members (user_id, group_id, joined_at)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (user_id, group_id) DO NOTHING`
-	
+
 	now := time.Now()
 	for _, userID := range userIDs {
 		batch.Queue(insertQuery, userID, groupID, now)
@@ -171,7 +171,7 @@ func AddGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, us
 	for i := range userIDs {
 		_, err := br.Exec()
 		if err != nil {
-			return NewDBError("AddGroupMembers", err, 
+			return NewDBError("AddGroupMembers", err,
 				fmt.Sprintf("failed to add member %d of %d", i+1, len(userIDs)))
 		}
 	}
@@ -189,7 +189,7 @@ func AddGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID str
 	query := `INSERT INTO group_members (user_id, group_id, joined_at)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (user_id, group_id) DO NOTHING`
-	
+
 	_, err := pool.Exec(ctx, query, userID, groupID, time.Now())
 	if err != nil {
 		return NewDBError("AddGroupMember", err, "failed to add member")
@@ -206,7 +206,7 @@ func RemoveGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID 
 
 	query := `DELETE FROM group_members
 		WHERE user_id = $1 AND group_id = $2`
-	
+
 	result, err := pool.Exec(ctx, query, userID, groupID)
 	if err != nil {
 		return NewDBError("RemoveGroupMember", err, "failed to remove member")
@@ -236,7 +236,7 @@ func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string,
 	batch := &pgx.Batch{}
 	deleteQuery := `DELETE FROM group_members
 		WHERE user_id = $1 AND group_id = $2`
-	
+
 	for _, userID := range userIDs {
 		batch.Queue(deleteQuery, userID, groupID)
 	}
@@ -249,7 +249,7 @@ func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string,
 	for i := range userIDs {
 		_, err := br.Exec()
 		if err != nil {
-			return NewDBError("RemoveGroupMembers", err, 
+			return NewDBError("RemoveGroupMembers", err,
 				fmt.Sprintf("failed to remove member %d of %d", i+1, len(userIDs)))
 		}
 	}

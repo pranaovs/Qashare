@@ -88,7 +88,7 @@ type BatchQuery struct {
 // Example: exists, err := RecordExists(ctx, pool, "users", "email = $1", email)
 func RecordExists(ctx context.Context, pool *pgxpool.Pool, table, condition string, args ...interface{}) (bool, error) {
 	query := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE %s)", table, condition)
-	
+
 	var exists bool
 	err := pool.QueryRow(ctx, query, args...).Scan(&exists)
 	if err != nil {
@@ -102,7 +102,7 @@ func RecordExists(ctx context.Context, pool *pgxpool.Pool, table, condition stri
 // Example: count, err := CountRecords(ctx, pool, "users", "is_guest = $1", true)
 func CountRecords(ctx context.Context, pool *pgxpool.Pool, table, condition string, args ...interface{}) (int64, error) {
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", table, condition)
-	
+
 	var count int64
 	err := pool.QueryRow(ctx, query, args...).Scan(&count)
 	if err != nil {
@@ -146,9 +146,9 @@ func RetryOnError(ctx context.Context, maxRetries int, operation func() error) e
 		// Wait before retrying with exponential backoff
 		if i < maxRetries-1 {
 			waitTime := time.Duration(1<<uint(i)) * 100 * time.Millisecond
-			log.Printf("[DB] Operation failed, retrying in %v (attempt %d/%d): %v", 
+			log.Printf("[DB] Operation failed, retrying in %v (attempt %d/%d): %v",
 				waitTime, i+1, maxRetries, err)
-			
+
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
@@ -198,7 +198,7 @@ func ValidateUUID(uuid string) bool {
 	if uuid[8] != '-' || uuid[13] != '-' || uuid[18] != '-' || uuid[23] != '-' {
 		return false
 	}
-	
+
 	// Check that all other characters are valid hexadecimal
 	for i, c := range uuid {
 		// Skip the dash positions
@@ -210,6 +210,6 @@ func ValidateUUID(uuid string) bool {
 			return false
 		}
 	}
-	
+
 	return true
 }

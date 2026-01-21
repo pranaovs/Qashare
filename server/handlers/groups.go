@@ -92,7 +92,7 @@ func (h *GroupsHandler) GetGroup(c *gin.Context) {
 
 	groupID := c.Param("id")
 
-	err := db.MemberOfGroup(c, h.pool, userID, groupID)
+	err := db.MemberOfGroup(c.Request.Context(), h.pool, userID, groupID)
 	if err != nil {
 		if errors.Is(err, db.ErrNotMember) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
@@ -102,7 +102,7 @@ func (h *GroupsHandler) GetGroup(c *gin.Context) {
 		return
 	}
 
-	group, err := db.GetGroup(c, h.pool, groupID)
+	group, err := db.GetGroup(c.Request.Context(), h.pool, groupID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -130,7 +130,7 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 		return
 	}
 
-	groupCreator, err := db.GetGroupCreator(c, h.pool, groupID)
+	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, groupID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "group not found"})
 		return
@@ -142,7 +142,7 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 
 	validUserIDs := make([]string, 0, len(req.UserIDs))
 	for _, uid := range req.UserIDs {
-		err := db.UserExists(c, h.pool, uid)
+		err := db.UserExists(c.Request.Context(), h.pool, uid)
 		if err == nil {
 			validUserIDs = append(validUserIDs, uid)
 		} else if errors.Is(err, db.ErrUserNotFound) {
@@ -158,7 +158,7 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 		return
 	}
 
-	err = db.AddGroupMembers(c, h.pool, groupID, validUserIDs)
+	err = db.AddGroupMembers(c.Request.Context(), h.pool, groupID, validUserIDs)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to add members"})
 		return
@@ -189,7 +189,7 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 		return
 	}
 
-	groupCreator, err := db.GetGroupCreator(c, h.pool, groupID)
+	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, groupID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "group not found"})
 		return
@@ -203,7 +203,7 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 		return
 	}
 
-	err = db.RemoveGroupMembers(c, h.pool, groupID, req.UserIDs)
+	err = db.RemoveGroupMembers(c.Request.Context(), h.pool, groupID, req.UserIDs)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to remove members"})
 		return

@@ -10,16 +10,16 @@ import (
 var (
 	// ErrNotFound indicates that the requested resource was not found in the database
 	ErrNotFound = errors.New("resource not found")
-	
+
 	// ErrAlreadyExists indicates that a resource with the same identifier already exists
 	ErrAlreadyExists = errors.New("resource already exists")
-	
+
 	// ErrInvalidInput indicates that the provided input is invalid
 	ErrInvalidInput = errors.New("invalid input")
-	
+
 	// ErrPermissionDenied indicates that the user doesn't have permission for the operation
 	ErrPermissionDenied = errors.New("permission denied")
-	
+
 	// ErrConflict indicates a conflict with the current state of the resource
 	ErrConflict = errors.New("resource conflict")
 )
@@ -28,13 +28,13 @@ var (
 var (
 	// ErrUserNotFound indicates that the requested user was not found
 	ErrUserNotFound = errors.New("user not found")
-	
+
 	// ErrEmailNotRegistered indicates that the email is not registered
 	ErrEmailNotRegistered = errors.New("email not registered")
-	
+
 	// ErrEmailAlreadyExists indicates that a user with the email already exists
 	ErrEmailAlreadyExists = errors.New("user with this email already exists")
-	
+
 	// ErrUsersNotRelated indicates that users don't share any groups
 	ErrUsersNotRelated = errors.New("users not related")
 )
@@ -43,10 +43,10 @@ var (
 var (
 	// ErrGroupNotFound indicates that the requested group was not found
 	ErrGroupNotFound = errors.New("group not found")
-	
+
 	// ErrNotMember indicates that the user is not a member of the group
 	ErrNotMember = errors.New("not a member")
-	
+
 	// ErrNotGroupCreator indicates that the user is not the creator of the group
 	ErrNotGroupCreator = errors.New("not group creator")
 )
@@ -55,13 +55,13 @@ var (
 var (
 	// ErrExpenseNotFound indicates that the requested expense was not found
 	ErrExpenseNotFound = errors.New("expense not found")
-	
+
 	// ErrInvalidAmount indicates that the expense amount is invalid
 	ErrInvalidAmount = errors.New("invalid amount")
-	
+
 	// ErrTitleRequired indicates that the expense title is required
 	ErrTitleRequired = errors.New("title required")
-	
+
 	// ErrExpenseIDRequired indicates that the expense ID is required
 	ErrExpenseIDRequired = errors.New("expense_id required")
 )

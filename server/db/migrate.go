@@ -86,7 +86,7 @@ func initMigrationTable(ctx context.Context, pool *pgxpool.Pool) error {
 			execution_time_ms INTEGER
 		)
 	`
-	
+
 	_, err := pool.Exec(ctx, createTableSQL)
 	if err != nil {
 		return fmt.Errorf("failed to create schema_migrations table: %w", err)
@@ -110,7 +110,7 @@ func getMigrationFiles(migrationsDir string) ([]string, error) {
 			files = append(files, filepath.Join(migrationsDir, e.Name()))
 		}
 	}
-	
+
 	// Sort files alphabetically to ensure consistent ordering
 	sort.Strings(files)
 	return files, nil
@@ -197,7 +197,7 @@ func isMigrationApplied(ctx context.Context, pool *pgxpool.Pool, migrationName s
 		`SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE migration_name = $1)`,
 		migrationName,
 	).Scan(&exists)
-	
+
 	return exists, err
 }
 
@@ -247,7 +247,7 @@ func VerifyMigrationIntegrity(ctx context.Context, pool *pgxpool.Pool, migration
 
 	for _, migration := range status.Migrations {
 		filePath := filepath.Join(migrationsDir, migration.Name)
-		
+
 		// Read current file content
 		content, err := os.ReadFile(filePath)
 		if err != nil {
