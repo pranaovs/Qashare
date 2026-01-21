@@ -131,8 +131,11 @@ func createDatabase(dbURL, dbName string) error {
 	}
 	defer conn.Close(ctx)
 
-	// Create the database
-	createDBSQL := fmt.Sprintf("CREATE DATABASE %s", pgx.Identifier{dbName}.Sanitize())
+	// Sanitize database name to prevent SQL injection
+	// Database names must be valid PostgreSQL identifiers
+	sanitizedName := sanitizeIdentifier(dbName)
+	createDBSQL := fmt.Sprintf("CREATE DATABASE %s", sanitizedName)
+	
 	_, err = conn.Exec(ctx, createDBSQL)
 	if err != nil {
 		return fmt.Errorf("failed to execute CREATE DATABASE: %w", err)
@@ -140,6 +143,15 @@ func createDatabase(dbURL, dbName string) error {
 
 	log.Printf("[DB] Successfully created database: %s", dbName)
 	return nil
+}
+
+// sanitizeIdentifier properly quotes a PostgreSQL identifier (table/database name)
+// to prevent SQL injection and handle special characters
+func sanitizeIdentifier(name string) string {
+	// Replace any double quotes with escaped double quotes
+	escaped := strings.ReplaceAll(name, `"`, `""`)
+	// Quote the identifier
+	return fmt.Sprintf(`"%s"`, escaped)
 }
 
 // Close gracefully closes the database connection pool

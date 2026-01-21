@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -178,7 +179,7 @@ func isRetryableError(err error) bool {
 	}
 
 	for _, pattern := range retryablePatterns {
-		if contains(errStr, pattern) {
+		if strings.Contains(errStr, pattern) {
 			return true
 		}
 	}
@@ -187,7 +188,8 @@ func isRetryableError(err error) bool {
 }
 
 // ValidateUUID checks if a string is a valid UUID format
-// This is a simple validation, not a full UUID parser
+// This is a basic validation that checks format structure
+// For more rigorous validation, consider using github.com/google/uuid package
 func ValidateUUID(uuid string) bool {
 	if len(uuid) != 36 {
 		return false
@@ -196,5 +198,18 @@ func ValidateUUID(uuid string) bool {
 	if uuid[8] != '-' || uuid[13] != '-' || uuid[18] != '-' || uuid[23] != '-' {
 		return false
 	}
+	
+	// Check that all other characters are valid hexadecimal
+	for i, c := range uuid {
+		// Skip the dash positions
+		if i == 8 || i == 13 || i == 18 || i == 23 {
+			continue
+		}
+		// Check if character is a valid hex digit
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+			return false
+		}
+	}
+	
 	return true
 }

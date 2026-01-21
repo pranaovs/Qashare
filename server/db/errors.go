@@ -3,6 +3,7 @@ package db
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 // Common database errors that can be checked with errors.Is()
@@ -107,7 +108,8 @@ func IsConstraintViolation(err error) bool {
 		return false
 	}
 	// PostgreSQL constraint violation errors typically contain "constraint"
-	return contains(err.Error(), "constraint") || contains(err.Error(), "violates")
+	errStr := err.Error()
+	return strings.Contains(errStr, "constraint") || strings.Contains(errStr, "violates")
 }
 
 // IsDuplicateKey checks if an error is a duplicate key violation
@@ -115,23 +117,6 @@ func IsDuplicateKey(err error) bool {
 	if err == nil {
 		return false
 	}
-	return contains(err.Error(), "duplicate key") || contains(err.Error(), "unique constraint")
-}
-
-// contains is a case-insensitive substring check helper
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && 
-		(s == substr || len(s) > len(substr) && 
-			(s[:len(substr)] == substr || 
-				s[len(s)-len(substr):] == substr || 
-				len(s) > len(substr) && containsHelper(s, substr)))
-}
-
-func containsHelper(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
+	errStr := err.Error()
+	return strings.Contains(errStr, "duplicate key") || strings.Contains(errStr, "unique constraint")
 }
