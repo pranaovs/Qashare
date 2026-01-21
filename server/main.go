@@ -92,20 +92,26 @@ func createDBConfig(dbURL string) *db.DBConfig {
 
 	// Allow environment variable overrides for connection pool settings
 	if maxConn := utils.Getenv("DB_MAX_CONNECTIONS", ""); maxConn != "" {
-		if val, err := strconv.ParseInt(maxConn, 10, 32); err == nil {
+		if val, err := strconv.Atoi(maxConn); err == nil && val > 0 {
 			config.MaxConnections = int32(val)
+		} else {
+			log.Printf("[INIT] ⚠ Invalid DB_MAX_CONNECTIONS value '%s', using default: %d", maxConn, config.MaxConnections)
 		}
 	}
 
 	if minConn := utils.Getenv("DB_MIN_CONNECTIONS", ""); minConn != "" {
-		if val, err := strconv.ParseInt(minConn, 10, 32); err == nil {
+		if val, err := strconv.Atoi(minConn); err == nil && val > 0 {
 			config.MinConnections = int32(val)
+		} else {
+			log.Printf("[INIT] ⚠ Invalid DB_MIN_CONNECTIONS value '%s', using default: %d", minConn, config.MinConnections)
 		}
 	}
 
 	if timeout := utils.Getenv("DB_CONNECT_TIMEOUT", ""); timeout != "" {
-		if val, err := strconv.Atoi(timeout); err == nil {
+		if val, err := strconv.Atoi(timeout); err == nil && val > 0 {
 			config.ConnectTimeout = time.Duration(val) * time.Second
+		} else {
+			log.Printf("[INIT] ⚠ Invalid DB_CONNECT_TIMEOUT value '%s', using default: %v", timeout, config.ConnectTimeout)
 		}
 	}
 
