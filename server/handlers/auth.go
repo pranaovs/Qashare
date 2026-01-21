@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/pranaovs/qashare/db"
@@ -51,7 +50,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	userID, err := db.CreateUser(context.Background(), h.pool, name, email, passwordHash)
+	userID, err := db.CreateUser(c.Request.Context(), h.pool, name, email, passwordHash)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -82,7 +81,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	password := request.Password
 
-	userID, savedPassword, err := db.GetUserCredentials(context.Background(), h.pool, email)
+	userID, savedPassword, err := db.GetUserCredentials(c.Request.Context(), h.pool, email)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid email or password"})
 		return
@@ -114,7 +113,7 @@ func (h *AuthHandler) Me(c *gin.Context) {
 
 	var user models.User
 
-	user, err := db.GetUser(context.Background(), h.pool, userID)
+	user, err := db.GetUser(c.Request.Context(), h.pool, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

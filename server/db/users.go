@@ -42,7 +42,7 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, name, email, password s
 	query := `INSERT INTO users (user_name, email, password_hash, created_at)
 		VALUES ($1, $2, $3, $4)
 		RETURNING user_id`
-	
+
 	err = pool.QueryRow(ctx, query, name, email, password, time.Now()).Scan(&userID)
 	if err != nil {
 		// Check for duplicate key violation (race condition)
@@ -66,11 +66,11 @@ func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (mo
 	query := `SELECT user_id, user_name, email, is_guest, extract(epoch from created_at)::bigint
 		FROM users
 		WHERE email = $1`
-	
+
 	err := pool.QueryRow(ctx, query, email).Scan(
 		&user.UserID, &user.Name, &user.Email, &user.Guest, &user.CreatedAt,
 	)
-	
+
 	if err == pgx.ErrNoRows {
 		log.Printf("[DB] User not found for email: %s", email)
 		return models.User{}, ErrEmailNotRegistered
@@ -92,7 +92,7 @@ func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (
 
 	var userID, passwordHash string
 	query := `SELECT user_id, password_hash FROM users WHERE email = $1`
-	
+
 	err := pool.QueryRow(ctx, query, email).Scan(&userID, &passwordHash)
 	if err == pgx.ErrNoRows {
 		log.Printf("[DB] Credentials not found for email: %s", email)
@@ -115,11 +115,11 @@ func GetUser(ctx context.Context, pool *pgxpool.Pool, userID string) (models.Use
 	query := `SELECT user_id, user_name, email, is_guest, extract(epoch from created_at)::bigint 
 		FROM users 
 		WHERE user_id = $1`
-	
+
 	err := pool.QueryRow(ctx, query, userID).Scan(
 		&user.UserID, &user.Name, &user.Email, &user.Guest, &user.CreatedAt,
 	)
-	
+
 	if err == pgx.ErrNoRows {
 		log.Printf("[DB] User not found with ID: %s", userID)
 		return models.User{}, ErrUserNotFound
@@ -148,7 +148,7 @@ func UsersRelated(ctx context.Context, pool *pgxpool.Pool, userID1, userID2 stri
 			JOIN group_members gm2 ON gm1.group_id = gm2.group_id
 			WHERE gm1.user_id = $1 AND gm2.user_id = $2
 		)`
-	
+
 	var areRelated bool
 	err := pool.QueryRow(ctx, query, userID1, userID2).Scan(&areRelated)
 	if err != nil {
@@ -175,7 +175,7 @@ func AdminOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]mo
 		FROM groups
 		WHERE created_by = $1
 		ORDER BY created_at DESC`
-	
+
 	rows, err := pool.Query(ctx, query, userID)
 	if err != nil {
 		return nil, NewDBError("AdminOfGroups", err, "failed to query admin groups")
@@ -214,7 +214,7 @@ func MemberOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]m
 		JOIN group_members gm ON gm.group_id = g.group_id
 		WHERE gm.user_id = $1
 		ORDER BY g.created_at DESC`
-	
+
 	rows, err := pool.Query(ctx, query, userID)
 	if err != nil {
 		return nil, NewDBError("MemberOfGroups", err, "failed to query member groups")
@@ -267,7 +267,7 @@ func UserExists(ctx context.Context, pool *pgxpool.Pool, userID string) error {
 func MemberOfGroup(ctx context.Context, pool *pgxpool.Pool, userID, groupID string) error {
 	log.Printf("[DB] Checking if user %s is member of group %s", userID, groupID)
 
-	exists, err := RecordExists(ctx, pool, "group_members", 
+	exists, err := RecordExists(ctx, pool, "group_members",
 		"user_id = $1 AND group_id = $2", userID, groupID)
 	if err != nil {
 		return NewDBError("MemberOfGroup", err, "failed to check group membership")
@@ -299,7 +299,7 @@ func AllMembersOfGroup(ctx context.Context, pool *pgxpool.Pool, userIDs []string
 	query := `SELECT COUNT(DISTINCT user_id)
 		FROM group_members
 		WHERE group_id = $1 AND user_id = ANY($2)`
-	
+
 	var count int
 	err := pool.QueryRow(ctx, query, groupID, uniqueUserIDs).Scan(&count)
 	if err != nil {

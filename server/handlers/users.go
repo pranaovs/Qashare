@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"errors"
 	"net/http"
 
@@ -30,7 +29,7 @@ func (h *UsersHandler) GetUser(c *gin.Context) {
 		return
 	}
 
-	err := db.UsersRelated(context.Background(), h.pool, userID, qUserID)
+	err := db.UsersRelated(c.Request.Context(), h.pool, userID, qUserID)
 	if err != nil {
 		if errors.Is(err, db.ErrUsersNotRelated) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
@@ -40,7 +39,7 @@ func (h *UsersHandler) GetUser(c *gin.Context) {
 		return
 	}
 
-	result, err := db.GetUser(context.Background(), h.pool, qUserID)
+	result, err := db.GetUser(c.Request.Context(), h.pool, qUserID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

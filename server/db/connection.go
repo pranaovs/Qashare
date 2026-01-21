@@ -15,25 +15,25 @@ import (
 
 // DBConfig holds database configuration parameters
 type DBConfig struct {
-	URL                string
-	MaxConnections     int32
-	MinConnections     int32
-	MaxConnLifetime    time.Duration
-	MaxConnIdleTime    time.Duration
-	HealthCheckPeriod  time.Duration
-	ConnectTimeout     time.Duration
+	URL               string
+	MaxConnections    int32
+	MinConnections    int32
+	MaxConnLifetime   time.Duration
+	MaxConnIdleTime   time.Duration
+	HealthCheckPeriod time.Duration
+	ConnectTimeout    time.Duration
 }
 
 // DefaultDBConfig returns a DBConfig with sensible defaults
 func DefaultDBConfig(dbURL string) *DBConfig {
 	return &DBConfig{
-		URL:                dbURL,
-		MaxConnections:     25,
-		MinConnections:     2,
-		MaxConnLifetime:    time.Hour,
-		MaxConnIdleTime:    time.Minute * 30,
-		HealthCheckPeriod:  time.Minute,
-		ConnectTimeout:     time.Second * 10,
+		URL:               dbURL,
+		MaxConnections:    25,
+		MinConnections:    2,
+		MaxConnLifetime:   time.Hour,
+		MaxConnIdleTime:   time.Minute * 30,
+		HealthCheckPeriod: time.Minute,
+		ConnectTimeout:    time.Second * 10,
 	}
 }
 
@@ -58,7 +58,7 @@ func ConnectWithConfig(config *DBConfig) (*pgxpool.Pool, error) {
 	}
 
 	dbName := strings.TrimPrefix(parsedURL.Path, "/")
-	
+
 	// Try to connect to the database
 	log.Printf("[DB] Attempting to connect to database: %s", dbName)
 	pool, err := createPool(ctx, config)
@@ -66,12 +66,12 @@ func ConnectWithConfig(config *DBConfig) (*pgxpool.Pool, error) {
 		// Check if error is due to database not existing
 		if strings.Contains(err.Error(), "database") && strings.Contains(err.Error(), "does not exist") {
 			log.Printf("[DB] Database '%s' does not exist, attempting to create it", dbName)
-			
+
 			// Try to create the database
 			if createErr := createDatabase(config.URL, dbName); createErr != nil {
 				return nil, fmt.Errorf("failed to create database: %w", createErr)
 			}
-			
+
 			// Retry connection after creating database
 			log.Printf("[DB] Retrying connection after database creation")
 			pool, err = createPool(ctx, config)
@@ -117,7 +117,7 @@ func createDatabase(dbURL, dbName string) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse database URL: %w", err)
 	}
-	
+
 	parsedURL.Path = "/postgres"
 	maintenanceURL := parsedURL.String()
 
@@ -135,7 +135,7 @@ func createDatabase(dbURL, dbName string) error {
 	// Database names must be valid PostgreSQL identifiers
 	sanitizedName := sanitizeIdentifier(dbName)
 	createDBSQL := fmt.Sprintf("CREATE DATABASE %s", sanitizedName)
-	
+
 	_, err = conn.Exec(ctx, createDBSQL)
 	if err != nil {
 		return fmt.Errorf("failed to execute CREATE DATABASE: %w", err)

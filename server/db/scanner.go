@@ -12,14 +12,16 @@ import (
 // This provides automatic mapping of database columns to struct fields.
 //
 // Example usage:
-//   var user models.User
-//   err := ScanStruct(rows, &user)
+//
+//	var user models.User
+//	err := ScanStruct(rows, &user)
 //
 // The struct fields should have 'db' tags matching the column names:
-//   type User struct {
-//       UserID string `db:"user_id"`
-//       Name   string `db:"user_name"`
-//   }
+//
+//	type User struct {
+//	    UserID string `db:"user_id"`
+//	    Name   string `db:"user_name"`
+//	}
 func ScanStruct(row pgx.Row, dest interface{}) error {
 	val := reflect.ValueOf(dest)
 	if val.Kind() != reflect.Ptr {
@@ -45,8 +47,9 @@ func ScanStruct(row pgx.Row, dest interface{}) error {
 // This is useful for queries that return multiple rows.
 //
 // Example usage:
-//   var users []models.User
-//   err := ScanStructs(rows, &users)
+//
+//	var users []models.User
+//	err := ScanStructs(rows, &users)
 func ScanStructs(rows pgx.Rows, dest interface{}) error {
 	defer rows.Close()
 
@@ -95,7 +98,7 @@ func getFieldPointers(val reflect.Value) ([]interface{}, error) {
 
 		// Get the db tag
 		dbTag := fieldType.Tag.Get("db")
-		
+
 		// Skip fields without db tags or with '-'
 		if dbTag == "" || dbTag == "-" {
 			continue
@@ -116,8 +119,9 @@ func getFieldPointers(val reflect.Value) ([]interface{}, error) {
 // This is useful for building SELECT queries dynamically
 //
 // Example:
-//   columns := GetDBColumns(models.User{})
-//   // Returns: []string{"user_id", "user_name", "email", ...}
+//
+//	columns := GetDBColumns(models.User{})
+//	// Returns: []string{"user_id", "user_name", "email", ...}
 func GetDBColumns(model interface{}) []string {
 	val := reflect.ValueOf(model)
 	if val.Kind() == reflect.Ptr {
@@ -150,8 +154,9 @@ func GetDBColumns(model interface{}) []string {
 // This provides a convenient way to generate queries that match struct definitions
 //
 // Example:
-//   query := BuildSelectQuery("users", models.User{}, "WHERE user_id = $1")
-//   // Returns: "SELECT user_id, user_name, email, ... FROM users WHERE user_id = $1"
+//
+//	query := BuildSelectQuery("users", models.User{}, "WHERE user_id = $1")
+//	// Returns: "SELECT user_id, user_name, email, ... FROM users WHERE user_id = $1"
 func BuildSelectQuery(tableName string, model interface{}, whereClause string) string {
 	columns := GetDBColumns(model)
 	if len(columns) == 0 {
