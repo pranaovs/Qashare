@@ -31,6 +31,35 @@ func GetEnvRequired(key string) string {
 	return val
 }
 
+// GetEnvInt retrieves an integer environment variable with a default value
+func GetEnvInt(key string, defaultValue int) int {
+	valStr := os.Getenv(key)
+	if valStr == "" {
+		return defaultValue
+	}
+
+	val, err := strconv.Atoi(valStr)
+	if err != nil {
+		log.Printf("Warning: Invalid integer for %s: '%s', using default: %d", key, valStr, defaultValue)
+		return defaultValue
+	}
+	return val
+}
+
+// GetEnvIntRequired retrieves an integer environment variable, calls log.Fatal if missing or invalid
+func GetEnvIntRequired(key string) int {
+	valStr := os.Getenv(key)
+	if valStr == "" {
+		log.Fatalf("Config Error: Required environment variable %s is missing", key)
+	}
+
+	val, err := strconv.Atoi(valStr)
+	if err != nil {
+		log.Fatalf("Config Error: %s must be a valid integer", key)
+	}
+	return val
+}
+
 // GetEnvBool retrieves a boolean (true, 1, yes)
 func GetEnvBool(key string, defaultValue bool) bool {
 	val := os.Getenv(key)

@@ -31,8 +31,8 @@ type DBConfig struct {
 func Connect(dbURL string) (*pgxpool.Pool, error) {
 	config := DBConfig{
 		URL:               dbURL,
-		MaxConnections:    25,
-		MinConnections:    2,
+		MaxConnections:    int32(utils.GetEnvInt("DB_MAX_CONNECTIONS", 10)),
+		MinConnections:    int32(utils.GetEnvInt("DB_MIN_CONNECTIONS", 2)),
 		MaxConnLifetime:   utils.GetEnvDuration("DB_MAX_CONN_LIFETIME", 60*60),  // 1 hour
 		MaxConnIdleTime:   utils.GetEnvDuration("DB_MAX_CONN_IDLE_TIME", 30*60), // 30 minutes
 		HealthCheckPeriod: utils.GetEnvDuration("DB_HEALTH_CHECK_PERIOD", 60),   // 1 minute
