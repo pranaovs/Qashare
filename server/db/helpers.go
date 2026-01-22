@@ -218,3 +218,48 @@ func ValidateUUID(uuid string) bool {
 
 	return true
 }
+
+// ValidateUserForCreate validates required fields for user creation.
+// Required fields: name, email, passwordHash
+// Returns an error if any required field is missing or invalid.
+func ValidateUserForCreate(name, email, passwordHash string) error {
+	// Validate name is not empty
+	if strings.TrimSpace(name) == "" {
+		return fmt.Errorf("%w: name is required", ErrMissingRequiredField)
+	}
+
+	// Validate email is not empty
+	if strings.TrimSpace(email) == "" {
+		return fmt.Errorf("%w: email is required", ErrMissingRequiredField)
+	}
+
+	// Validate password hash is present
+	if strings.TrimSpace(passwordHash) == "" {
+		return fmt.Errorf("%w: password is required", ErrMissingRequiredField)
+	}
+
+	return nil
+}
+
+// ValidateUserForUpdate validates required fields for user update.
+// Required fields: userID
+// At least one of: name, email, passwordHash
+// Returns an error if any required field is missing or invalid.
+func ValidateUserForUpdate(userID, name, email, passwordHash string) error {
+	// Validate user ID is not empty
+	if strings.TrimSpace(userID) == "" {
+		return fmt.Errorf("%w: user_id is required", ErrMissingRequiredField)
+	}
+
+	// Validate user ID format (basic UUID check)
+	if !ValidateUUID(userID) {
+		return fmt.Errorf("%w: invalid user_id format", ErrInvalidFieldValue)
+	}
+
+	// At least one field must be provided for update
+	if strings.TrimSpace(name) == "" && strings.TrimSpace(email) == "" && strings.TrimSpace(passwordHash) == "" {
+		return fmt.Errorf("%w: at least one field (name, email, or password) must be provided for update", ErrMissingRequiredField)
+	}
+
+	return nil
+}

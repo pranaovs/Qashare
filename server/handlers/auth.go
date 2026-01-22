@@ -50,7 +50,14 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	userID, err := db.CreateUser(c.Request.Context(), h.pool, name, email, passwordHash)
+	// Create User struct for db operation
+	user := models.User{
+		Name:         name,
+		Email:        email,
+		PasswordHash: &passwordHash,
+	}
+
+	userID, err := db.CreateUser(c.Request.Context(), h.pool, user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

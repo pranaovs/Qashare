@@ -5,7 +5,9 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/pranaovs/qashare/models"
@@ -16,21 +18,34 @@ import (
 )
 
 // CreateUser inserts a new user into the database and returns the newly created user's ID.
-// Parameters:
-//   - name: The user's display name
-//   - email: The user's email address (must be unique)
-//   - password: The hashed password for the user
+// The function accepts a User struct containing all necessary user information.
+// Required fields in user:
+//   - Name: The user's display name
+//   - Email: The user's email address (must be unique)
+//   - PasswordHash: The hashed password for the user
 //
 // Returns the newly created user's ID or an error if the operation fails.
 // Returns ErrEmailAlreadyExists if a user with the email already exists.
-func CreateUser(ctx context.Context, pool *pgxpool.Pool, name, email, password string) (string, error) {
-	log.Printf("[DB] Creating new user with email: %s", email)
+// Returns ErrMissingRequiredField if any required field is missing.
+// Returns ErrInvalidFieldValue if any field has an invalid value.
+func CreateUser(ctx context.Context, pool *pgxpool.Pool, user models.User) (string, error) {
+	log.Printf("[DB] Creating new user with email: %s", user.Email)
+
+	// Validate required fields
+	passwordHash := ""
+	if user.PasswordHash != nil {
+		passwordHash = *user.PasswordHash
+	}
+	if err := ValidateUserForCreate(user.Name, user.Email, passwordHash); err != nil {
+		log.Printf("[DB] User validation failed: %v", err)
+		return "", err
+	}
 
 	// Check if user already exists with this email
-	_, err := GetUserFromEmail(ctx, pool, email)
+	_, err := GetUserFromEmail(ctx, pool, user.Email)
 	if err == nil {
 		// User already exists
-		log.Printf("[DB] User creation failed: email already exists: %s", email)
+		log.Printf("[DB] User creation failed: email already exists: %s", user.Email)
 		return "", ErrEmailAlreadyExists
 	} else if err != ErrEmailNotRegistered {
 		// Some other database error occurred
@@ -43,7 +58,7 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, name, email, password s
 		VALUES ($1, $2, $3, $4)
 		RETURNING user_id`
 
-	err = pool.QueryRow(ctx, query, name, email, password, time.Now()).Scan(&userID)
+	err = pool.QueryRow(ctx, query, user.Name, user.Email, passwordHash, time.Now()).Scan(&userID)
 	if err != nil {
 		// Check for duplicate key violation (race condition)
 		if IsDuplicateKey(err) {
@@ -54,6 +69,99 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, name, email, password s
 
 	log.Printf("[DB] User created successfully with ID: %s", userID)
 	return userID, nil
+}
+
+// UpdateUser updates an existing user in the database with the provided information.
+// The function accepts a User struct containing the user information to update.
+// Required fields in user:
+//   - UserID: The ID of the user to update
+//
+// Optional fields (at least one must be provided):
+//   - Name: The user's new display name
+//   - Email: The user's new email address
+//   - PasswordHash: The user's new hashed password
+//
+// Returns an error if the operation fails.
+// Returns ErrMissingRequiredField if user_id is missing or no fields to update.
+// Returns ErrInvalidFieldValue if any field has an invalid value.
+// Returns ErrUserNotFound if the user does not exist.
+// Returns ErrEmailAlreadyExists if updating email to one that already exists.
+func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user models.User) error {
+	log.Printf("[DB] Updating user with ID: %s", user.UserID)
+
+	// Extract password hash
+	passwordHash := ""
+	if user.PasswordHash != nil {
+		passwordHash = *user.PasswordHash
+	}
+
+	// Validate required fields
+	if err := ValidateUserForUpdate(user.UserID, user.Name, user.Email, passwordHash); err != nil {
+		log.Printf("[DB] User validation failed: %v", err)
+		return err
+	}
+
+	// Check if user exists
+	if err := UserExists(ctx, pool, user.UserID); err != nil {
+		return err
+	}
+
+	// Build dynamic update query based on provided fields
+	var setClauses []string
+	var args []interface{}
+	argPosition := 1
+
+	if user.Name != "" {
+		setClauses = append(setClauses, fmt.Sprintf("user_name = $%d", argPosition))
+		args = append(args, user.Name)
+		argPosition++
+	}
+
+	if user.Email != "" {
+		// Check if email already exists for a different user
+		existingUser, err := GetUserFromEmail(ctx, pool, user.Email)
+		if err == nil && existingUser.UserID != user.UserID {
+			log.Printf("[DB] User update failed: email already exists: %s", user.Email)
+			return ErrEmailAlreadyExists
+		} else if err != nil && err != ErrEmailNotRegistered {
+			return NewDBError("UpdateUser", err, "failed to check existing email")
+		}
+
+		setClauses = append(setClauses, fmt.Sprintf("email = $%d", argPosition))
+		args = append(args, user.Email)
+		argPosition++
+	}
+
+	if passwordHash != "" {
+		setClauses = append(setClauses, fmt.Sprintf("password_hash = $%d", argPosition))
+		args = append(args, passwordHash)
+		argPosition++
+	}
+
+	// Add user_id to args for WHERE clause
+	args = append(args, user.UserID)
+
+	// Build and execute query
+	query := fmt.Sprintf("UPDATE users SET %s WHERE user_id = $%d",
+		strings.Join(setClauses, ", "), argPosition)
+
+	result, err := pool.Exec(ctx, query, args...)
+	if err != nil {
+		// Check for duplicate key violation
+		if IsDuplicateKey(err) {
+			return ErrEmailAlreadyExists
+		}
+		return NewDBError("UpdateUser", err, "failed to update user")
+	}
+
+	// Check if any rows were affected
+	if result.RowsAffected() == 0 {
+		log.Printf("[DB] User not found for update: %s", user.UserID)
+		return ErrUserNotFound
+	}
+
+	log.Printf("[DB] User updated successfully: %s", user.UserID)
+	return nil
 }
 
 // GetUserFromEmail retrieves a user by their email address.

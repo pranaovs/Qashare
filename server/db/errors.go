@@ -37,6 +37,12 @@ var (
 
 	// ErrUsersNotRelated indicates that users don't share any groups
 	ErrUsersNotRelated = errors.New("users not related")
+
+	// ErrMissingRequiredField indicates that a required field is missing or empty
+	ErrMissingRequiredField = errors.New("missing required field")
+
+	// ErrInvalidFieldValue indicates that a field value is invalid
+	ErrInvalidFieldValue = errors.New("invalid field value")
 )
 
 // Group-specific errors
