@@ -104,7 +104,7 @@ func CreateExpense(
 		return "", NewDBError("CreateExpense", err, "failed to create expense")
 	}
 
-	log.Printf("[DB] ✓ Expense created successfully with ID: %s", expenseID)
+	log.Printf("[DB] Expense created successfully with ID: %s", expenseID)
 	return expenseID, nil
 }
 
@@ -201,7 +201,7 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expen
 		return NewDBError("UpdateExpense", err, "failed to update expense")
 	}
 
-	log.Printf("[DB] ✓ Expense updated successfully: %s", expense.ExpenseID)
+	log.Printf("[DB] Expense updated successfully: %s", expense.ExpenseID)
 	return nil
 }
 
@@ -277,7 +277,7 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 		return models.Expense{}, NewDBError("GetExpense", err, "error iterating split rows")
 	}
 
-	log.Printf("[DB] ✓ Expense retrieved: %s with %d splits", expense.Title, len(expense.Splits))
+	log.Printf("[DB] Expense retrieved: %s with %d splits", expense.Title, len(expense.Splits))
 	return expense, nil
 }
 
@@ -310,6 +310,6 @@ func DeleteExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) er
 		return NewDBError("DeleteExpense", err, "failed to delete expense")
 	}
 
-	log.Printf("[DB] ✓ Expense deleted successfully: %s", expenseID)
+	log.Printf("[DB] Expense deleted successfully: %s", expenseID)
 	return nil
 }

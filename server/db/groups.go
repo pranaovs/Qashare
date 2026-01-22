@@ -58,7 +58,7 @@ func CreateGroup(ctx context.Context, pool *pgxpool.Pool, name, description, own
 		return "", NewDBError("CreateGroup", err, "failed to create group")
 	}
 
-	log.Printf("[DB] ✓ Group created successfully with ID: %s", groupID)
+	log.Printf("[DB] Group created successfully with ID: %s", groupID)
 	return groupID, nil
 }
 
@@ -80,7 +80,7 @@ func GetGroupCreator(ctx context.Context, pool *pgxpool.Pool, groupID string) (s
 		return "", NewDBError("GetGroupCreator", err, "failed to query group creator")
 	}
 
-	log.Printf("[DB] ✓ Group creator retrieved: %s", creatorID)
+	log.Printf("[DB] Group creator retrieved: %s", creatorID)
 	return creatorID, nil
 }
 
@@ -137,7 +137,7 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.G
 		return models.Group{}, NewDBError("GetGroup", err, "error iterating member rows")
 	}
 
-	log.Printf("[DB] ✓ Group retrieved: %s with %d members", group.Name, len(group.Members))
+	log.Printf("[DB] Group retrieved: %s with %d members", group.Name, len(group.Members))
 	return group, nil
 }
 
@@ -176,7 +176,7 @@ func AddGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, us
 		}
 	}
 
-	log.Printf("[DB] ✓ Successfully added %d members to group", len(userIDs))
+	log.Printf("[DB] Successfully added %d members to group", len(userIDs))
 	return nil
 }
 
@@ -195,7 +195,7 @@ func AddGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID str
 		return NewDBError("AddGroupMember", err, "failed to add member")
 	}
 
-	log.Printf("[DB] ✓ Member added to group")
+	log.Printf("[DB] Member added to group")
 	return nil
 }
 
@@ -218,7 +218,7 @@ func RemoveGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID 
 		return ErrNotMember
 	}
 
-	log.Printf("[DB] ✓ Member removed from group")
+	log.Printf("[DB] Member removed from group")
 	return nil
 }
 
@@ -254,6 +254,6 @@ func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string,
 		}
 	}
 
-	log.Printf("[DB] ✓ Successfully removed %d members from group", len(userIDs))
+	log.Printf("[DB] Successfully removed %d members from group", len(userIDs))
 	return nil
 }

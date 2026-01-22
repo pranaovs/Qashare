@@ -65,7 +65,7 @@ func initDatabase() (*pgxpool.Pool, error) {
 		db.Close(pool)
 		return nil, err
 	}
-	log.Println("[INIT] ✓ Database health check passed")
+	log.Println("[INIT] Database health check passed")
 
 	// Run migrations
 	migrationsDir := utils.GetEnv("DB_MIGRATIONS_DIR", "db/migrations")
@@ -77,12 +77,12 @@ func initDatabase() (*pgxpool.Pool, error) {
 	// Verify migration integrity (optional, can be disabled via env var)
 	if utils.GetEnv("DB_VERIFY_MIGRATIONS", "true") == "true" {
 		if err := db.VerifyMigrationIntegrity(ctx, pool, migrationsDir); err != nil {
-			log.Printf("[INIT] ⚠ Migration integrity check failed: %v", err)
+			log.Printf("[INIT] Migration integrity check failed: %v", err)
 			// Non-fatal warning - allow startup but log the issue
 		}
 	}
 
-	log.Println("[INIT] ✓ Database initialized successfully")
+	log.Println("[INIT] Database initialized successfully")
 	return pool, nil
 }
 
@@ -95,7 +95,7 @@ func createDBConfig(dbURL string) *db.DBConfig {
 		if val, err := strconv.Atoi(maxConn); err == nil && val > 0 {
 			config.MaxConnections = int32(val)
 		} else {
-			log.Printf("[INIT] ⚠ Invalid DB_MAX_CONNECTIONS value '%s', using default: %d", maxConn, config.MaxConnections)
+			log.Printf("[INIT] Invalid DB_MAX_CONNECTIONS value '%s', using default: %d", maxConn, config.MaxConnections)
 		}
 	}
 
@@ -103,7 +103,7 @@ func createDBConfig(dbURL string) *db.DBConfig {
 		if val, err := strconv.Atoi(minConn); err == nil && val > 0 {
 			config.MinConnections = int32(val)
 		} else {
-			log.Printf("[INIT] ⚠ Invalid DB_MIN_CONNECTIONS value '%s', using default: %d", minConn, config.MinConnections)
+			log.Printf("[INIT] Invalid DB_MIN_CONNECTIONS value '%s', using default: %d", minConn, config.MinConnections)
 		}
 	}
 
@@ -111,7 +111,7 @@ func createDBConfig(dbURL string) *db.DBConfig {
 		if val, err := strconv.Atoi(timeout); err == nil && val > 0 {
 			config.ConnectTimeout = time.Duration(val) * time.Second
 		} else {
-			log.Printf("[INIT] ⚠ Invalid DB_CONNECT_TIMEOUT value '%s', using default: %v", timeout, config.ConnectTimeout)
+			log.Printf("[INIT] Invalid DB_CONNECT_TIMEOUT value '%s', using default: %v", timeout, config.ConnectTimeout)
 		}
 	}
 
