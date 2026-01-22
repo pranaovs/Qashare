@@ -46,7 +46,7 @@ func initDatabase() (*pgxpool.Pool, error) {
 	log.Println("[INIT] Initializing database connection...")
 
 	// Get database configuration from environment
-	dbURL := utils.Getenv("DB_URL", "postgres://postgres:postgres@localhost:5432/shared_expenses")
+	dbURL := utils.GetEnv("DB_URL", "postgres://postgres:postgres@localhost:5432/shared_expenses")
 
 	// Create database config with optional environment overrides
 	config := createDBConfig(dbURL)
@@ -68,14 +68,14 @@ func initDatabase() (*pgxpool.Pool, error) {
 	log.Println("[INIT] ✓ Database health check passed")
 
 	// Run migrations
-	migrationsDir := utils.Getenv("DB_MIGRATIONS_DIR", "db/migrations")
+	migrationsDir := utils.GetEnv("DB_MIGRATIONS_DIR", "db/migrations")
 	if err := db.Migrate(pool, migrationsDir); err != nil {
 		db.Close(pool)
 		return nil, err
 	}
 
 	// Verify migration integrity (optional, can be disabled via env var)
-	if utils.Getenv("DB_VERIFY_MIGRATIONS", "true") == "true" {
+	if utils.GetEnv("DB_VERIFY_MIGRATIONS", "true") == "true" {
 		if err := db.VerifyMigrationIntegrity(ctx, pool, migrationsDir); err != nil {
 			log.Printf("[INIT] ⚠ Migration integrity check failed: %v", err)
 			// Non-fatal warning - allow startup but log the issue
@@ -91,7 +91,7 @@ func createDBConfig(dbURL string) *db.DBConfig {
 	config := db.DefaultDBConfig(dbURL)
 
 	// Allow environment variable overrides for connection pool settings
-	if maxConn := utils.Getenv("DB_MAX_CONNECTIONS", ""); maxConn != "" {
+	if maxConn := utils.GetEnv("DB_MAX_CONNECTIONS", ""); maxConn != "" {
 		if val, err := strconv.Atoi(maxConn); err == nil && val > 0 {
 			config.MaxConnections = int32(val)
 		} else {
@@ -99,7 +99,7 @@ func createDBConfig(dbURL string) *db.DBConfig {
 		}
 	}
 
-	if minConn := utils.Getenv("DB_MIN_CONNECTIONS", ""); minConn != "" {
+	if minConn := utils.GetEnv("DB_MIN_CONNECTIONS", ""); minConn != "" {
 		if val, err := strconv.Atoi(minConn); err == nil && val > 0 {
 			config.MinConnections = int32(val)
 		} else {
@@ -107,7 +107,7 @@ func createDBConfig(dbURL string) *db.DBConfig {
 		}
 	}
 
-	if timeout := utils.Getenv("DB_CONNECT_TIMEOUT", ""); timeout != "" {
+	if timeout := utils.GetEnv("DB_CONNECT_TIMEOUT", ""); timeout != "" {
 		if val, err := strconv.Atoi(timeout); err == nil && val > 0 {
 			config.ConnectTimeout = time.Duration(val) * time.Second
 		} else {
@@ -125,7 +125,7 @@ func setupRouter(pool *pgxpool.Pool) *gin.Engine {
 }
 
 func startServer(router *gin.Engine) error {
-	port := utils.Getenv("API_PORT", "8080")
+	port := utils.GetEnv("API_PORT", "8080")
 	srv := &http.Server{
 		Addr:    ":" + port,
 		Handler: router,

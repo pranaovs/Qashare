@@ -1,23 +1,79 @@
 package utils
 
 import (
+	"log"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
 
 func Loadenv() {
-	_ = godotenv.Load(Getenv("ENV_PATH", ".env"))
-	_ = godotenv.Overload(Getenv("DEFAULT_ENV_PATH", ".env.default"))
+	_ = godotenv.Load(GetEnv("ENV_PATH", ".env"))
+	_ = godotenv.Overload(GetEnv("DEFAULT_ENV_PATH", ".env.default"))
 }
 
-// Getenv Loadenv before calling
-func Getenv(key, defaultVal string) string {
-	val, exists := os.LookupEnv(key)
+// GetEnv retrieves a string, returning default if empty
+func GetEnv(key, defaultValue string) string {
+	if val := os.Getenv(key); val != "" {
+		return val
+	}
+	return defaultValue
+}
 
-	if !exists {
-		return defaultVal
+// GetEnvBool retrieves a boolean (true, 1, yes)
+func GetEnvBool(key string, defaultValue bool) bool {
+	val := os.Getenv(key)
+	if val == "" {
+		return defaultValue
+	}
+	// ParseBool handles "1", "t", "T", "true", "TRUE", "True"
+	b, err := strconv.ParseBool(val)
+	if err != nil {
+		log.Printf("Warning: Invalid boolean for %s: '%s', using default: %t", key, val, defaultValue)
+		return defaultValue
+	}
+	return b
+}
+
+// GetEnvPort retrieves an int, validating it is a valid port (1-65535) or 0
+func GetEnvPort(key string, defaultValue int) int {
+	valStr := os.Getenv(key)
+	if valStr == "" {
+		return defaultValue
 	}
 
+	val, err := strconv.Atoi(valStr)
+	if err != nil {
+		log.Fatalf("Config Error: %s must be a number", key)
+	}
+
+	if val < 0 || val > 65535 {
+		log.Fatalf("Config Error: %s must be between 0 and 65535", key)
+	}
+	return val
+}
+
+// GetEnvDuration parses a string (e.g. "60") into seconds
+func GetEnvDuration(key string, defaultSeconds int) time.Duration {
+	valStr := os.Getenv(key)
+	if valStr == "" {
+		return time.Duration(defaultSeconds) * time.Second
+	}
+
+	val, err := strconv.Atoi(valStr)
+	if err != nil {
+		log.Fatalf("Config Error: %s must be a valid number of seconds", key)
+	}
+	return time.Duration(val) * time.Second
+}
+
+// GetEnvRequired retrieves a string, calls log.Fatal if missing
+func GetEnvRequired(key string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		log.Fatalf("Config Error: Required environment variable %s is missing", key)
+	}
 	return val
 }
