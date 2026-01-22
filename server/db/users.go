@@ -19,12 +19,13 @@ import (
 
 // UserUpdate represents fields that can be updated for a user.
 // Use pointers for optional fields to distinguish between "not set" and "set to zero value".
+// The struct uses db tags to automatically map to database columns.
 type UserUpdate struct {
-	UserID       string  // Required: The user ID to update
-	Name         *string // Optional: New name
-	Email        *string // Optional: New email
-	PasswordHash *string // Optional: New password hash
-	Guest        *bool   // Optional: New guest status
+	UserID       string  `db:"user_id"`       // Required: The user ID to update
+	Name         *string `db:"user_name"`     // Optional: New name
+	Email        *string `db:"email"`         // Optional: New email
+	PasswordHash *string `db:"password_hash"` // Optional: New password hash
+	Guest        *bool   `db:"is_guest"`      // Optional: New guest status
 }
 
 // CreateUser inserts a new user into the database and returns the newly created user's ID.
@@ -86,6 +87,8 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user models.User) (stri
 
 // UpdateUser updates an existing user in the database with the provided information.
 // The function accepts a UserUpdate struct containing the user information to update.
+// The struct uses db tags to automatically map fields to database columns.
+//
 // Required fields:
 //   - UserID: The ID of the user to update
 //
@@ -123,20 +126,13 @@ func UpdateUser(ctx context.Context, pool *pgxpool.Pool, update UserUpdate) erro
 		return err
 	}
 
-	// Build dynamic update query based on provided fields
-	// Note: Field names are hardcoded and not derived from user input, so no SQL injection risk
-	var setClauses []string
-	var args []interface{}
-	argPosition := 1
-
+	// Validate provided string fields are not empty after trimming
 	if update.Name != nil {
 		name := strings.TrimSpace(*update.Name)
 		if name == "" {
 			return fmt.Errorf("%w: name cannot be empty", ErrInvalidFieldValue)
 		}
-		setClauses = append(setClauses, fmt.Sprintf("user_name = $%d", argPosition))
-		args = append(args, name)
-		argPosition++
+		update.Name = &name
 	}
 
 	if update.Email != nil {
@@ -144,9 +140,7 @@ func UpdateUser(ctx context.Context, pool *pgxpool.Pool, update UserUpdate) erro
 		if email == "" {
 			return fmt.Errorf("%w: email cannot be empty", ErrInvalidFieldValue)
 		}
-		setClauses = append(setClauses, fmt.Sprintf("email = $%d", argPosition))
-		args = append(args, email)
-		argPosition++
+		update.Email = &email
 	}
 
 	if update.PasswordHash != nil {
@@ -154,18 +148,14 @@ func UpdateUser(ctx context.Context, pool *pgxpool.Pool, update UserUpdate) erro
 		if passwordHash == "" {
 			return fmt.Errorf("%w: password hash cannot be empty", ErrInvalidFieldValue)
 		}
-		setClauses = append(setClauses, fmt.Sprintf("password_hash = $%d", argPosition))
-		args = append(args, passwordHash)
-		argPosition++
+		update.PasswordHash = &passwordHash
 	}
 
-	if update.Guest != nil {
-		setClauses = append(setClauses, fmt.Sprintf("is_guest = $%d", argPosition))
-		args = append(args, *update.Guest)
-		argPosition++
-	}
+	// Build dynamic update query using db struct tags
+	// Skip UserID field as it's used in the WHERE clause
+	setClauses, args := BuildUpdateClauses(update, []string{"UserID"})
 
-	// Validate we have at least one valid field to update after filtering empty strings
+	// Validate we have at least one valid field to update
 	if len(setClauses) == 0 {
 		return fmt.Errorf("%w: at least one non-empty field must be provided for update", ErrMissingRequiredField)
 	}
@@ -174,10 +164,9 @@ func UpdateUser(ctx context.Context, pool *pgxpool.Pool, update UserUpdate) erro
 	args = append(args, update.UserID)
 
 	// Build and execute query
-	// Use a transaction-like approach by relying on database constraints
 	// The unique constraint on email will prevent duplicates
 	query := fmt.Sprintf("UPDATE users SET %s WHERE user_id = $%d",
-		strings.Join(setClauses, ", "), argPosition)
+		strings.Join(setClauses, ", "), len(args))
 
 	result, err := pool.Exec(ctx, query, args...)
 	if err != nil {

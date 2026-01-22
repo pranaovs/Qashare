@@ -200,3 +200,71 @@ func GetDBColumnMap(model any) map[string]string {
 
 	return columnMap
 }
+
+// BuildUpdateClauses builds UPDATE SET clauses and args from a struct using db tags.
+// It inspects the struct, extracts non-nil pointer fields, and maps them to db columns.
+// Returns the SET clauses, args slice, and starting argument position.
+//
+// Example:
+//
+//	update := UserUpdate{UserID: "123", Name: &name, Email: &email}
+//	clauses, args := BuildUpdateClauses(update, []string{"UserID"})
+//	// clauses: []string{"user_name = $1", "email = $2"}
+//	// args: []interface{}{"John", "john@example.com"}
+func BuildUpdateClauses(model any, skipFields []string) ([]string, []interface{}) {
+	val := reflect.ValueOf(model)
+	if val.Kind() == reflect.Pointer {
+		val = val.Elem()
+	}
+
+	if val.Kind() != reflect.Struct {
+		return nil, nil
+	}
+
+	typ := val.Type()
+	var setClauses []string
+	var args []interface{}
+	argPosition := 1
+
+	// Create a map of fields to skip
+	skipMap := make(map[string]bool)
+	for _, field := range skipFields {
+		skipMap[field] = true
+	}
+
+	for i := 0; i < typ.NumField(); i++ {
+		fieldType := typ.Field(i)
+		fieldValue := val.Field(i)
+		
+		// Skip fields in the skip list
+		if skipMap[fieldType.Name] {
+			continue
+		}
+
+		dbTag := fieldType.Tag.Get("db")
+		// Skip fields without db tags or with '-'
+		if dbTag == "" || dbTag == "-" {
+			continue
+		}
+
+		// Handle pointer fields (optional update fields)
+		if fieldValue.Kind() == reflect.Pointer {
+			// Skip nil pointers (field not set for update)
+			if fieldValue.IsNil() {
+				continue
+			}
+			// Get the actual value
+			actualValue := fieldValue.Elem().Interface()
+			setClauses = append(setClauses, fmt.Sprintf("%s = $%d", dbTag, argPosition))
+			args = append(args, actualValue)
+			argPosition++
+		} else {
+			// For non-pointer fields, include them directly
+			setClauses = append(setClauses, fmt.Sprintf("%s = $%d", dbTag, argPosition))
+			args = append(args, fieldValue.Interface())
+			argPosition++
+		}
+	}
+
+	return setClauses, args
+}
