@@ -126,7 +126,11 @@ func createDatabase(dbURL, dbName string) error {
 	if err != nil {
 		return fmt.Errorf("failed to connect to maintenance database: %w", err)
 	}
-	defer conn.Close(ctx)
+	defer func() {
+		if err := conn.Close(ctx); err != nil {
+			log.Printf("[DB] Warning: failed to close maintenance DB connection: %v", err)
+		}
+	}()
 
 	// Sanitize database name to prevent SQL injection
 	// Database names must be valid PostgreSQL identifiers
