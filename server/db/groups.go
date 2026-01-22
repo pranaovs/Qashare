@@ -84,7 +84,7 @@ func GetGroupCreator(ctx context.Context, pool *pgxpool.Pool, groupID string) (s
 }
 
 // GetGroup retrieves complete group information including all members.
-// Returns a Group struct with full details and a list of all group members.
+// Returns a models.GroupDetails struct with full details and a list of all group members.
 // Returns ErrGroupNotFound if no group with the ID exists.
 func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.GroupDetails, error) {
 	log.Printf("[DB] Fetching group details: %s", groupID)
