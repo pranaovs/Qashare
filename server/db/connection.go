@@ -11,6 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/pranaovs/qashare/utils"
 )
 
 // DBConfig holds database configuration parameters
@@ -24,30 +25,26 @@ type DBConfig struct {
 	ConnectTimeout    time.Duration
 }
 
-// DefaultDBConfig returns a DBConfig with sensible defaults
-func DefaultDBConfig(dbURL string) *DBConfig {
-	return &DBConfig{
-		URL:               dbURL,
-		MaxConnections:    25,
-		MinConnections:    2,
-		MaxConnLifetime:   time.Hour,
-		MaxConnIdleTime:   time.Minute * 30,
-		HealthCheckPeriod: time.Minute,
-		ConnectTimeout:    time.Second * 10,
-	}
-}
-
 // Connect establishes a connection to the PostgreSQL database using the provided URL.
 // It will attempt to create the database if it doesn't exist.
 // Returns a connection pool or an error if connection fails.
 func Connect(dbURL string) (*pgxpool.Pool, error) {
-	return ConnectWithConfig(DefaultDBConfig(dbURL))
+	config := DBConfig{
+		URL:               dbURL,
+		MaxConnections:    25,
+		MinConnections:    2,
+		MaxConnLifetime:   utils.GetEnvDuration("DB_MAX_CONN_LIFETIME", 60*60),  // 1 hour
+		MaxConnIdleTime:   utils.GetEnvDuration("DB_MAX_CONN_IDLE_TIME", 30*60), // 30 minutes
+		HealthCheckPeriod: utils.GetEnvDuration("DB_HEALTH_CHECK_PERIOD", 60),   // 1 minute
+		ConnectTimeout:    utils.GetEnvDuration("DB_CONNECT_TIMEOUT", 10),       // 10 seconds
+	}
+	return ConnectWithConfig(config)
 }
 
 // ConnectWithConfig establishes a connection to the PostgreSQL database using the provided configuration.
 // It will attempt to create the database if it doesn't exist.
 // Returns a connection pool or an error if connection fails.
-func ConnectWithConfig(config *DBConfig) (*pgxpool.Pool, error) {
+func ConnectWithConfig(config DBConfig) (*pgxpool.Pool, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.ConnectTimeout)
 	defer cancel()
 
@@ -94,7 +91,7 @@ func ConnectWithConfig(config *DBConfig) (*pgxpool.Pool, error) {
 }
 
 // createPool creates a new connection pool with the provided configuration
-func createPool(ctx context.Context, config *DBConfig) (*pgxpool.Pool, error) {
+func createPool(ctx context.Context, config DBConfig) (*pgxpool.Pool, error) {
 	poolConfig, err := pgxpool.ParseConfig(config.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse pool config: %w", err)
