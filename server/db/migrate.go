@@ -128,7 +128,7 @@ func applyMigration(ctx context.Context, pool *pgxpool.Pool, filePath string) (b
 	}
 
 	if alreadyApplied {
-		log.Printf("[MIGRATIONS] ⊘ Skipping already applied: %s", migrationName)
+		log.Printf("[MIGRATIONS] Skipping already applied: %s", migrationName)
 		return false, nil
 	}
 
@@ -142,7 +142,7 @@ func applyMigration(ctx context.Context, pool *pgxpool.Pool, filePath string) (b
 	checksum := calculateChecksum(sqlContent)
 
 	// Execute migration in a transaction
-	log.Printf("[MIGRATIONS] ⟳ Applying migration: %s", migrationName)
+	log.Printf("[MIGRATIONS] Applying migration: %s", migrationName)
 	startTime := time.Now()
 
 	tx, err := pool.Begin(ctx)
@@ -154,7 +154,7 @@ func applyMigration(ctx context.Context, pool *pgxpool.Pool, filePath string) (b
 	defer func() {
 		if err != nil {
 			if rbErr := tx.Rollback(ctx); rbErr != nil {
-				log.Printf("[MIGRATIONS] ✗ Failed to rollback transaction for '%s': %v", migrationName, rbErr)
+				log.Printf("[MIGRATIONS] Failed to rollback transaction for '%s': %v", migrationName, rbErr)
 			}
 		}
 	}()
