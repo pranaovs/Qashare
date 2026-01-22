@@ -129,21 +129,33 @@ func UpdateUser(ctx context.Context, pool *pgxpool.Pool, update UserUpdate) erro
 	var args []interface{}
 	argPosition := 1
 
-	if update.Name != nil && strings.TrimSpace(*update.Name) != "" {
+	if update.Name != nil {
+		name := strings.TrimSpace(*update.Name)
+		if name == "" {
+			return fmt.Errorf("%w: name cannot be empty", ErrInvalidFieldValue)
+		}
 		setClauses = append(setClauses, fmt.Sprintf("user_name = $%d", argPosition))
-		args = append(args, *update.Name)
+		args = append(args, name)
 		argPosition++
 	}
 
-	if update.Email != nil && strings.TrimSpace(*update.Email) != "" {
+	if update.Email != nil {
+		email := strings.TrimSpace(*update.Email)
+		if email == "" {
+			return fmt.Errorf("%w: email cannot be empty", ErrInvalidFieldValue)
+		}
 		setClauses = append(setClauses, fmt.Sprintf("email = $%d", argPosition))
-		args = append(args, *update.Email)
+		args = append(args, email)
 		argPosition++
 	}
 
-	if update.PasswordHash != nil && strings.TrimSpace(*update.PasswordHash) != "" {
+	if update.PasswordHash != nil {
+		passwordHash := strings.TrimSpace(*update.PasswordHash)
+		if passwordHash == "" {
+			return fmt.Errorf("%w: password hash cannot be empty", ErrInvalidFieldValue)
+		}
 		setClauses = append(setClauses, fmt.Sprintf("password_hash = $%d", argPosition))
-		args = append(args, *update.PasswordHash)
+		args = append(args, passwordHash)
 		argPosition++
 	}
 
