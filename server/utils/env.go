@@ -10,8 +10,8 @@ import (
 )
 
 func Loadenv() {
-	_ = godotenv.Load(GetEnv("DEFAULT_ENV_PATH", ".env.default")) // Defaults
-	_ = godotenv.Overload(GetEnv("ENV_PATH", ".env"))             // Overrides
+	// _ = godotenv.Load(GetEnv("DEFAULT_ENV_PATH", ".env.default")) // Defaults
+	_ = godotenv.Load(GetEnv("ENV_PATH", ".env"))
 }
 
 // GetEnv retrieves a string, returning default if empty
