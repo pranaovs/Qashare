@@ -22,6 +22,15 @@ func GetEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
+// GetEnvRequired retrieves a string, calls log.Fatal if missing
+func GetEnvRequired(key string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		log.Fatalf("Config Error: Required environment variable %s is missing", key)
+	}
+	return val
+}
+
 // GetEnvBool retrieves a boolean (true, 1, yes)
 func GetEnvBool(key string, defaultValue bool) bool {
 	val := os.Getenv(key)
@@ -37,11 +46,43 @@ func GetEnvBool(key string, defaultValue bool) bool {
 	return b
 }
 
+// GetEnvBoolRequired retrieves a boolean, calls log.Fatal if missing or invalid
+func GetEnvBoolRequired(key string) bool {
+	val := os.Getenv(key)
+	if val == "" {
+		log.Fatalf("Config Error: Required environment variable %s is missing", key)
+	}
+	// ParseBool handles "1", "t", "T", "true", "TRUE", "True"
+	b, err := strconv.ParseBool(val)
+	if err != nil {
+		log.Fatalf("Config Error: Invalid boolean for %s: '%s'", key, val)
+	}
+	return b
+}
+
 // GetEnvPort retrieves an int, validating it is a valid port (1-65535) or 0
 func GetEnvPort(key string, defaultValue int) int {
 	valStr := os.Getenv(key)
 	if valStr == "" {
 		return defaultValue
+	}
+
+	val, err := strconv.Atoi(valStr)
+	if err != nil {
+		log.Fatalf("Config Error: %s must be a number", key)
+	}
+
+	if val < 0 || val > 65535 {
+		log.Fatalf("Config Error: %s must be between 0 and 65535", key)
+	}
+	return val
+}
+
+// GetEnvPortRequired retrieves a port number, calls log.Fatal if missing or invalid
+func GetEnvPortRequired(key string) int {
+	valStr := os.Getenv(key)
+	if valStr == "" {
+		log.Fatalf("Config Error: Required environment variable %s is missing", key)
 	}
 
 	val, err := strconv.Atoi(valStr)
@@ -69,11 +110,16 @@ func GetEnvDuration(key string, defaultSeconds int) time.Duration {
 	return time.Duration(val) * time.Second
 }
 
-// GetEnvRequired retrieves a string, calls log.Fatal if missing
-func GetEnvRequired(key string) string {
-	val := os.Getenv(key)
-	if val == "" {
+// GetEnvDurationRequired parses a string (e.g. "60") into seconds, calls log.Fatal if missing or invalid
+func GetEnvDurationRequired(key string) time.Duration {
+	valStr := os.Getenv(key)
+	if valStr == "" {
 		log.Fatalf("Config Error: Required environment variable %s is missing", key)
 	}
-	return val
+
+	val, err := strconv.Atoi(valStr)
+	if err != nil {
+		log.Fatalf("Config Error: %s must be a valid number of seconds", key)
+	}
+	return time.Duration(val) * time.Second
 }
