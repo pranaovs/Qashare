@@ -29,7 +29,7 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 		return
 	}
 
-	var expense models.Expense
+	var expense models.ExpenseDetails
 	if err := c.ShouldBindJSON(&expense); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
@@ -123,7 +123,7 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 		return
 	}
 
-	var payload models.Expense
+	var payload models.ExpenseDetails
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return

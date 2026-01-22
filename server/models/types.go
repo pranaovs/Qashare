@@ -55,8 +55,12 @@ type Expense struct {
 	IsIncompleteSplit  bool    `json:"is_incomplete_split" db:"is_incomplete_split"`
 	Latitude           float64 `json:"latitude,omitempty" db:"latitude"`
 	Longitude          float64 `json:"longitude,omitempty" db:"longitude"`
+}
 
-	Splits []ExpenseSplit `json:"splits" db:"-"`
+// ExpenseDetails represents detailed information about an expense including its splits
+type ExpenseDetails struct {
+	Expense                // Struct embedding to include all Expense fields
+	Splits  []ExpenseSplit `json:"splits"`
 }
 
 // ExpenseSplit represents how an expense is split among users
@@ -65,6 +69,4 @@ type ExpenseSplit struct {
 	UserID    string  `json:"user_id" db:"user_id"`
 	Amount    float64 `json:"amount" db:"amount"`
 	IsPaid    bool    `json:"is_paid" db:"is_paid"` // "paid" or "owes"
-
-	Splits []ExpenseSplit `json:"splits" db:"-"`
 }

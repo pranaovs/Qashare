@@ -30,7 +30,7 @@ import (
 func CreateExpense(
 	ctx context.Context,
 	pool *pgxpool.Pool,
-	expense models.Expense,
+	expense models.ExpenseDetails,
 ) (string, error) {
 	// Validate input
 	if expense.Title == "" {
@@ -116,7 +116,7 @@ func CreateExpense(
 //
 // The old splits are deleted and replaced with the new splits provided.
 // Returns an error if validation fails or the operation fails.
-func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expense) error {
+func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.ExpenseDetails) error {
 	// Validate input
 	if expense.ExpenseID == "" {
 		return ErrExpenseIDRequired
@@ -212,10 +212,10 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expen
 
 // GetExpense retrieves a complete expense record including all its splits.
 // Returns ErrExpenseNotFound if no expense with the ID exists.
-func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (models.Expense, error) {
+func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (models.ExpenseDetails, error) {
 	log.Printf("[DB] Fetching expense: %s", expenseID)
 
-	var expense models.Expense
+	var expense models.ExpenseDetails
 
 	// Fetch expense details
 	expenseQuery := `SELECT expense_id,
@@ -247,10 +247,10 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 	)
 	if err == pgx.ErrNoRows {
 		log.Printf("[DB] Expense not found: %s", expenseID)
-		return models.Expense{}, ErrExpenseNotFound
+		return models.ExpenseDetails{}, ErrExpenseNotFound
 	}
 	if err != nil {
-		return models.Expense{}, NewDBError("GetExpense", err, "failed to query expense")
+		return models.ExpenseDetails{}, NewDBError("GetExpense", err, "failed to query expense")
 	}
 
 	// Fetch expense splits
@@ -261,7 +261,7 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 
 	rows, err := pool.Query(ctx, splitsQuery, expenseID)
 	if err != nil {
-		return models.Expense{}, NewDBError("GetExpense", err, "failed to query splits")
+		return models.ExpenseDetails{}, NewDBError("GetExpense", err, "failed to query splits")
 	}
 	defer rows.Close()
 
@@ -272,14 +272,14 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 		split.ExpenseID = expenseID
 		err = rows.Scan(&split.UserID, &split.Amount, &split.IsPaid)
 		if err != nil {
-			return models.Expense{}, NewDBError("GetExpense", err, "failed to scan split row")
+			return models.ExpenseDetails{}, NewDBError("GetExpense", err, "failed to scan split row")
 		}
 		expense.Splits = append(expense.Splits, split)
 	}
 
 	// Check for any errors during iteration
 	if err := rows.Err(); err != nil {
-		return models.Expense{}, NewDBError("GetExpense", err, "error iterating split rows")
+		return models.ExpenseDetails{}, NewDBError("GetExpense", err, "error iterating split rows")
 	}
 
 	log.Printf("[DB] Expense retrieved: %s with %d splits", expense.Title, len(expense.Splits))
