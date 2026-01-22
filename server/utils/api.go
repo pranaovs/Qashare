@@ -49,10 +49,10 @@ func randB64() string {
 	return base64.StdEncoding.EncodeToString(b)
 }
 
-var jwtSecret = []byte(Getenv("JWT_SECRET", randB64()))
+var jwtSecret = []byte(GetEnv("JWT_SECRET", randB64()))
 
 func GenerateJWT(userID string) (string, error) {
-	expiryStr := Getenv("JWT_EXPIRY", "24")
+	expiryStr := GetEnv("JWT_EXPIRY", "24")
 	expiryHours, err := strconv.Atoi(expiryStr)
 	if err != nil || expiryHours <= 0 {
 		return "", fmt.Errorf("invalid JWT_EXPIRY value: %q, must be a positive integer", expiryStr)

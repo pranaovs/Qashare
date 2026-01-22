@@ -65,7 +65,7 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	}
 
 	if !expense.IsIncompleteAmount && !expense.IsIncompleteSplit {
-		tolerance, err := strconv.ParseFloat(utils.Getenv("SPLIT_TOLERANCE", "0.01"), 64)
+		tolerance, err := strconv.ParseFloat(utils.GetEnv("SPLIT_TOLERANCE", "0.01"), 64)
 		if err != nil {
 			tolerance = 0.01
 		}
@@ -169,7 +169,7 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 	}
 
 	if !payload.IsIncompleteAmount && !payload.IsIncompleteSplit {
-		tolerance, err := strconv.ParseFloat(utils.Getenv("SPLIT_TOLERANCE", "0.01"), 64)
+		tolerance, err := strconv.ParseFloat(utils.GetEnv("SPLIT_TOLERANCE", "0.01"), 64)
 		if err != nil {
 			tolerance = 0.01
 		}
