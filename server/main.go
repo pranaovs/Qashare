@@ -72,7 +72,7 @@ func initDatabase() (*pgxpool.Pool, error) {
 	}
 
 	// Verify migration integrity (optional, can be disabled via env var)
-	if utils.GetEnv("DB_VERIFY_MIGRATIONS", "true") == "true" {
+	if utils.GetEnvBool("DB_VERIFY_MIGRATIONS", true) {
 		if err := db.VerifyMigrationIntegrity(ctx, pool, migrationsDir); err != nil {
 			log.Printf("[INIT] Migration integrity check failed: %v", err)
 			// Non-fatal warning - allow startup but log the issue
@@ -90,9 +90,9 @@ func setupRouter(pool *pgxpool.Pool) *gin.Engine {
 }
 
 func startServer(router *gin.Engine) error {
-	port := utils.GetEnv("API_PORT", "8080")
+	port := utils.GetEnvPort("API_PORT", 8080)
 	srv := &http.Server{
-		Addr:    ":" + port,
+		Addr:    ":" + strconv.Itoa(port),
 		Handler: router,
 	}
 
@@ -100,7 +100,7 @@ func startServer(router *gin.Engine) error {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		log.Printf("Server starting on port %s", port)
+		log.Printf("Server starting on port %d", port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed to start: %v", err)
 		}
