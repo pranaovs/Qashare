@@ -107,6 +107,7 @@ func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user models.User) error
 	}
 
 	// Build dynamic update query based on provided fields
+	// Note: Field names are hardcoded and not derived from user input, so no SQL injection risk
 	var setClauses []string
 	var args []interface{}
 	argPosition := 1
@@ -118,15 +119,6 @@ func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user models.User) error
 	}
 
 	if user.Email != "" {
-		// Check if email already exists for a different user
-		existingUser, err := GetUserFromEmail(ctx, pool, user.Email)
-		if err == nil && existingUser.UserID != user.UserID {
-			log.Printf("[DB] User update failed: email already exists: %s", user.Email)
-			return ErrEmailAlreadyExists
-		} else if err != nil && err != ErrEmailNotRegistered {
-			return NewDBError("UpdateUser", err, "failed to check existing email")
-		}
-
 		setClauses = append(setClauses, fmt.Sprintf("email = $%d", argPosition))
 		args = append(args, user.Email)
 		argPosition++
@@ -142,13 +134,16 @@ func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user models.User) error
 	args = append(args, user.UserID)
 
 	// Build and execute query
+	// Use a transaction-like approach by relying on database constraints
+	// The unique constraint on email will prevent duplicates
 	query := fmt.Sprintf("UPDATE users SET %s WHERE user_id = $%d",
 		strings.Join(setClauses, ", "), argPosition)
 
 	result, err := pool.Exec(ctx, query, args...)
 	if err != nil {
-		// Check for duplicate key violation
+		// Check for duplicate key violation (email already exists)
 		if IsDuplicateKey(err) {
+			log.Printf("[DB] User update failed: email already exists")
 			return ErrEmailAlreadyExists
 		}
 		return NewDBError("UpdateUser", err, "failed to update user")
