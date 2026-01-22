@@ -60,7 +60,7 @@ func GetEnvIntRequired(key string) int {
 	return val
 }
 
-// GetEnvBool retrieves a boolean (true, 1, yes)
+// GetEnvBool retrieves a boolean (true, 1)
 func GetEnvBool(key string, defaultValue bool) bool {
 	val := os.Getenv(key)
 	if val == "" {
