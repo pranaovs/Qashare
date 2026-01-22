@@ -46,13 +46,10 @@ func initDatabase() (*pgxpool.Pool, error) {
 	log.Println("[INIT] Initializing database connection...")
 
 	// Get database configuration from environment
-	dbURL := utils.Getenv("DB_URL", "postgres://postgres:postgres@localhost:5432/shared_expenses")
-
-	// Create database config with optional environment overrides
-	config := createDBConfig(dbURL)
+	dbURL := utils.GetEnv("DB_URL", "postgres://postgres:postgres@localhost:5432/shared_expenses")
 
 	// Connect to database (will auto-create if not exists)
-	pool, err := db.ConnectWithConfig(config)
+	pool, err := db.Connect(dbURL)
 	if err != nil {
 		return nil, err
 	}
@@ -65,57 +62,25 @@ func initDatabase() (*pgxpool.Pool, error) {
 		db.Close(pool)
 		return nil, err
 	}
-	log.Println("[INIT] ✓ Database health check passed")
+	log.Println("[INIT] Database health check passed")
 
 	// Run migrations
-	migrationsDir := utils.Getenv("DB_MIGRATIONS_DIR", "db/migrations")
+	migrationsDir := utils.GetEnv("DB_MIGRATIONS_DIR", "db/migrations")
 	if err := db.Migrate(pool, migrationsDir); err != nil {
 		db.Close(pool)
 		return nil, err
 	}
 
 	// Verify migration integrity (optional, can be disabled via env var)
-	if utils.Getenv("DB_VERIFY_MIGRATIONS", "true") == "true" {
+	if utils.GetEnvBool("DB_VERIFY_MIGRATIONS", true) {
 		if err := db.VerifyMigrationIntegrity(ctx, pool, migrationsDir); err != nil {
-			log.Printf("[INIT] ⚠ Migration integrity check failed: %v", err)
+			log.Printf("[INIT] Migration integrity check failed: %v", err)
 			// Non-fatal warning - allow startup but log the issue
 		}
 	}
 
-	log.Println("[INIT] ✓ Database initialized successfully")
+	log.Println("[INIT] Database initialized successfully")
 	return pool, nil
-}
-
-// createDBConfig creates a database configuration with optional environment overrides
-func createDBConfig(dbURL string) *db.DBConfig {
-	config := db.DefaultDBConfig(dbURL)
-
-	// Allow environment variable overrides for connection pool settings
-	if maxConn := utils.Getenv("DB_MAX_CONNECTIONS", ""); maxConn != "" {
-		if val, err := strconv.Atoi(maxConn); err == nil && val > 0 {
-			config.MaxConnections = int32(val)
-		} else {
-			log.Printf("[INIT] ⚠ Invalid DB_MAX_CONNECTIONS value '%s', using default: %d", maxConn, config.MaxConnections)
-		}
-	}
-
-	if minConn := utils.Getenv("DB_MIN_CONNECTIONS", ""); minConn != "" {
-		if val, err := strconv.Atoi(minConn); err == nil && val > 0 {
-			config.MinConnections = int32(val)
-		} else {
-			log.Printf("[INIT] ⚠ Invalid DB_MIN_CONNECTIONS value '%s', using default: %d", minConn, config.MinConnections)
-		}
-	}
-
-	if timeout := utils.Getenv("DB_CONNECT_TIMEOUT", ""); timeout != "" {
-		if val, err := strconv.Atoi(timeout); err == nil && val > 0 {
-			config.ConnectTimeout = time.Duration(val) * time.Second
-		} else {
-			log.Printf("[INIT] ⚠ Invalid DB_CONNECT_TIMEOUT value '%s', using default: %v", timeout, config.ConnectTimeout)
-		}
-	}
-
-	return config
 }
 
 func setupRouter(pool *pgxpool.Pool) *gin.Engine {
@@ -125,9 +90,9 @@ func setupRouter(pool *pgxpool.Pool) *gin.Engine {
 }
 
 func startServer(router *gin.Engine) error {
-	port := utils.Getenv("API_PORT", "8080")
+	port := utils.GetEnvPort("API_PORT", 8080)
 	srv := &http.Server{
-		Addr:    ":" + port,
+		Addr:    ":" + strconv.Itoa(port),
 		Handler: router,
 	}
 
@@ -135,7 +100,7 @@ func startServer(router *gin.Engine) error {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		log.Printf("Server starting on port %s", port)
+		log.Printf("Server starting on port %d", port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed to start: %v", err)
 		}

@@ -84,8 +84,11 @@ func CreateExpense(
 			}
 
 			br := tx.SendBatch(ctx, batch)
-			defer br.Close()
-
+			defer func() {
+				if err := br.Close(); err != nil {
+					log.Printf("[DB] Error closing batch: %v", err)
+				}
+			}()
 			// Execute all batched queries and check for errors
 			for i := 0; i < len(expense.Splits); i++ {
 				_, err = br.Exec()
@@ -99,12 +102,11 @@ func CreateExpense(
 
 		return nil
 	})
-
 	if err != nil {
 		return "", NewDBError("CreateExpense", err, "failed to create expense")
 	}
 
-	log.Printf("[DB] ✓ Expense created successfully with ID: %s", expenseID)
+	log.Printf("[DB] Expense created successfully with ID: %s", expenseID)
 	return expenseID, nil
 }
 
@@ -181,7 +183,11 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expen
 			}
 
 			br := tx.SendBatch(ctx, batch)
-			defer br.Close()
+			defer func() {
+				if err := br.Close(); err != nil {
+					log.Printf("[DB] Error closing batch: %v", err)
+				}
+			}()
 
 			// Execute all batched queries and check for errors
 			for i := 0; i < len(expense.Splits); i++ {
@@ -196,12 +202,11 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expen
 
 		return nil
 	})
-
 	if err != nil {
 		return NewDBError("UpdateExpense", err, "failed to update expense")
 	}
 
-	log.Printf("[DB] ✓ Expense updated successfully: %s", expense.ExpenseID)
+	log.Printf("[DB] Expense updated successfully: %s", expense.ExpenseID)
 	return nil
 }
 
@@ -277,7 +282,7 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 		return models.Expense{}, NewDBError("GetExpense", err, "error iterating split rows")
 	}
 
-	log.Printf("[DB] ✓ Expense retrieved: %s with %d splits", expense.Title, len(expense.Splits))
+	log.Printf("[DB] Expense retrieved: %s with %d splits", expense.Title, len(expense.Splits))
 	return expense, nil
 }
 
@@ -305,11 +310,10 @@ func DeleteExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) er
 
 		return nil
 	})
-
 	if err != nil {
 		return NewDBError("DeleteExpense", err, "failed to delete expense")
 	}
 
-	log.Printf("[DB] ✓ Expense deleted successfully: %s", expenseID)
+	log.Printf("[DB] Expense deleted successfully: %s", expenseID)
 	return nil
 }
