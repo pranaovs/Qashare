@@ -87,10 +87,10 @@ func GetGroupCreator(ctx context.Context, pool *pgxpool.Pool, groupID string) (s
 // GetGroup retrieves complete group information including all members.
 // Returns a Group struct with full details and a list of all group members.
 // Returns ErrGroupNotFound if no group with the ID exists.
-func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.Group, error) {
+func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.GroupDetails, error) {
 	log.Printf("[DB] Fetching group details: %s", groupID)
 
-	var group models.Group
+	var group models.GroupDetails
 
 	// Fetch group basic information
 	groupQuery := `SELECT group_id, group_name, description, created_by, extract(epoch from created_at)::bigint
@@ -98,14 +98,19 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.G
 		WHERE group_id = $1`
 
 	err := pool.QueryRow(ctx, groupQuery, groupID).Scan(
-		&group.GroupID, &group.Name, &group.Description, &group.CreatedBy, &group.CreatedAt,
+		&group.GroupID,
+		&group.Name,
+		&group.Description,
+		&group.CreatedBy,
+		&group.CreatedAt,
 	)
+
 	if err == pgx.ErrNoRows {
 		log.Printf("[DB] Group not found: %s", groupID)
-		return models.Group{}, ErrGroupNotFound
+		return models.GroupDetails{}, ErrGroupNotFound
 	}
 	if err != nil {
-		return models.Group{}, NewDBError("GetGroup", err, "failed to query group")
+		return models.GroupDetails{}, NewDBError("GetGroup", err, "failed to query group")
 	}
 
 	// Fetch group members with user details
@@ -117,7 +122,7 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.G
 
 	rows, err := pool.Query(ctx, membersQuery, groupID)
 	if err != nil {
-		return models.Group{}, NewDBError("GetGroup", err, "failed to query group members")
+		return models.GroupDetails{}, NewDBError("GetGroup", err, "failed to query group members")
 	}
 	defer rows.Close()
 
@@ -127,14 +132,14 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.G
 		var member models.GroupUser
 		err := rows.Scan(&member.UserID, &member.Name, &member.Email, &member.Guest, &member.JoinedAt)
 		if err != nil {
-			return models.Group{}, NewDBError("GetGroup", err, "failed to scan member row")
+			return models.GroupDetails{}, NewDBError("GetGroup", err, "failed to scan member row")
 		}
 		group.Members = append(group.Members, member)
 	}
 
 	// Check for any errors during iteration
 	if err := rows.Err(); err != nil {
-		return models.Group{}, NewDBError("GetGroup", err, "error iterating member rows")
+		return models.GroupDetails{}, NewDBError("GetGroup", err, "error iterating member rows")
 	}
 
 	log.Printf("[DB] ✓ Group retrieved: %s with %d members", group.Name, len(group.Members))

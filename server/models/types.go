@@ -1,6 +1,7 @@
 // Package models defines the core data structures for the shared expenses application.
 package models
 
+// User represents a user in the system
 type User struct {
 	UserID       string  `json:"user_id" db:"user_id"`
 	Name         string  `json:"name" db:"user_name"`
@@ -10,16 +11,22 @@ type User struct {
 	CreatedAt    int64   `json:"created_at" db:"created_at"`
 }
 
+// Group represents a group
 type Group struct {
 	GroupID     string `json:"group_id" db:"group_id"`
 	Name        string `json:"name" db:"group_name"`
 	Description string `json:"description,omitempty" db:"description"`
 	CreatedBy   string `json:"created_by" db:"created_by"`
 	CreatedAt   int64  `json:"created_at" db:"created_at"`
-
-	Members []GroupUser `json:"members" db:"-"` // NOTE: Be careful with this, not a part of DB schema
 }
 
+// GroupDetails represents detailed information about a group including its members
+type GroupDetails struct {
+	Group               // Struct embedding to include all Group fields
+	Members []GroupUser `json:"members"`
+}
+
+// GroupMember represents a user's membership in a group
 type GroupMember struct {
 	UserID   string `json:"user_id" db:"user_id"`
 	GroupID  string `json:"group_id" db:"group_id"`
@@ -35,6 +42,7 @@ type GroupUser struct {
 	JoinedAt int64  `json:"joined_at"`
 }
 
+// Expense represents an expense in a group(ID)
 type Expense struct {
 	ExpenseID          string  `json:"expense_id" db:"expense_id"`
 	GroupID            string  `json:"group_id" db:"group_id"`
@@ -51,9 +59,12 @@ type Expense struct {
 	Splits []ExpenseSplit `json:"splits" db:"-"`
 }
 
+// ExpenseSplit represents how an expense is split among users
 type ExpenseSplit struct {
 	ExpenseID string  `json:"-" db:"expense_id"`
 	UserID    string  `json:"user_id" db:"user_id"`
 	Amount    float64 `json:"amount" db:"amount"`
 	IsPaid    bool    `json:"is_paid" db:"is_paid"` // "paid" or "owes"
+
+	Splits []ExpenseSplit `json:"splits" db:"-"`
 }
