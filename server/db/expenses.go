@@ -84,8 +84,11 @@ func CreateExpense(
 			}
 
 			br := tx.SendBatch(ctx, batch)
-			defer br.Close()
-
+			defer func() {
+				if err := br.Close(); err != nil {
+					log.Printf("[DB] Error closing batch: %v", err)
+				}
+			}()
 			// Execute all batched queries and check for errors
 			for i := 0; i < len(expense.Splits); i++ {
 				_, err = br.Exec()
@@ -99,7 +102,6 @@ func CreateExpense(
 
 		return nil
 	})
-
 	if err != nil {
 		return "", NewDBError("CreateExpense", err, "failed to create expense")
 	}
@@ -181,7 +183,11 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expen
 			}
 
 			br := tx.SendBatch(ctx, batch)
-			defer br.Close()
+			defer func() {
+				if err := br.Close(); err != nil {
+					log.Printf("[DB] Error closing batch: %v", err)
+				}
+			}()
 
 			// Execute all batched queries and check for errors
 			for i := 0; i < len(expense.Splits); i++ {
@@ -196,7 +202,6 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expen
 
 		return nil
 	})
-
 	if err != nil {
 		return NewDBError("UpdateExpense", err, "failed to update expense")
 	}
@@ -305,7 +310,6 @@ func DeleteExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) er
 
 		return nil
 	})
-
 	if err != nil {
 		return NewDBError("DeleteExpense", err, "failed to delete expense")
 	}

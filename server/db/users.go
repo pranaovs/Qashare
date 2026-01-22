@@ -32,7 +32,7 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, name, email, password s
 		// User already exists
 		log.Printf("[DB] User creation failed: email already exists: %s", email)
 		return "", ErrEmailAlreadyExists
-	} else if err != nil && err != ErrEmailNotRegistered {
+	} else if err != ErrEmailNotRegistered {
 		// Some other database error occurred
 		return "", NewDBError("CreateUser", err, "failed to check existing user")
 	}

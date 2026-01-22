@@ -22,9 +22,9 @@ import (
 //	    UserID string `db:"user_id"`
 //	    Name   string `db:"user_name"`
 //	}
-func ScanStruct(row pgx.Row, dest interface{}) error {
+func ScanStruct(row pgx.Row, dest any) error {
 	val := reflect.ValueOf(dest)
-	if val.Kind() != reflect.Ptr {
+	if val.Kind() != reflect.Pointer {
 		return fmt.Errorf("dest must be a pointer to a struct")
 	}
 
@@ -50,12 +50,12 @@ func ScanStruct(row pgx.Row, dest interface{}) error {
 //
 //	var users []models.User
 //	err := ScanStructs(rows, &users)
-func ScanStructs(rows pgx.Rows, dest interface{}) error {
+func ScanStructs(rows pgx.Rows, dest any) error {
 	defer rows.Close()
 
 	// Get the slice value
 	sliceVal := reflect.ValueOf(dest)
-	if sliceVal.Kind() != reflect.Ptr || sliceVal.Elem().Kind() != reflect.Slice {
+	if sliceVal.Kind() != reflect.Pointer || sliceVal.Elem().Kind() != reflect.Slice {
 		return fmt.Errorf("dest must be a pointer to a slice")
 	}
 
@@ -88,9 +88,9 @@ func ScanStructs(rows pgx.Rows, dest interface{}) error {
 
 // getFieldPointers extracts pointers to struct fields based on their 'db' tags
 // Returns a slice of pointers in the order of the struct fields with db tags
-func getFieldPointers(val reflect.Value) ([]interface{}, error) {
+func getFieldPointers(val reflect.Value) ([]any, error) {
 	typ := val.Type()
-	var fieldPointers []interface{}
+	var fieldPointers []any
 
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
@@ -122,9 +122,9 @@ func getFieldPointers(val reflect.Value) ([]interface{}, error) {
 //
 //	columns := GetDBColumns(models.User{})
 //	// Returns: []string{"user_id", "user_name", "email", ...}
-func GetDBColumns(model interface{}) []string {
+func GetDBColumns(model any) []string {
 	val := reflect.ValueOf(model)
-	if val.Kind() == reflect.Ptr {
+	if val.Kind() == reflect.Pointer {
 		val = val.Elem()
 	}
 
@@ -157,7 +157,7 @@ func GetDBColumns(model interface{}) []string {
 //
 //	query := BuildSelectQuery("users", models.User{}, "WHERE user_id = $1")
 //	// Returns: "SELECT user_id, user_name, email, ... FROM users WHERE user_id = $1"
-func BuildSelectQuery(tableName string, model interface{}, whereClause string) string {
+func BuildSelectQuery(tableName string, model any, whereClause string) string {
 	columns := GetDBColumns(model)
 	if len(columns) == 0 {
 		return ""
@@ -173,9 +173,9 @@ func BuildSelectQuery(tableName string, model interface{}, whereClause string) s
 
 // GetDBColumnMap creates a map of struct field names to db column names
 // This is useful for custom field mapping logic
-func GetDBColumnMap(model interface{}) map[string]string {
+func GetDBColumnMap(model any) map[string]string {
 	val := reflect.ValueOf(model)
-	if val.Kind() == reflect.Ptr {
+	if val.Kind() == reflect.Pointer {
 		val = val.Elem()
 	}
 

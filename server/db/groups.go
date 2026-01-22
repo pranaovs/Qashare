@@ -53,7 +53,6 @@ func CreateGroup(ctx context.Context, pool *pgxpool.Pool, name, description, own
 
 		return nil
 	})
-
 	if err != nil {
 		return "", NewDBError("CreateGroup", err, "failed to create group")
 	}
@@ -165,7 +164,11 @@ func AddGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, us
 
 	// Execute batch
 	br := pool.SendBatch(ctx, batch)
-	defer br.Close()
+	defer func() {
+		if err := br.Close(); err != nil {
+			log.Printf("[DB] Error closing batch: %v", err)
+		}
+	}()
 
 	// Check results for each query
 	for i := range userIDs {
@@ -243,7 +246,12 @@ func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string,
 
 	// Execute batch
 	br := pool.SendBatch(ctx, batch)
-	defer br.Close()
+
+	defer func() {
+		if err := br.Close(); err != nil {
+			log.Printf("[DB] Error closing batch: %v", err)
+		}
+	}()
 
 	// Check results for each query
 	for i := range userIDs {
