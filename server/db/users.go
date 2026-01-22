@@ -32,7 +32,7 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, name, email, password s
 		// User already exists
 		log.Printf("[DB] User creation failed: email already exists: %s", email)
 		return "", ErrEmailAlreadyExists
-	} else if err != nil && err != ErrEmailNotRegistered {
+	} else if err != ErrEmailNotRegistered {
 		// Some other database error occurred
 		return "", NewDBError("CreateUser", err, "failed to check existing user")
 	}
@@ -52,7 +52,7 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, name, email, password s
 		return "", NewDBError("CreateUser", err, "failed to insert user")
 	}
 
-	log.Printf("[DB] ✓ User created successfully with ID: %s", userID)
+	log.Printf("[DB] User created successfully with ID: %s", userID)
 	return userID, nil
 }
 
@@ -79,7 +79,7 @@ func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (mo
 		return models.User{}, NewDBError("GetUserFromEmail", err, "failed to query user")
 	}
 
-	log.Printf("[DB] ✓ User found with ID: %s", user.UserID)
+	log.Printf("[DB] User found with ID: %s", user.UserID)
 	return user, nil
 }
 
@@ -102,7 +102,7 @@ func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (
 		return "", "", NewDBError("GetUserCredentials", err, "failed to query credentials")
 	}
 
-	log.Printf("[DB] ✓ Credentials retrieved for user ID: %s", userID)
+	log.Printf("[DB] Credentials retrieved for user ID: %s", userID)
 	return userID, passwordHash, nil
 }
 
@@ -128,7 +128,7 @@ func GetUser(ctx context.Context, pool *pgxpool.Pool, userID string) (models.Use
 		return models.User{}, NewDBError("GetUser", err, "failed to query user")
 	}
 
-	log.Printf("[DB] ✓ User retrieved: %s", user.Name)
+	log.Printf("[DB] User retrieved: %s", user.Name)
 	return user, nil
 }
 
@@ -160,7 +160,7 @@ func UsersRelated(ctx context.Context, pool *pgxpool.Pool, userID1, userID2 stri
 		return ErrUsersNotRelated
 	}
 
-	log.Printf("[DB] ✓ Users are related through shared groups")
+	log.Printf("[DB] Users are related through shared groups")
 	return nil
 }
 
@@ -198,7 +198,7 @@ func AdminOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]mo
 		return nil, NewDBError("AdminOfGroups", err, "error iterating group rows")
 	}
 
-	log.Printf("[DB] ✓ Found %d admin groups for user", len(groups))
+	log.Printf("[DB] Found %d admin groups for user", len(groups))
 	return groups, nil
 }
 
@@ -237,7 +237,7 @@ func MemberOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]m
 		return nil, NewDBError("MemberOfGroups", err, "error iterating group rows")
 	}
 
-	log.Printf("[DB] ✓ Found %d member groups for user", len(groups))
+	log.Printf("[DB] Found %d member groups for user", len(groups))
 	return groups, nil
 }
 
@@ -257,7 +257,7 @@ func UserExists(ctx context.Context, pool *pgxpool.Pool, userID string) error {
 		return ErrUserNotFound
 	}
 
-	log.Printf("[DB] ✓ User exists: %s", userID)
+	log.Printf("[DB] User exists: %s", userID)
 	return nil
 }
 
@@ -278,7 +278,7 @@ func MemberOfGroup(ctx context.Context, pool *pgxpool.Pool, userID, groupID stri
 		return ErrNotMember
 	}
 
-	log.Printf("[DB] ✓ User is a member of group")
+	log.Printf("[DB] User is a member of group")
 	return nil
 }
 
@@ -312,6 +312,6 @@ func AllMembersOfGroup(ctx context.Context, pool *pgxpool.Pool, userIDs []string
 		return ErrNotMember
 	}
 
-	log.Printf("[DB] ✓ All %d users are members of the group", count)
+	log.Printf("[DB] All %d users are members of the group", count)
 	return nil
 }

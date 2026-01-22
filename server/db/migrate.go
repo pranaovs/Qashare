@@ -68,9 +68,9 @@ func Migrate(pool *pgxpool.Pool, migrationsDir string) error {
 
 	// Log summary
 	if appliedCount > 0 {
-		log.Printf("[MIGRATIONS] ✓ Successfully applied %d new migration(s)", appliedCount)
+		log.Printf("[MIGRATIONS] Successfully applied %d new migration(s)", appliedCount)
 	} else {
-		log.Println("[MIGRATIONS] ✓ Database is up to date - no new migrations to apply")
+		log.Println("[MIGRATIONS] Database is up to date - no new migrations to apply")
 	}
 
 	return nil
@@ -186,7 +186,7 @@ func applyMigration(ctx context.Context, pool *pgxpool.Pool, filePath string) (b
 		return false, fmt.Errorf("failed to commit transaction for '%s': %w", migrationName, err)
 	}
 
-	log.Printf("[MIGRATIONS] ✓ Successfully applied: %s (took %dms)", migrationName, executionTime)
+	log.Printf("[MIGRATIONS] Successfully applied: %s (took %dms)", migrationName, executionTime)
 	return true, nil
 }
 
@@ -252,7 +252,7 @@ func VerifyMigrationIntegrity(ctx context.Context, pool *pgxpool.Pool, migration
 		content, err := os.ReadFile(filePath)
 		if err != nil {
 			if os.IsNotExist(err) {
-				log.Printf("[MIGRATIONS] ⚠ Warning: Migration file '%s' no longer exists", migration.Name)
+				log.Printf("[MIGRATIONS] Warning: Migration file '%s' no longer exists", migration.Name)
 				continue
 			}
 			return fmt.Errorf("failed to read migration file '%s': %w", migration.Name, err)
@@ -266,6 +266,6 @@ func VerifyMigrationIntegrity(ctx context.Context, pool *pgxpool.Pool, migration
 		}
 	}
 
-	log.Printf("[MIGRATIONS] ✓ Integrity verification passed for %d migration(s)", len(status.Migrations))
+	log.Printf("[MIGRATIONS] Integrity verification passed for %d migration(s)", len(status.Migrations))
 	return nil
 }

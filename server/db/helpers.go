@@ -65,10 +65,15 @@ func ExecuteInBatch(ctx context.Context, pool *pgxpool.Pool, queries []BatchQuer
 	}
 
 	br := pool.SendBatch(ctx, batch)
-	defer br.Close()
+
+	defer func() {
+		if err := br.Close(); err != nil {
+			log.Printf("[DB] Error closing batch: %v", err)
+		}
+	}()
 
 	// Execute all queries and collect errors
-	for i := 0; i < len(queries); i++ {
+	for i := range queries {
 		_, err := br.Exec()
 		if err != nil {
 			return fmt.Errorf("batch query %d failed: %w", i, err)
@@ -81,12 +86,12 @@ func ExecuteInBatch(ctx context.Context, pool *pgxpool.Pool, queries []BatchQuer
 // BatchQuery represents a single query in a batch operation
 type BatchQuery struct {
 	SQL  string
-	Args []interface{}
+	Args []any
 }
 
 // RecordExists checks if a record exists in a table with the given condition
 // Example: exists, err := RecordExists(ctx, pool, "users", "email = $1", email)
-func RecordExists(ctx context.Context, pool *pgxpool.Pool, table, condition string, args ...interface{}) (bool, error) {
+func RecordExists(ctx context.Context, pool *pgxpool.Pool, table, condition string, args ...any) (bool, error) {
 	query := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE %s)", table, condition)
 
 	var exists bool
@@ -100,7 +105,7 @@ func RecordExists(ctx context.Context, pool *pgxpool.Pool, table, condition stri
 
 // CountRecords returns the count of records in a table matching the condition
 // Example: count, err := CountRecords(ctx, pool, "users", "is_guest = $1", true)
-func CountRecords(ctx context.Context, pool *pgxpool.Pool, table, condition string, args ...interface{}) (int64, error) {
+func CountRecords(ctx context.Context, pool *pgxpool.Pool, table, condition string, args ...any) (int64, error) {
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", table, condition)
 
 	var count int64
@@ -114,7 +119,7 @@ func CountRecords(ctx context.Context, pool *pgxpool.Pool, table, condition stri
 
 // LogQuery logs a database query with its parameters (for debugging)
 // This should only be used in development, not in production
-func LogQuery(query string, args ...interface{}) {
+func LogQuery(query string, args ...any) {
 	log.Printf("[DB QUERY] %s [args: %v]", query, args)
 }
 
@@ -132,7 +137,7 @@ func MeasureQueryTime(operation string) func() {
 // Useful for handling temporary connection issues
 func RetryOnError(ctx context.Context, maxRetries int, operation func() error) error {
 	var err error
-	for i := 0; i < maxRetries; i++ {
+	for i := range maxRetries {
 		err = operation()
 		if err == nil {
 			return nil
@@ -206,7 +211,7 @@ func ValidateUUID(uuid string) bool {
 			continue
 		}
 		// Check if character is a valid hex digit
-		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') && (c < 'A' || c > 'F') {
 			return false
 		}
 	}
