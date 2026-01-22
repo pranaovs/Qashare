@@ -235,7 +235,7 @@ func BuildUpdateClauses(model any, skipFields []string) ([]string, []interface{}
 	for i := 0; i < typ.NumField(); i++ {
 		fieldType := typ.Field(i)
 		fieldValue := val.Field(i)
-		
+
 		// Skip fields in the skip list
 		if skipMap[fieldType.Name] {
 			continue
