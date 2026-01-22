@@ -134,7 +134,8 @@ func GetEnvDuration(key string, defaultSeconds int) time.Duration {
 
 	val, err := strconv.Atoi(valStr)
 	if err != nil || val < 0 {
-		log.Fatalf("Config Error: %s must be a valid number of seconds", key)
+		log.Printf("Config Warning: %s must be a valid number of seconds, using default %d", key, defaultSeconds)
+		return time.Duration(defaultSeconds) * time.Second
 	}
 	return time.Duration(val) * time.Second
 }
