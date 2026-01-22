@@ -240,26 +240,3 @@ func ValidateUserForCreate(name, email, passwordHash string) error {
 
 	return nil
 }
-
-// ValidateUserForUpdate validates required fields for user update.
-// Required fields: userID
-// At least one of: name, email, passwordHash
-// Returns an error if any required field is missing or invalid.
-func ValidateUserForUpdate(userID, name, email, passwordHash string) error {
-	// Validate user ID is not empty
-	if strings.TrimSpace(userID) == "" {
-		return fmt.Errorf("%w: user_id is required", ErrMissingRequiredField)
-	}
-
-	// Validate user ID format (basic UUID check)
-	if !ValidateUUID(userID) {
-		return fmt.Errorf("%w: invalid user_id format", ErrInvalidFieldValue)
-	}
-
-	// At least one field must be provided for update
-	if strings.TrimSpace(name) == "" && strings.TrimSpace(email) == "" && strings.TrimSpace(passwordHash) == "" {
-		return fmt.Errorf("%w: at least one field (name, email, or password) must be provided for update", ErrMissingRequiredField)
-	}
-
-	return nil
-}

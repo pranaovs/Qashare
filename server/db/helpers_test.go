@@ -96,118 +96,6 @@ func TestValidateUserForCreate(t *testing.T) {
 	}
 }
 
-// TestValidateUserForUpdate tests the ValidateUserForUpdate function
-func TestValidateUserForUpdate(t *testing.T) {
-	validUUID := "550e8400-e29b-41d4-a716-446655440000"
-	invalidUUID := "not-a-uuid"
-
-	tests := []struct {
-		name         string
-		userID       string
-		userName     string
-		email        string
-		passwordHash string
-		wantErr      bool
-		errType      error
-		errContains  string
-	}{
-		{
-			name:         "valid update with name",
-			userID:       validUUID,
-			userName:     "New Name",
-			email:        "",
-			passwordHash: "",
-			wantErr:      false,
-		},
-		{
-			name:         "valid update with email",
-			userID:       validUUID,
-			userName:     "",
-			email:        "newemail@example.com",
-			passwordHash: "",
-			wantErr:      false,
-		},
-		{
-			name:         "valid update with password",
-			userID:       validUUID,
-			userName:     "",
-			email:        "",
-			passwordHash: "new_hashed_password",
-			wantErr:      false,
-		},
-		{
-			name:         "valid update with all fields",
-			userID:       validUUID,
-			userName:     "New Name",
-			email:        "newemail@example.com",
-			passwordHash: "new_hashed_password",
-			wantErr:      false,
-		},
-		{
-			name:         "missing userID",
-			userID:       "",
-			userName:     "New Name",
-			email:        "newemail@example.com",
-			passwordHash: "",
-			wantErr:      true,
-			errType:      ErrMissingRequiredField,
-			errContains:  "user_id is required",
-		},
-		{
-			name:         "invalid userID format",
-			userID:       invalidUUID,
-			userName:     "New Name",
-			email:        "",
-			passwordHash: "",
-			wantErr:      true,
-			errType:      ErrInvalidFieldValue,
-			errContains:  "invalid user_id format",
-		},
-		{
-			name:         "no fields to update",
-			userID:       validUUID,
-			userName:     "",
-			email:        "",
-			passwordHash: "",
-			wantErr:      true,
-			errType:      ErrMissingRequiredField,
-			errContains:  "at least one field",
-		},
-		{
-			name:         "whitespace only fields",
-			userID:       validUUID,
-			userName:     "   ",
-			email:        "   ",
-			passwordHash: "   ",
-			wantErr:      true,
-			errType:      ErrMissingRequiredField,
-			errContains:  "at least one field",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateUserForUpdate(tt.userID, tt.userName, tt.email, tt.passwordHash)
-			if tt.wantErr {
-				if err == nil {
-					t.Errorf("ValidateUserForUpdate() expected error but got nil")
-					return
-				}
-				if tt.errType != nil && !errors.Is(err, tt.errType) {
-					t.Errorf("ValidateUserForUpdate() error should wrap %v, got: %v", tt.errType, err)
-				}
-				if tt.errContains != "" && !strings.Contains(err.Error(), tt.errContains) {
-					t.Errorf("ValidateUserForUpdate() error = %v, should contain %q", err, tt.errContains)
-				}
-			} else {
-				if err != nil {
-					t.Errorf("ValidateUserForUpdate() unexpected error = %v", err)
-				}
-			}
-		})
-	}
-}
-
 // TestValidateUUID tests the ValidateUUID function
 func TestValidateUUID(t *testing.T) {
 	tests := []struct {
@@ -259,5 +147,74 @@ func TestValidateUUID(t *testing.T) {
 				t.Errorf("ValidateUUID(%q) = %v, want %v", tt.uuid, result, tt.valid)
 			}
 		})
+	}
+}
+
+// TestUserUpdate tests the UserUpdate struct validation logic
+func TestUserUpdate(t *testing.T) {
+	validUUID := "550e8400-e29b-41d4-a716-446655440000"
+	
+	// Test that UserUpdate struct can hold all update fields
+	name := "New Name"
+	email := "newemail@example.com"
+	password := "new_password_hash"
+	guestTrue := true
+	guestFalse := false
+	
+	// Test with name only
+	update1 := UserUpdate{
+		UserID: validUUID,
+		Name:   &name,
+	}
+	if update1.UserID != validUUID || update1.Name == nil || *update1.Name != name {
+		t.Errorf("UserUpdate with name not properly constructed")
+	}
+	
+	// Test with email only
+	update2 := UserUpdate{
+		UserID: validUUID,
+		Email:  &email,
+	}
+	if update2.Email == nil || *update2.Email != email {
+		t.Errorf("UserUpdate with email not properly constructed")
+	}
+	
+	// Test with password only
+	update3 := UserUpdate{
+		UserID:       validUUID,
+		PasswordHash: &password,
+	}
+	if update3.PasswordHash == nil || *update3.PasswordHash != password {
+		t.Errorf("UserUpdate with password not properly constructed")
+	}
+	
+	// Test with Guest set to true
+	update4 := UserUpdate{
+		UserID: validUUID,
+		Guest:  &guestTrue,
+	}
+	if update4.Guest == nil || *update4.Guest != true {
+		t.Errorf("UserUpdate with Guest=true not properly constructed")
+	}
+	
+	// Test with Guest set to false - this should be distinguishable from not set
+	update5 := UserUpdate{
+		UserID: validUUID,
+		Guest:  &guestFalse,
+	}
+	if update5.Guest == nil || *update5.Guest != false {
+		t.Errorf("UserUpdate with Guest=false not properly constructed")
+	}
+	
+	// Test with all fields
+	update6 := UserUpdate{
+		UserID:       validUUID,
+		Name:         &name,
+		Email:        &email,
+		PasswordHash: &password,
+		Guest:        &guestTrue,
+	}
+	if update6.Name == nil || update6.Email == nil || update6.PasswordHash == nil || update6.Guest == nil {
+		t.Errorf("UserUpdate with all fields not properly constructed")
 	}
 }

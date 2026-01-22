@@ -17,12 +17,25 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// UserUpdate represents fields that can be updated for a user.
+// Use pointers for optional fields to distinguish between "not set" and "set to zero value".
+type UserUpdate struct {
+	UserID       string  // Required: The user ID to update
+	Name         *string // Optional: New name
+	Email        *string // Optional: New email
+	PasswordHash *string // Optional: New password hash
+	Guest        *bool   // Optional: New guest status
+}
+
 // CreateUser inserts a new user into the database and returns the newly created user's ID.
 // The function accepts a User struct containing all necessary user information.
 // Required fields in user:
 //   - Name: The user's display name
 //   - Email: The user's email address (must be unique)
 //   - PasswordHash: The hashed password for the user
+//
+// Optional fields:
+//   - Guest: Whether the user is a guest user (defaults to false)
 //
 // Returns the newly created user's ID or an error if the operation fails.
 // Returns ErrEmailAlreadyExists if a user with the email already exists.
@@ -52,13 +65,13 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user models.User) (stri
 		return "", NewDBError("CreateUser", err, "failed to check existing user")
 	}
 
-	// Insert the new user into the database
+	// Insert the new user into the database with all struct fields
 	var userID string
-	query := `INSERT INTO users (user_name, email, password_hash, created_at)
-		VALUES ($1, $2, $3, $4)
+	query := `INSERT INTO users (user_name, email, password_hash, is_guest, created_at)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING user_id`
 
-	err = pool.QueryRow(ctx, query, user.Name, user.Email, passwordHash, time.Now()).Scan(&userID)
+	err = pool.QueryRow(ctx, query, user.Name, user.Email, passwordHash, user.Guest, time.Now()).Scan(&userID)
 	if err != nil {
 		// Check for duplicate key violation (race condition)
 		if IsDuplicateKey(err) {
@@ -67,42 +80,46 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user models.User) (stri
 		return "", NewDBError("CreateUser", err, "failed to insert user")
 	}
 
-	log.Printf("[DB] User created successfully with ID: %s", userID)
+	log.Printf("[DB] User created successfully with ID: %s (guest: %v)", userID, user.Guest)
 	return userID, nil
 }
 
 // UpdateUser updates an existing user in the database with the provided information.
-// The function accepts a User struct containing the user information to update.
-// Required fields in user:
+// The function accepts a UserUpdate struct containing the user information to update.
+// Required fields:
 //   - UserID: The ID of the user to update
 //
 // Optional fields (at least one must be provided):
 //   - Name: The user's new display name
 //   - Email: The user's new email address
 //   - PasswordHash: The user's new hashed password
+//   - Guest: The user's new guest status
+//
+// Use pointers for optional fields to distinguish between "not set" and "set to zero/false".
 //
 // Returns an error if the operation fails.
 // Returns ErrMissingRequiredField if user_id is missing or no fields to update.
 // Returns ErrInvalidFieldValue if any field has an invalid value.
 // Returns ErrUserNotFound if the user does not exist.
 // Returns ErrEmailAlreadyExists if updating email to one that already exists.
-func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user models.User) error {
-	log.Printf("[DB] Updating user with ID: %s", user.UserID)
+func UpdateUser(ctx context.Context, pool *pgxpool.Pool, update UserUpdate) error {
+	log.Printf("[DB] Updating user with ID: %s", update.UserID)
 
-	// Extract password hash
-	passwordHash := ""
-	if user.PasswordHash != nil {
-		passwordHash = *user.PasswordHash
+	// Validate user ID
+	if strings.TrimSpace(update.UserID) == "" {
+		return fmt.Errorf("%w: user_id is required", ErrMissingRequiredField)
+	}
+	if !ValidateUUID(update.UserID) {
+		return fmt.Errorf("%w: invalid user_id format", ErrInvalidFieldValue)
 	}
 
-	// Validate required fields
-	if err := ValidateUserForUpdate(user.UserID, user.Name, user.Email, passwordHash); err != nil {
-		log.Printf("[DB] User validation failed: %v", err)
-		return err
+	// Check if at least one field is provided for update
+	if update.Name == nil && update.Email == nil && update.PasswordHash == nil && update.Guest == nil {
+		return fmt.Errorf("%w: at least one field must be provided for update", ErrMissingRequiredField)
 	}
 
 	// Check if user exists
-	if err := UserExists(ctx, pool, user.UserID); err != nil {
+	if err := UserExists(ctx, pool, update.UserID); err != nil {
 		return err
 	}
 
@@ -112,26 +129,37 @@ func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user models.User) error
 	var args []interface{}
 	argPosition := 1
 
-	if user.Name != "" {
+	if update.Name != nil && strings.TrimSpace(*update.Name) != "" {
 		setClauses = append(setClauses, fmt.Sprintf("user_name = $%d", argPosition))
-		args = append(args, user.Name)
+		args = append(args, *update.Name)
 		argPosition++
 	}
 
-	if user.Email != "" {
+	if update.Email != nil && strings.TrimSpace(*update.Email) != "" {
 		setClauses = append(setClauses, fmt.Sprintf("email = $%d", argPosition))
-		args = append(args, user.Email)
+		args = append(args, *update.Email)
 		argPosition++
 	}
 
-	if passwordHash != "" {
+	if update.PasswordHash != nil && strings.TrimSpace(*update.PasswordHash) != "" {
 		setClauses = append(setClauses, fmt.Sprintf("password_hash = $%d", argPosition))
-		args = append(args, passwordHash)
+		args = append(args, *update.PasswordHash)
 		argPosition++
+	}
+
+	if update.Guest != nil {
+		setClauses = append(setClauses, fmt.Sprintf("is_guest = $%d", argPosition))
+		args = append(args, *update.Guest)
+		argPosition++
+	}
+
+	// Validate we have at least one valid field to update after filtering empty strings
+	if len(setClauses) == 0 {
+		return fmt.Errorf("%w: at least one non-empty field must be provided for update", ErrMissingRequiredField)
 	}
 
 	// Add user_id to args for WHERE clause
-	args = append(args, user.UserID)
+	args = append(args, update.UserID)
 
 	// Build and execute query
 	// Use a transaction-like approach by relying on database constraints
@@ -151,11 +179,11 @@ func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user models.User) error
 
 	// Check if any rows were affected
 	if result.RowsAffected() == 0 {
-		log.Printf("[DB] User not found for update: %s", user.UserID)
+		log.Printf("[DB] User not found for update: %s", update.UserID)
 		return ErrUserNotFound
 	}
 
-	log.Printf("[DB] User updated successfully: %s", user.UserID)
+	log.Printf("[DB] User updated successfully: %s", update.UserID)
 	return nil
 }
 
