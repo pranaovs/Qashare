@@ -98,11 +98,13 @@ func GetEnvPort(key string, defaultValue int) int {
 
 	val, err := strconv.Atoi(valStr)
 	if err != nil {
-		log.Fatalf("Config Error: %s must be a number", key)
+		log.Printf("Config Warning: %s must be a number, using default %d", key, defaultValue)
+		return defaultValue
 	}
 
 	if val < 0 || val > 65535 {
-		log.Fatalf("Config Error: %s must be between 0 and 65535", key)
+		log.Printf("Config Warning: %s must be between 0 and 65535, using default %d", key, defaultValue)
+		return defaultValue
 	}
 	return val
 }
