@@ -66,10 +66,12 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 // May return a DBError (via NewDBError) if any database operation fails.
 func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy string) (models.User, error) {
 	// Check if user already exists with this email
-	_, err := GetUserFromEmail(ctx, pool, email)
+	existing, err := GetUserFromEmail(ctx, pool, email)
 	if err == nil {
 		// User already exists
 		return models.User{}, ErrEmailAlreadyExists
+	} else if err == ErrUserIsGuest {
+		return existing, nil // Guest user already exists, return it
 	} else if err != ErrEmailNotRegistered {
 		// Some other database error occurred
 		return models.User{}, NewDBError("CreateGuest", err, "failed to check existing user")
