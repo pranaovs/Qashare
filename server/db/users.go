@@ -15,7 +15,7 @@ import (
 )
 
 // CreateUser inserts a new user into the database
-// The user must be a real autehnticated user, not a guest.
+// The user must be a real authenticated user, not a guest.
 // For guest users, use CreateGuest instead.
 // Takes a User model with Name, Email, and PasswordHash populated, and adds UserID and CreatedAt.
 // Returns ErrEmailAlreadyExists if a user with the email already exists.
