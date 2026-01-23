@@ -1,4 +1,4 @@
-package com.example.client
+package me.pranaovs.qashare
 
 import io.flutter.embedding.android.FlutterActivity
 
