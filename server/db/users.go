@@ -118,7 +118,7 @@ func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy 
 // Returns ErrEmailNotRegistered if no user with the email exists.
 func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (models.User, error) {
 	var user models.User
-	query := `SELECT user_id, user_name, email, is_guest , extract(epoch from created_at)::bigint
+	query := `SELECT user_id, user_name, email, is_guest, extract(epoch from created_at)::bigint
 		FROM users
 		WHERE email = $1`
 
