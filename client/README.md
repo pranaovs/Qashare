@@ -1,6 +1,6 @@
-# client
+# qashare
 
-A new Flutter project.
+Track shared expenses and split bills easily
 
 ## Getting Started
 

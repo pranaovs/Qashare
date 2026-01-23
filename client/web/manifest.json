@@ -1,11 +1,11 @@
 {
-    "name": "client",
-    "short_name": "client",
+    "name": "qashare",
+    "short_name": "qashare",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Track shared expenses and split bills easily",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
