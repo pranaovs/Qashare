@@ -54,6 +54,15 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 	return nil
 }
 
+// CreateGuest inserts a new guest user into the database.
+// The guest user is identified by email and has no password. The user name is derived
+// from the part of the email before the "@" symbol. This function also records which
+// existing user added the guest in the guests table.
+// Takes a context, a database connection pool, the guest's email address, and the
+// user ID of the user who added the guest.
+// Returns the created User model with UserID and CreatedAt populated.
+// Returns ErrEmailAlreadyExists if a user with the given email already exists.
+// May return a DBError (via NewDBError) if any database operation fails.
 func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy string) (models.User, error) {
 	// Check if user already exists with this email
 	_, err := GetUserFromEmail(ctx, pool, email)
