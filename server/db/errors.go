@@ -32,6 +32,9 @@ var (
 	// ErrEmailNotRegistered indicates that the email is not registered
 	ErrEmailNotRegistered = errors.New("email not registered")
 
+	// ErrUserIsGuest indicates that the user is a guest user
+	ErrUserIsGuest = errors.New("user is a guest")
+
 	// ErrEmailAlreadyExists indicates that a user with the email already exists
 	ErrEmailAlreadyExists = errors.New("user with this email already exists")
 
