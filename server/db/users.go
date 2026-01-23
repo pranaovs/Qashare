@@ -5,6 +5,7 @@ package db
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pranaovs/qashare/models"
 	"github.com/pranaovs/qashare/utils"
@@ -14,25 +15,33 @@ import (
 )
 
 // CreateUser inserts a new user into the database
+// The user must be a real autehnticated user, not a guest.
+// For guest users, use CreateGuestUser instead.
 // Takes a User model with Name, Email, and PasswordHash populated, and adds UserID and CreatedAt.
 // Returns ErrEmailAlreadyExists if a user with the email already exists.
 func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) error {
 	// Check if user already exists with this email
 	_, err := GetUserFromEmail(ctx, pool, user.Email)
+	user.Guest = false
+
+	query := `INSERT INTO users (user_name, email, password_hash, is_guest)
+		VALUES ($1, $2, $3, $4)
+		RETURNING user_id, extract(epoch from created_at)::bigint`
+
 	if err == nil {
 		// User already exists
 		return ErrEmailAlreadyExists
+	} else if err == ErrUserIsGuest {
+		// Insert the new user into the database with current timestamp
+		query = `INSERT INTO users (user_name, email, password_hash, is_guest, created_at)
+			VALUES ($1, $2, $3, $4, NOW())
+			RETURNING user_id, extract(epoch from created_at)::bigint`
 	} else if err != ErrEmailNotRegistered {
 		// Some other database error occurred
 		return NewDBError("CreateUser", err, "failed to check existing user")
 	}
 
-	// Insert the new user into the database
-	query := `INSERT INTO users (user_name, email, password_hash)
-		VALUES ($1, $2, $3)
-		RETURNING user_id, extract(epoch from created_at)::bigint`
-
-	err = pool.QueryRow(ctx, query, user.Name, user.Email, user.PasswordHash).Scan(&user.UserID, &user.CreatedAt)
+	err = pool.QueryRow(ctx, query, user.Name, user.Email, user.PasswordHash, user.Guest).Scan(&user.UserID, &user.CreatedAt)
 	if err != nil {
 		// Check for duplicate key violation (race condition)
 		if IsDuplicateKey(err) {
@@ -45,12 +54,44 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 	return nil
 }
 
+func CreateGuestUser(ctx context.Context, pool *pgxpool.Pool, email string) (models.User, error) {
+	// Check if user already exists with this email
+	_, err := GetUserFromEmail(ctx, pool, email)
+	if err == nil {
+		// User already exists
+		return models.User{}, ErrEmailAlreadyExists
+	} else if err != ErrEmailNotRegistered {
+		// Some other database error occurred
+		return models.User{}, NewDBError("CreateUser", err, "failed to check existing user")
+	}
+
+	var user models.User
+	user.Email = email
+	// Set guest user name as the part before the "@" in the email
+	user.Name, _, _ = strings.Cut(email, "@")
+	user.Guest = true
+
+	query := `INSERT INTO users (user_name, email, is_guest)
+		VALUES ($1, $2, $3)
+		RETURNING user_id, extract(epoch from created_at)::bigint`
+	err = pool.QueryRow(ctx, query, user.Name, user.Email, user.Guest).Scan(&user.UserID, &user.CreatedAt)
+	if err != nil {
+		// Check for duplicate key violation (race condition)
+		if IsDuplicateKey(err) {
+			return models.User{}, ErrEmailAlreadyExists
+		}
+		return models.User{}, NewDBError("CreateUser", err, "failed to insert guest user")
+	}
+
+	return user, nil
+}
+
 // GetUserFromEmail retrieves a user by their email address.
 // This is commonly used for login and authentication purposes.
 // Returns ErrEmailNotRegistered if no user with the email exists.
 func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (models.User, error) {
 	var user models.User
-	query := `SELECT user_id, user_name, email, COALESCE(is_guest, false), extract(epoch from created_at)::bigint
+	query := `SELECT user_id, user_name, email, is_guest , extract(epoch from created_at)::bigint
 		FROM users
 		WHERE email = $1`
 
@@ -101,6 +142,9 @@ func GetUser(ctx context.Context, pool *pgxpool.Pool, userID string) (models.Use
 
 	if err == pgx.ErrNoRows {
 		return models.User{}, ErrUserNotFound
+	}
+	if user.Guest == true {
+		return user, ErrUserIsGuest
 	}
 	if err != nil {
 		return models.User{}, NewDBError("GetUser", err, "failed to query user")
