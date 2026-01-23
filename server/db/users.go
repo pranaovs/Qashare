@@ -5,6 +5,7 @@ package db
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pranaovs/qashare/models"
 	"github.com/pranaovs/qashare/utils"
@@ -13,36 +14,128 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// CreateUser inserts a new user into the database
+// CreateUser inserts a new non-guest (fully authenticated) user into the database.
+// Guest accounts should normally be created using CreateGuest. If an existing guest user
+// is found for the given email (signaled by ErrUserIsGuest from GetUserFromEmail), this
+// function will handle that case when creating the full user account.
 // Takes a User model with Name, Email, and PasswordHash populated, and adds UserID and CreatedAt.
-// Returns ErrEmailAlreadyExists if a user with the email already exists.
+// Returns ErrEmailAlreadyExists if a non-guest user with the email already exists.
 func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) error {
 	// Check if user already exists with this email
-	_, err := GetUserFromEmail(ctx, pool, user.Email)
-	if err == nil {
-		// User already exists
+	existingUser, err := GetUserFromEmail(ctx, pool, user.Email)
+
+	var query string
+	user.Guest = false
+
+	if err == nil && !existingUser.Guest {
+		// Non-guest user already exists
 		return ErrEmailAlreadyExists
 	} else if err != ErrEmailNotRegistered {
 		// Some other database error occurred
 		return NewDBError("CreateUser", err, "failed to check existing user")
 	}
 
-	// Insert the new user into the database
-	query := `INSERT INTO users (user_name, email, password_hash)
-		VALUES ($1, $2, $3)
-		RETURNING user_id, extract(epoch from created_at)::bigint`
+	err = WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
+		if existingUser.Guest {
+			// Update the existing guest user to become a regular user
+			query = `UPDATE users
+				SET user_name = $1, password_hash = $2, is_guest = $3, created_at = NOW()
+				WHERE email = $4
+				RETURNING user_id, extract(epoch from created_at)::bigint`
 
-	err = pool.QueryRow(ctx, query, user.Name, user.Email, user.PasswordHash).Scan(&user.UserID, &user.CreatedAt)
-	if err != nil {
-		// Check for duplicate key violation (race condition)
-		if IsDuplicateKey(err) {
-			return ErrEmailAlreadyExists
+			err = tx.QueryRow(ctx, query, user.Name, user.PasswordHash, user.Guest, user.Email).Scan(&user.UserID, &user.CreatedAt)
+			if err != nil {
+				return NewDBError("CreateUser", err, "failed to update guest user")
+			}
+
+			// Delete the guest entry since user is now promoted
+			deleteQuery := `DELETE FROM guests WHERE user_id = $1`
+			_, err = tx.Exec(ctx, deleteQuery, user.UserID)
+			if err != nil {
+				return NewDBError("CreateUser", err, "failed to delete guest entry")
+			}
+		} else {
+			// Insert new user (no existing user found)
+			query = `INSERT INTO users (user_name, email, password_hash, is_guest)
+				VALUES ($1, $2, $3, $4)
+				RETURNING user_id, extract(epoch from created_at)::bigint`
+
+			err = tx.QueryRow(ctx, query, user.Name, user.Email, user.PasswordHash, user.Guest).Scan(&user.UserID, &user.CreatedAt)
+			if err != nil {
+				// Check for duplicate key violation (race condition)
+				if IsDuplicateKey(err) {
+					return ErrEmailAlreadyExists
+				}
+				return NewDBError("CreateUser", err, "failed to insert user")
+			}
 		}
-		return NewDBError("CreateUser", err, "failed to insert user")
+
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	user.PasswordHash = nil // Remove password hash after insertion
 	return nil
+}
+
+// CreateGuest inserts a new guest user into the database.
+// The guest user is identified by email and has no password. The user name is derived
+// from the part of the email before the "@" symbol. This function also records which
+// existing user added the guest in the guests table.
+// Takes a context, a database connection pool, the guest's email address, and the
+// user ID of the user who added the guest.
+// Returns the created User model with UserID and CreatedAt populated.
+// Returns ErrEmailAlreadyExists if a user with the given email already exists.
+// May return a DBError (via NewDBError) if any database operation fails.
+func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy string) (models.User, error) {
+	// Check if user already exists with this email
+	_, err := GetUserFromEmail(ctx, pool, email)
+	if err == nil {
+		return models.User{}, ErrEmailAlreadyExists
+	} else if err != ErrEmailNotRegistered {
+		// Some other database error occurred
+		return models.User{}, NewDBError("CreateGuest", err, "failed to check existing user")
+	}
+
+	var user models.User
+	user.Email = email
+	// Set guest user name as the part before the "@" in the email
+	user.Name, _, _ = strings.Cut(email, "@")
+	user.Guest = true
+
+	err = WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
+		// Insert the guest user
+		query := `INSERT INTO users (user_name, email, is_guest)
+			VALUES ($1, $2, $3)
+			RETURNING user_id, extract(epoch from created_at)::bigint`
+
+		err := tx.QueryRow(ctx, query, user.Name, user.Email, user.Guest).Scan(&user.UserID, &user.CreatedAt)
+		if err != nil {
+			// Check for duplicate key violation (race condition)
+			if IsDuplicateKey(err) {
+				return ErrEmailAlreadyExists
+			}
+			return NewDBError("CreateGuest", err, "failed to insert guest user")
+		}
+
+		// Record who added this guest user
+		query = `INSERT INTO guests (user_id, added_by)
+			VALUES ($1, $2)`
+
+		_, err = tx.Exec(ctx, query, user.UserID, addedBy)
+		if err != nil {
+			return NewDBError("CreateGuest", err, "failed to record guest addition")
+		}
+
+		return nil
+	})
+	if err != nil {
+		return models.User{}, err
+	}
+
+	return user, nil
 }
 
 // GetUserFromEmail retrieves a user by their email address.
@@ -50,7 +143,7 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 // Returns ErrEmailNotRegistered if no user with the email exists.
 func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (models.User, error) {
 	var user models.User
-	query := `SELECT user_id, user_name, email, COALESCE(is_guest, false), extract(epoch from created_at)::bigint
+	query := `SELECT user_id, user_name, email, COALESCE(is_guest, false) AS is_guest, extract(epoch from created_at)::bigint
 		FROM users
 		WHERE email = $1`
 
@@ -91,8 +184,8 @@ func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (
 // Returns ErrUserNotFound if no user with the ID exists.
 func GetUser(ctx context.Context, pool *pgxpool.Pool, userID string) (models.User, error) {
 	var user models.User
-	query := `SELECT user_id, user_name, email, is_guest, extract(epoch from created_at)::bigint 
-		FROM users 
+	query := `SELECT user_id, user_name, email, is_guest, extract(epoch from created_at)::bigint
+		FROM users
 		WHERE user_id = $1`
 
 	err := pool.QueryRow(ctx, query, userID).Scan(

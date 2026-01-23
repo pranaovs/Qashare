@@ -135,7 +135,7 @@ To set up the project locally, follow these instructions for both the client and
 - [ ] Bill splitting algorithms
 - [ ] Group management features
 - [ ] User spending reports
-- [ ] Guest Users
+- [x] Guest Users
 - [ ] Permission management
 - [ ] Edit history
 - [ ] Data import/export
