@@ -184,7 +184,7 @@ func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (
 // Returns ErrUserNotFound if no user with the ID exists.
 func GetUser(ctx context.Context, pool *pgxpool.Pool, userID string) (models.User, error) {
 	var user models.User
-	query := `SELECT user_id, user_name, email, is_guest, extract(epoch from created_at)::bigint 
+	query := `SELECT user_id, user_name, email, is_guest, extract(epoch from created_at)::bigint
 		FROM users
 		WHERE user_id = $1`
 
