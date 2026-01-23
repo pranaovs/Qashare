@@ -33,8 +33,6 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 		RETURNING user_id, extract(epoch from created_at)::bigint`
 
 	err = pool.QueryRow(ctx, query, user.Name, user.Email, user.PasswordHash).Scan(&user.UserID, &user.CreatedAt)
-	user.PasswordHash = nil // Remove password hash after insertion
-
 	if err != nil {
 		// Check for duplicate key violation (race condition)
 		if IsDuplicateKey(err) {
@@ -43,6 +41,7 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 		return NewDBError("CreateUser", err, "failed to insert user")
 	}
 
+	user.PasswordHash = nil // Remove password hash after insertion
 	return nil
 }
 
