@@ -1,4 +1,4 @@
-package me.pranaovs.qashare.qashare
+package me.pranaovs.qashare
 
 import io.flutter.embedding.android.FlutterActivity
 

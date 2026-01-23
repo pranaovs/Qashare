@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "me.pranaovs.qashare.qashare"
+    namespace = "me.pranaovs.qashare"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "me.pranaovs.qashare.qashare"
+        applicationId = "me.pranaovs.qashare"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
