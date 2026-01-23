@@ -112,7 +112,7 @@ func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy 
 		return nil
 	})
 	if err != nil {
-		return models.User{}, NewDBError("CreateGuest", err, "failed to create guest")
+		return models.User{}, err
 	}
 
 	return user, nil
