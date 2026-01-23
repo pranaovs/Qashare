@@ -30,7 +30,7 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 	// Insert the new user into the database
 	query := `INSERT INTO users (user_name, email, password_hash)
 		VALUES ($1, $2, $3)
-		RETURNING user_id, `
+		RETURNING user_id, extract(epoch from created_at)::bigint`
 
 	err = pool.QueryRow(ctx, query, user.Name, user.Email, user.PasswordHash).Scan(&user.UserID, &user.CreatedAt)
 	if err != nil {
