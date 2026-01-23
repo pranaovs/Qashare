@@ -49,6 +49,7 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 		return
 	}
 
+	group.Description = request.Description
 	err = db.CreateGroup(c.Request.Context(), h.pool, &group)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
