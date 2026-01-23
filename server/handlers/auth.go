@@ -47,11 +47,12 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	*user.PasswordHash, err = utils.HashPassword(request.Password)
+	passwordHash, err := utils.HashPassword(request.Password)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	user.PasswordHash = &passwordHash
 
 	err = db.CreateUser(c.Request.Context(), h.pool, &user)
 	if err != nil {
