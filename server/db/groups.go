@@ -26,7 +26,7 @@ func CreateGroup(ctx context.Context, pool *pgxpool.Pool, group *models.Group) e
 		// Insert the group
 		query := `INSERT INTO groups (group_name, description, created_by)
 			VALUES ($1, $2, $3)
-			RETURNING group_id, created_at`
+			RETURNING group_id, extract(epoch from created_at)::bigint`
 
 		err := tx.QueryRow(ctx, query, group.Name, group.Description, group.CreatedBy).Scan(&group.GroupID, &group.CreatedAt)
 		if err != nil {
