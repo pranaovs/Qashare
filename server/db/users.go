@@ -163,7 +163,7 @@ func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (
 func GetUser(ctx context.Context, pool *pgxpool.Pool, userID string) (models.User, error) {
 	var user models.User
 	query := `SELECT user_id, user_name, email, is_guest, extract(epoch from created_at)::bigint 
-		FROM users 
+		FROM users
 		WHERE user_id = $1`
 
 	err := pool.QueryRow(ctx, query, userID).Scan(
@@ -172,9 +172,6 @@ func GetUser(ctx context.Context, pool *pgxpool.Pool, userID string) (models.Use
 
 	if err == pgx.ErrNoRows {
 		return models.User{}, ErrUserNotFound
-	}
-	if user.Guest {
-		return user, ErrUserIsGuest
 	}
 	if err != nil {
 		return models.User{}, NewDBError("GetUser", err, "failed to query user")
