@@ -14,11 +14,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// CreateUser inserts a new user into the database
-// The user must be a real authenticated user, not a guest.
-// For guest users, use CreateGuest instead.
+// CreateUser inserts a new non-guest (fully authenticated) user into the database.
+// Guest accounts should normally be created using CreateGuest. If an existing guest user
+// is found for the given email (signaled by ErrUserIsGuest from GetUserFromEmail), this
+// function will handle that case when creating the full user account.
 // Takes a User model with Name, Email, and PasswordHash populated, and adds UserID and CreatedAt.
-// Returns ErrEmailAlreadyExists if a user with the email already exists.
+// Returns ErrEmailAlreadyExists if a non-guest user with the email already exists.
 func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) error {
 	// Check if user already exists with this email
 	_, err := GetUserFromEmail(ctx, pool, user.Email)
