@@ -143,7 +143,7 @@ func GetUser(ctx context.Context, pool *pgxpool.Pool, userID string) (models.Use
 	if err == pgx.ErrNoRows {
 		return models.User{}, ErrUserNotFound
 	}
-	if user.Guest == true {
+	if user.Guest {
 		return user, ErrUserIsGuest
 	}
 	if err != nil {
