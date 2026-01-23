@@ -9,6 +9,7 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
+
   void _showSuccess(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -28,6 +29,8 @@ class _SignupPageState extends State<SignupPage> {
       ),
     );
   }
+
+
 
   final _formKey = GlobalKey<FormState>();
 
@@ -116,11 +119,9 @@ class _SignupPageState extends State<SignupPage> {
                       if (value == null || value.trim().isEmpty) {
                         return "Enter email";
                       }
-                      final email = value.trim();
-                      // Basic email format validation allowing any domain
-                      final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-                      if (!emailRegex.hasMatch(email)) {
-                        return "Enter a valid email address";
+                      final email = value.trim().toLowerCase();
+                      if (!email.endsWith("@gmail.com")) {
+                        return "Only Gmail addresses allowed";
                       }
                       return null;
                     },
@@ -204,16 +205,12 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                       child: _isLoading
                           ? const CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            )
+                          color: Colors.white, strokeWidth: 2)
                           : const Text(
-                              "Sign Up",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                            ),
+                        "Sign Up",
+                        style:
+                        TextStyle(color: Colors.white, fontSize: 16),
+                      ),
                     ),
                   ),
 
@@ -251,7 +248,7 @@ class _SignupPageState extends State<SignupPage> {
     final result = await ApiService.registerUser(
       username: _usernameController.text.trim(),
       name: _nameController.text.trim(),
-      email: _emailController.text.trim().toLowerCase(),
+      email: _emailController.text.trim(),
       password: _passwordController.text,
     );
 
@@ -262,14 +259,13 @@ class _SignupPageState extends State<SignupPage> {
 
       // wait a bit so user sees snackbar, then go to login
       Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) {
-          Navigator.pop(context);
-        }
+        Navigator.pop(context);
       });
     } else {
       _showError(result.errorMessage ?? "Signup failed");
     }
   }
+
 
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(

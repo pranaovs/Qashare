@@ -38,7 +38,10 @@ class RegisterResult {
   }
 
   factory RegisterResult.error(String message) {
-    return RegisterResult._(isSuccess: false, errorMessage: message);
+    return RegisterResult._(
+      isSuccess: false,
+      errorMessage: message,
+    );
   }
 }
 
@@ -62,10 +65,17 @@ class LoginResult {
     required String token,
     required String message,
   }) {
-    return LoginResult._(isSuccess: true, token: token, message: message);
+    return LoginResult._(
+      isSuccess: true,
+      token: token,
+      message: message,
+    );
   }
 
   factory LoginResult.error(String message) {
-    return LoginResult._(isSuccess: false, errorMessage: message);
+    return LoginResult._(
+      isSuccess: false,
+      errorMessage: message,
+    );
   }
 }

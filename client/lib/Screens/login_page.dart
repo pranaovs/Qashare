@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qashare/Service/api_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -8,6 +9,53 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+
+
+  void _showSuccess(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final result = await ApiService.loginUser(
+      email: _usernameController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    if (result.isSuccess) {
+      _showSuccess("Login successful");
+
+      // TODO: store JWT token securely
+
+      Future.delayed(const Duration(milliseconds: 800), () {
+        Navigator.pushReplacementNamed(context, '/home');
+      });
+    } else {
+      _showError(result.errorMessage ?? "Login failed");
+    }
+  }
+
+
+
+
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -53,10 +101,10 @@ class _LoginPageState extends State<LoginPage> {
                   TextFormField(
                     controller: _usernameController,
                     style: const TextStyle(color: Colors.white),
-                    decoration: _inputDecoration("Username"),
+                    decoration: _inputDecoration("Email"),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "Enter username";
+                        return "Enter Email";
                       }
                       return null;
                     },
@@ -97,12 +145,7 @@ class _LoginPageState extends State<LoginPage> {
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          // TODO: login logic
-                          print("Login pressed");
-                        }
-                      },
+                      onPressed: _handleLogin,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         shape: RoundedRectangleBorder(
