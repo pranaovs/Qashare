@@ -1,12 +1,10 @@
 import "package:http/http.dart" as http;
-import 'package:flutter/material.dart';
+import'package:qashare/Config/api_config.dart';
 import 'dart:convert';
 import 'package:qashare/Models/auth_model.dart';
 
 
 class ApiService {
-  static const String _baseurl = "http://devbox:8080";
-
   // ================= REGISTER =================
   static Future<RegisterResult> registerUser({
     required String username,
@@ -14,7 +12,7 @@ class ApiService {
     required String email,
     required String password,}) async{
 
-    final url= Uri.parse("$_baseurl/auth/register");
+    final url= Uri.parse("${ApiConfig.baseUrl}/auth/register");
 
     try {
       final response = await http.post(url,
@@ -73,7 +71,7 @@ class ApiService {
     required String email,
     required String password,
   }) async{
-    final url= Uri.parse("$_baseurl/auth/login");
+    final url= Uri.parse("${ApiConfig.baseUrl}/auth/login");
 
 
     try{

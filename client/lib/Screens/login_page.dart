@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qashare/Config/api_config.dart';
 import 'package:qashare/Service/api_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -10,55 +11,10 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
 
-
-  void _showSuccess(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-
-  Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final result = await ApiService.loginUser(
-      email: _usernameController.text.trim(),
-      password: _passwordController.text,
-    );
-
-    if (result.isSuccess) {
-      _showSuccess("Login successful");
-
-      // TODO: store JWT token securely
-
-      Future.delayed(const Duration(milliseconds: 800), () {
-        Navigator.pushReplacementNamed(context, '/home');
-      });
-    } else {
-      _showError(result.errorMessage ?? "Login failed");
-    }
-  }
-
-
-
-
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  String _serverUrl = "devbox:8080";
 
   bool _obscure = true;
 
@@ -176,12 +132,97 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 100.0),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.black26,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.dns,
+                          size: 16,
+                          color:Theme.of(context).colorScheme.onSurfaceVariant ,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Server: ${_serverUrl.isEmpty ? "Not configured" : _serverUrl}',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _showServerDialog,
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            minimumSize: const Size(0, 30),
+                          ),
+                          child: const Text('Change'),
+                        ),
+                      ],
+                    ),
+                  ),
+
+
+
                 ],
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+
+  void _showServerDialog() {
+    final controller = TextEditingController(text: "devbox:8080");
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Server Address"),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              hintText: "host:port (e.g. devbox:8080)",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final server = controller.text.trim();
+
+                if (server.isNotEmpty) {
+                  setState(() {
+                    _serverUrl=server;
+                  });
+                  ApiConfig.setServer(server);
+                  Navigator.pop(context);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Server set to $server"),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                }
+              },
+              child: const Text("Save"),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -206,6 +247,48 @@ class _LoginPageState extends State<LoginPage> {
         borderRadius: BorderRadius.circular(12),
       ),
     );
+  }
+
+  void _showSuccess(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final result = await ApiService.loginUser(
+      email: _usernameController.text.trim(),
+      password: _passwordController.text,
+    );
+
+    if (result.isSuccess) {
+      _showSuccess("Login successful");
+
+      // TODO: store JWT token securely
+
+      Future.delayed(const Duration(milliseconds: 800), () {
+        Navigator.pushReplacementNamed(context, '/home');
+      });
+    } else {
+      _showError(result.errorMessage ?? "Login failed");
+    }
   }
 
   @override
