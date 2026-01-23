@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:qashare/Config/api_config.dart';
-import 'package:qashare/Config/token_storage.dart';
-import 'package:qashare/Service/api_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,7 +11,6 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  String _serverUrl = "devbox:8080";
 
   bool _obscure = true;
 
@@ -25,10 +21,7 @@ class _LoginPageState extends State<LoginPage> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 40,
-              vertical: 100.0,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 40,vertical: 100.0),
             child: Form(
               key: _formKey,
               child: Column(
@@ -60,14 +53,10 @@ class _LoginPageState extends State<LoginPage> {
                   TextFormField(
                     controller: _usernameController,
                     style: const TextStyle(color: Colors.white),
-                    decoration: _inputDecoration("Email"),
+                    decoration: _inputDecoration("Username"),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return "Enter Email";
-                      }
-                      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                      if (!emailRegex.hasMatch(value)) {
-                        return "Enter a valid email";
+                        return "Enter username";
                       }
                       return null;
                     },
@@ -108,7 +97,12 @@ class _LoginPageState extends State<LoginPage> {
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton(
-                      onPressed: _handleLogin,
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          // TODO: login logic
+                          print("Login pressed");
+                        }
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         shape: RoundedRectangleBorder(
@@ -139,96 +133,12 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 100.0),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.black26,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.dns,
-                          size: 16,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Server: ${_serverUrl.isEmpty ? "Not configured" : _serverUrl}',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: _showServerDialog,
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            minimumSize: const Size(0, 30),
-                          ),
-                          child: const Text('Change'),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
           ),
         ),
       ),
-    );
-  }
-
-  void _showServerDialog() {
-    final controller = TextEditingController(text: "$_serverUrl");
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Server Address"),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              hintText: "host:port (e.g. devbox:8080)",
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final server = controller.text.trim();
-
-                if (server.isNotEmpty) {
-                  setState(() {
-                    _serverUrl = server;
-                  });
-                  ApiConfig.setServer(server);
-                  Navigator.pop(context);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("Server set to $server"),
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                }
-              },
-              child: const Text("Save"),
-            ),
-          ],
-        );
-      },
     );
   }
 
@@ -253,48 +163,6 @@ class _LoginPageState extends State<LoginPage> {
         borderRadius: BorderRadius.circular(12),
       ),
     );
-  }
-
-  void _showSuccess(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    final result = await ApiService.loginUser(
-      email: _usernameController.text.trim().toLowerCase(),
-      password: _passwordController.text,
-    );
-
-    if (result.isSuccess) {
-      _showSuccess("Login successful");
-
-      await TokenStorage.saveToken(result.token!);
-
-      Future.delayed(const Duration(milliseconds: 800), () {
-        if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/home');
-      });
-    } else {
-      _showError(result.errorMessage ?? "Login failed");
-    }
   }
 
   @override
