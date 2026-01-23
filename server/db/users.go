@@ -96,7 +96,7 @@ func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy 
 		}
 
 		// Record who added this guest user
-		query = `INSERT INTO guests (guest_user_id, added_by_user_id)
+		query = `INSERT INTO guests (user_id, added_by)
 			VALUES ($1, $2)`
 
 		_, err = tx.Exec(ctx, query, user.UserID, addedBy)
