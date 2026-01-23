@@ -18,26 +18,17 @@ import (
 // CreateGroup creates a new group in the database and automatically adds the creator as a member.
 // This operation is atomic - either both the group creation and membership addition succeed,
 // or neither does (using a transaction).
-//
-// Parameters:
-//   - name: The name of the group
-//   - description: Optional description of the group
-//   - ownerUserID: The ID of the user creating the group
-//
+// Takes a Group model with Name, Description, and CreatedBy populated, and adds GroupID and CreatedAt.
 // Returns the newly created group's ID or an error if the operation fails.
-func CreateGroup(ctx context.Context, pool *pgxpool.Pool, name, description, ownerUserID string) (string, error) {
-	log.Printf("[DB] Creating new group: %s (owner: %s)", name, ownerUserID)
-
-	var groupID string
-
+func CreateGroup(ctx context.Context, pool *pgxpool.Pool, group *models.Group) error {
 	// Use WithTransaction helper for consistent transaction management
 	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
 		// Insert the group
-		query := `INSERT INTO groups (group_name, description, created_by, created_at)
-			VALUES ($1, $2, $3, $4)
-			RETURNING group_id`
+		query := `INSERT INTO groups (group_name, description, created_by)
+			VALUES ($1, $2, $3)
+			RETURNING group_id, created_at`
 
-		err := tx.QueryRow(ctx, query, name, description, ownerUserID, time.Now()).Scan(&groupID)
+		err := tx.QueryRow(ctx, query, group.Name, group.Description, group.CreatedBy).Scan(&group.GroupID, &group.CreatedAt)
 		if err != nil {
 			return fmt.Errorf("failed to insert group: %w", err)
 		}
@@ -46,7 +37,7 @@ func CreateGroup(ctx context.Context, pool *pgxpool.Pool, name, description, own
 		memberQuery := `INSERT INTO group_members (user_id, group_id, joined_at)
 			VALUES ($1, $2, $3)`
 
-		_, err = tx.Exec(ctx, memberQuery, ownerUserID, groupID, time.Now())
+		_, err = tx.Exec(ctx, memberQuery, group.CreatedBy, group.GroupID, time.Now())
 		if err != nil {
 			return fmt.Errorf("failed to add creator as member: %w", err)
 		}
@@ -54,32 +45,27 @@ func CreateGroup(ctx context.Context, pool *pgxpool.Pool, name, description, own
 		return nil
 	})
 	if err != nil {
-		return "", NewDBError("CreateGroup", err, "failed to create group")
+		return NewDBError("CreateGroup", err, "failed to create group")
 	}
 
-	log.Printf("[DB] Group created successfully with ID: %s", groupID)
-	return groupID, nil
+	return nil
 }
 
 // GetGroupCreator retrieves the user ID of the group creator.
 // This is a lightweight query that only returns the creator ID, useful for authorization checks.
 // Returns ErrGroupNotFound if no group with the ID exists.
 func GetGroupCreator(ctx context.Context, pool *pgxpool.Pool, groupID string) (string, error) {
-	log.Printf("[DB] Fetching group creator for group: %s", groupID)
-
 	var creatorID string
 	query := `SELECT created_by FROM groups WHERE group_id = $1`
 
 	err := pool.QueryRow(ctx, query, groupID).Scan(&creatorID)
 	if err == pgx.ErrNoRows {
-		log.Printf("[DB] Group not found: %s", groupID)
 		return "", ErrGroupNotFound
 	}
 	if err != nil {
 		return "", NewDBError("GetGroupCreator", err, "failed to query group creator")
 	}
 
-	log.Printf("[DB] Group creator retrieved: %s", creatorID)
 	return creatorID, nil
 }
 
@@ -87,8 +73,6 @@ func GetGroupCreator(ctx context.Context, pool *pgxpool.Pool, groupID string) (s
 // Returns a models.GroupDetails struct with full details and a list of all group members.
 // Returns ErrGroupNotFound if no group with the ID exists.
 func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.GroupDetails, error) {
-	log.Printf("[DB] Fetching group details: %s", groupID)
-
 	var group models.GroupDetails
 
 	// Fetch group basic information
@@ -105,7 +89,6 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.G
 	)
 
 	if err == pgx.ErrNoRows {
-		log.Printf("[DB] Group not found: %s", groupID)
 		return models.GroupDetails{}, ErrGroupNotFound
 	}
 	if err != nil {
@@ -141,7 +124,6 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.G
 		return models.GroupDetails{}, NewDBError("GetGroup", err, "error iterating member rows")
 	}
 
-	log.Printf("[DB] Group retrieved: %s with %d members", group.Name, len(group.Members))
 	return group, nil
 }
 
@@ -153,8 +135,6 @@ func AddGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, us
 	if len(userIDs) == 0 {
 		return ErrInvalidInput
 	}
-
-	log.Printf("[DB] Adding %d members to group: %s", len(userIDs), groupID)
 
 	// Build batch queries for all users
 	batch := &pgx.Batch{}
@@ -184,7 +164,6 @@ func AddGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, us
 		}
 	}
 
-	log.Printf("[DB] Successfully added %d members to group", len(userIDs))
 	return nil
 }
 
@@ -192,8 +171,6 @@ func AddGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, us
 // This is a convenience function for adding one member at a time.
 // Ignores duplicate memberships (ON CONFLICT DO NOTHING).
 func AddGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID string) error {
-	log.Printf("[DB] Adding member %s to group %s", userID, groupID)
-
 	query := `INSERT INTO group_members (user_id, group_id, joined_at)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (user_id, group_id) DO NOTHING`
@@ -203,15 +180,12 @@ func AddGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID str
 		return NewDBError("AddGroupMember", err, "failed to add member")
 	}
 
-	log.Printf("[DB] Member added to group")
 	return nil
 }
 
 // RemoveGroupMember removes a single user from a group.
 // Note: The database will handle cascading deletes for related expenses if configured.
 func RemoveGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID string) error {
-	log.Printf("[DB] Removing member %s from group %s", userID, groupID)
-
 	query := `DELETE FROM group_members
 		WHERE user_id = $1 AND group_id = $2`
 
@@ -222,11 +196,9 @@ func RemoveGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID 
 
 	// Check if any rows were affected
 	if result.RowsAffected() == 0 {
-		log.Printf("[DB] Member not found in group")
 		return ErrNotMember
 	}
 
-	log.Printf("[DB] Member removed from group")
 	return nil
 }
 
@@ -237,8 +209,6 @@ func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string,
 	if len(userIDs) == 0 {
 		return ErrInvalidInput
 	}
-
-	log.Printf("[DB] Removing %d members from group: %s", len(userIDs), groupID)
 
 	// Build batch queries for all users
 	batch := &pgx.Batch{}
@@ -267,6 +237,5 @@ func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string,
 		}
 	}
 
-	log.Printf("[DB] Successfully removed %d members from group", len(userIDs))
 	return nil
 }

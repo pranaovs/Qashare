@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/pranaovs/qashare/db"
@@ -29,13 +28,14 @@ func (h *UsersHandler) GetUser(c *gin.Context) {
 		return
 	}
 
-	err := db.UsersRelated(c.Request.Context(), h.pool, userID, qUserID)
+	// Do not allow access to user data if users are not related
+	related, err := db.UsersRelated(c.Request.Context(), h.pool, userID, qUserID)
 	if err != nil {
-		if errors.Is(err, db.ErrUsersNotRelated) {
-			c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if !related {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
 		return
 	}
 

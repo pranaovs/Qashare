@@ -32,34 +32,34 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	name, err := utils.ValidateName(request.Name)
+	user := models.User{}
+	var err error
+
+	user.Name, err = utils.ValidateName(request.Name)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	email, err := utils.ValidateEmail(request.Email)
+	user.Email, err = utils.ValidateEmail(request.Email)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	passwordHash, err := utils.HashPassword(request.Password)
+	*user.PasswordHash, err = utils.HashPassword(request.Password)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	userID, err := db.CreateUser(c.Request.Context(), h.pool, name, email, passwordHash)
+	err = db.CreateUser(c.Request.Context(), h.pool, &user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message": "user registered successfully",
-		"user_id": userID,
-	})
+	c.JSON(http.StatusOK, user)
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
