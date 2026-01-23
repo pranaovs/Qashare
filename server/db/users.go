@@ -23,9 +23,11 @@ import (
 func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) error {
 	// Check if user already exists with this email
 	_, err := GetUserFromEmail(ctx, pool, user.Email)
+
+	var query string
 	user.Guest = false
 
-	query := `INSERT INTO users (user_name, email, password_hash, is_guest)
+	query = `INSERT INTO users (user_name, email, password_hash, is_guest)
 		VALUES ($1, $2, $3, $4)
 		RETURNING user_id, extract(epoch from created_at)::bigint`
 
