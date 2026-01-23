@@ -16,7 +16,7 @@ import (
 
 // CreateUser inserts a new user into the database
 // The user must be a real autehnticated user, not a guest.
-// For guest users, use CreateGuestUser instead.
+// For guest users, use CreateGuest instead.
 // Takes a User model with Name, Email, and PasswordHash populated, and adds UserID and CreatedAt.
 // Returns ErrEmailAlreadyExists if a user with the email already exists.
 func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) error {
@@ -54,7 +54,7 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 	return nil
 }
 
-func CreateGuestUser(ctx context.Context, pool *pgxpool.Pool, email string) (models.User, error) {
+func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy string) (models.User, error) {
 	// Check if user already exists with this email
 	_, err := GetUserFromEmail(ctx, pool, email)
 	if err == nil {
@@ -71,16 +71,34 @@ func CreateGuestUser(ctx context.Context, pool *pgxpool.Pool, email string) (mod
 	user.Name, _, _ = strings.Cut(email, "@")
 	user.Guest = true
 
-	query := `INSERT INTO users (user_name, email, is_guest)
-		VALUES ($1, $2, $3)
-		RETURNING user_id, extract(epoch from created_at)::bigint`
-	err = pool.QueryRow(ctx, query, user.Name, user.Email, user.Guest).Scan(&user.UserID, &user.CreatedAt)
-	if err != nil {
-		// Check for duplicate key violation (race condition)
-		if IsDuplicateKey(err) {
-			return models.User{}, ErrEmailAlreadyExists
+	err = WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
+		// Insert the guest user
+		query := `INSERT INTO users (user_name, email, is_guest)
+			VALUES ($1, $2, $3)
+			RETURNING user_id, extract(epoch from created_at)::bigint`
+
+		err := tx.QueryRow(ctx, query, user.Name, user.Email, user.Guest).Scan(&user.UserID, &user.CreatedAt)
+		if err != nil {
+			// Check for duplicate key violation (race condition)
+			if IsDuplicateKey(err) {
+				return ErrEmailAlreadyExists
+			}
+			return NewDBError("CreateGuest", err, "failed to insert guest user")
 		}
-		return models.User{}, NewDBError("CreateUser", err, "failed to insert guest user")
+
+		// Record who added this guest user
+		query = `INSERT INTO guests (guest_user_id, added_by_user_id)
+			VALUES ($1, $2)`
+
+		_, err = tx.Exec(ctx, query, user.UserID, addedBy)
+		if err != nil {
+			return NewDBError("CreateGuest", err, "failed to record guest addition")
+		}
+
+		return nil
+	})
+	if err != nil {
+		return models.User{}, NewDBError("CreateGuest", err, "failed to create guest")
 	}
 
 	return user, nil

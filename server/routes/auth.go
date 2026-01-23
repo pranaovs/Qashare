@@ -14,4 +14,5 @@ func RegisterAuthRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 	router.POST("/register", handler.Register)
 	router.POST("/login", handler.Login)
 	router.GET("/me", middleware.RequireAuth(), handler.Me)
+	router.POST("/guest", middleware.RequireAuth(), handler.RegisterGuest)
 }
