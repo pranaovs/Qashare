@@ -47,7 +47,7 @@ func CreateExpense(
 			is_incomplete_amount, is_incomplete_split, latitude, longitude
 		)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		RETURNING expense_id, created_at`
+		RETURNING expense_id, extract(epoch from created_at)::bigint`
 
 		err := tx.QueryRow(
 			ctx,
