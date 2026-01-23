@@ -27,7 +27,7 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 	var ok bool
 	var err error
 
-	group.GroupID, ok = middleware.GetUserID(c)
+	group.CreatedBy, ok = middleware.GetUserID(c)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
