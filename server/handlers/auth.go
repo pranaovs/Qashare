@@ -139,7 +139,13 @@ func (h *AuthHandler) RegisterGuest(c *gin.Context) {
 		return
 	}
 
-	user, err := db.CreateGuest(c.Request.Context(), h.pool, request.Email, userID)
+	email, err := utils.ValidateEmail(request.Email)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := db.CreateGuest(c.Request.Context(), h.pool, email, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
