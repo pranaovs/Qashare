@@ -35,17 +35,18 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 		return NewDBError("CreateUser", err, "failed to check existing user")
 	}
 
-	// Update the existing guest user to become a regular user
-	if !existingUser.Guest {
-		query = `INSERT INTO users (user_name, email, password_hash, is_guest)
-		VALUES ($1, $2, $3, $4)
-		RETURNING user_id, extract(epoch from created_at)::bigint`
-	} else {
-		query = `UPDATE users
-		SET user_name = $1, password_hash = $3, is_guest = $4, created_at = NOW()
-		WHERE email = $2
-		RETURNING user_id, extract(epoch from created_at)::bigint`
-	}
+	err = WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
+		if existingUser.Guest {
+			// Update the existing guest user to become a regular user
+			query = `UPDATE users
+				SET user_name = $1, password_hash = $2, is_guest = $3, created_at = NOW()
+				WHERE email = $4
+				RETURNING user_id, extract(epoch from created_at)::bigint`
+
+			err = tx.QueryRow(ctx, query, user.Name, user.PasswordHash, user.Guest, user.Email).Scan(&user.UserID, &user.CreatedAt)
+			if err != nil {
+				return NewDBError("CreateUser", err, "failed to update guest user")
+			}
 
 			// Delete the guest entry since user is now promoted
 			deleteQuery := `DELETE FROM guests WHERE user_id = $1`
