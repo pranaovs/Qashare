@@ -22,28 +22,30 @@ import (
 // Returns ErrEmailAlreadyExists if a non-guest user with the email already exists.
 func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) error {
 	// Check if user already exists with this email
-	_, err := GetUserFromEmail(ctx, pool, user.Email)
+	existingUser, err := GetUserFromEmail(ctx, pool, user.Email)
 
 	var query string
 	user.Guest = false
-
-	query = `INSERT INTO users (user_name, email, password_hash, is_guest)
-		VALUES ($1, $2, $3, $4)
-		RETURNING user_id, extract(epoch from created_at)::bigint`
-
 	if err == nil {
 		// User already exists
 		return ErrEmailAlreadyExists
-	} else if err == ErrUserIsGuest {
-		// Update the existing guest user to become a regular user
-		query = `UPDATE users
-			SET user_name = $1, password_hash = $3, is_guest = $4, created_at = NOW()
-			WHERE email = $2
-			RETURNING user_id, extract(epoch from created_at)::bigint`
 	} else if err != ErrEmailNotRegistered {
 		// Some other database error occurred
 		return NewDBError("CreateUser", err, "failed to check existing user")
 	}
+
+	// Update the existing guest user to become a regular user
+	if !existingUser.Guest {
+		query = `INSERT INTO users (user_name, email, password_hash, is_guest)
+		VALUES ($1, $2, $3, $4)
+		RETURNING user_id, extract(epoch from created_at)::bigint`
+	} else {
+		query = `UPDATE users
+		SET user_name = $1, password_hash = $3, is_guest = $4, created_at = NOW()
+		WHERE email = $2
+		RETURNING user_id, extract(epoch from created_at)::bigint`
+	}
+
 	err = pool.QueryRow(ctx, query, user.Name, user.Email, user.PasswordHash, user.Guest).Scan(&user.UserID, &user.CreatedAt)
 	if err != nil {
 		// Check for duplicate key violation (race condition)
