@@ -19,7 +19,7 @@ import (
 // This operation is atomic - either both the group creation and membership addition succeed,
 // or neither does (using a transaction).
 // Takes a Group model with Name, Description, and CreatedBy populated, and adds GroupID and CreatedAt.
-// Returns the newly created group's ID or an error if the operation fails.
+// Returns an error if the operation fails. The group's GroupID and CreatedAt fields will be populated upon success.
 func CreateGroup(ctx context.Context, pool *pgxpool.Pool, group *models.Group) error {
 	// Use WithTransaction helper for consistent transaction management
 	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
