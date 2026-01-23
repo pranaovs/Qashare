@@ -71,7 +71,7 @@ func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy 
 		return models.User{}, ErrEmailAlreadyExists
 	} else if err != ErrEmailNotRegistered {
 		// Some other database error occurred
-		return models.User{}, NewDBError("CreateUser", err, "failed to check existing user")
+		return models.User{}, NewDBError("CreateGuest", err, "failed to check existing user")
 	}
 
 	var user models.User
