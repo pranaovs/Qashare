@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/pranaovs/qashare/models"
 
@@ -30,30 +29,25 @@ import (
 func CreateExpense(
 	ctx context.Context,
 	pool *pgxpool.Pool,
-	expense models.ExpenseDetails,
-) (string, error) {
+	expense *models.ExpenseDetails,
+) error {
 	// Validate input
 	if expense.Title == "" {
-		return "", ErrTitleRequired
+		return ErrTitleRequired
 	}
 	if !expense.IsIncompleteAmount && expense.Amount <= 0 {
-		return "", ErrInvalidAmount
+		return ErrInvalidAmount
 	}
-
-	log.Printf("[DB] Creating expense: %s (amount: %.2f, group: %s)",
-		expense.Title, expense.Amount, expense.GroupID)
-
-	var expenseID string
 
 	// Use WithTransaction helper for consistent transaction management
 	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
 		// Insert expense record
 		insertQuery := `INSERT INTO expenses (
 			group_id, added_by, title, description, amount,
-			is_incomplete_amount, is_incomplete_split, latitude, longitude, created_at
+			is_incomplete_amount, is_incomplete_split, latitude, longitude
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-		RETURNING expense_id`
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		RETURNING expense_id, extract(epoch from created_at)::bigint`
 
 		err := tx.QueryRow(
 			ctx,
@@ -67,8 +61,7 @@ func CreateExpense(
 			expense.IsIncompleteSplit,
 			expense.Latitude,
 			expense.Longitude,
-			time.Now(),
-		).Scan(&expenseID)
+		).Scan(&expense.ExpenseID, &expense.CreatedAt)
 		if err != nil {
 			return fmt.Errorf("failed to insert expense: %w", err)
 		}
@@ -80,7 +73,7 @@ func CreateExpense(
 				VALUES ($1, $2, $3, $4)`
 
 			for _, split := range expense.Splits {
-				batch.Queue(splitQuery, expenseID, split.UserID, split.Amount, split.IsPaid)
+				batch.Queue(splitQuery, expense.ExpenseID, split.UserID, split.Amount, split.IsPaid)
 			}
 
 			br := tx.SendBatch(ctx, batch)
@@ -96,18 +89,15 @@ func CreateExpense(
 					return fmt.Errorf("failed to insert split %d of %d: %w", i+1, len(expense.Splits), err)
 				}
 			}
-
-			log.Printf("[DB] Inserted %d splits for expense", len(expense.Splits))
 		}
 
 		return nil
 	})
 	if err != nil {
-		return "", NewDBError("CreateExpense", err, "failed to create expense")
+		return NewDBError("CreateExpense", err, "failed to create expense")
 	}
 
-	log.Printf("[DB] Expense created successfully with ID: %s", expenseID)
-	return expenseID, nil
+	return nil
 }
 
 // UpdateExpense updates an existing expense and replaces all its splits.
@@ -116,7 +106,7 @@ func CreateExpense(
 //
 // The old splits are deleted and replaced with the new splits provided.
 // Returns an error if validation fails or the operation fails.
-func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.ExpenseDetails) error {
+func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.ExpenseDetails) error {
 	// Validate input
 	if expense.ExpenseID == "" {
 		return ErrExpenseIDRequired
@@ -127,8 +117,6 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expen
 	if !expense.IsIncompleteAmount && expense.Amount <= 0 {
 		return ErrInvalidAmount
 	}
-
-	log.Printf("[DB] Updating expense: %s (ID: %s)", expense.Title, expense.ExpenseID)
 
 	// Use WithTransaction helper for consistent transaction management
 	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
@@ -197,7 +185,6 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expen
 				}
 			}
 
-			log.Printf("[DB] Updated %d splits for expense", len(expense.Splits))
 		}
 
 		return nil
@@ -206,15 +193,12 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense models.Expen
 		return NewDBError("UpdateExpense", err, "failed to update expense")
 	}
 
-	log.Printf("[DB] Expense updated successfully: %s", expense.ExpenseID)
 	return nil
 }
 
 // GetExpense retrieves a complete expense record including all its splits.
 // Returns ErrExpenseNotFound if no expense with the ID exists.
 func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (models.ExpenseDetails, error) {
-	log.Printf("[DB] Fetching expense: %s", expenseID)
-
 	var expense models.ExpenseDetails
 
 	// Fetch expense details
@@ -246,7 +230,6 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 		&expense.Longitude,
 	)
 	if err == pgx.ErrNoRows {
-		log.Printf("[DB] Expense not found: %s", expenseID)
 		return models.ExpenseDetails{}, ErrExpenseNotFound
 	}
 	if err != nil {
@@ -282,7 +265,6 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 		return models.ExpenseDetails{}, NewDBError("GetExpense", err, "error iterating split rows")
 	}
 
-	log.Printf("[DB] Expense retrieved: %s with %d splits", expense.Title, len(expense.Splits))
 	return expense, nil
 }
 
@@ -291,8 +273,6 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 // Note: The database will handle cascading deletes for expense_splits if configured.
 // Returns ErrExpenseNotFound if no expense with the ID exists.
 func DeleteExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) error {
-	log.Printf("[DB] Deleting expense: %s", expenseID)
-
 	// Use WithTransaction helper for consistent transaction management
 	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
 		// Delete the expense (splits will be cascade deleted)
@@ -314,6 +294,5 @@ func DeleteExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) er
 		return NewDBError("DeleteExpense", err, "failed to delete expense")
 	}
 
-	log.Printf("[DB] Expense deleted successfully: %s", expenseID)
 	return nil
 }

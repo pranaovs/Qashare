@@ -7,6 +7,7 @@ import (
 
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/middleware"
+	"github.com/pranaovs/qashare/models"
 	"github.com/pranaovs/qashare/utils"
 
 	"github.com/gin-gonic/gin"
@@ -22,7 +23,11 @@ func NewGroupsHandler(pool *pgxpool.Pool) *GroupsHandler {
 }
 
 func (h *GroupsHandler) Create(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
+	group := models.Group{}
+	var ok bool
+	var err error
+
+	group.CreatedBy, ok = middleware.GetUserID(c)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
@@ -38,19 +43,20 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	name, err := utils.ValidateName(request.Name)
+	group.Name, err = utils.ValidateName(request.Name)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	groupID, err := db.CreateGroup(c.Request.Context(), h.pool, name, request.Description, userID)
+	group.Description = request.Description
+	err = db.CreateGroup(c.Request.Context(), h.pool, &group)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"group_id": groupID})
+	c.JSON(http.StatusOK, group)
 }
 
 func (h *GroupsHandler) ListUserGroups(c *gin.Context) {

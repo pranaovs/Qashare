@@ -79,13 +79,13 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 		}
 	}
 
-	expenseID, err := db.CreateExpense(c.Request.Context(), h.pool, expense)
+	err := db.CreateExpense(c.Request.Context(), h.pool, &expense)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"expense_id": expenseID})
+	c.JSON(http.StatusOK, expense)
 }
 
 func (h *ExpensesHandler) GetExpense(c *gin.Context) {
@@ -183,7 +183,7 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 		}
 	}
 
-	if err := db.UpdateExpense(c.Request.Context(), h.pool, payload); err != nil {
+	if err := db.UpdateExpense(c.Request.Context(), h.pool, &payload); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
