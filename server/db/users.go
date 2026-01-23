@@ -26,8 +26,9 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 
 	var query string
 	user.Guest = false
-	if err == nil {
-		// User already exists
+
+	if err == nil && !existingUser.Guest {
+		// Non-guest user already exists
 		return ErrEmailAlreadyExists
 	} else if err != ErrEmailNotRegistered {
 		// Some other database error occurred
@@ -46,13 +47,32 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 		RETURNING user_id, extract(epoch from created_at)::bigint`
 	}
 
-	err = pool.QueryRow(ctx, query, user.Name, user.Email, user.PasswordHash, user.Guest).Scan(&user.UserID, &user.CreatedAt)
-	if err != nil {
-		// Check for duplicate key violation (race condition)
-		if IsDuplicateKey(err) {
-			return ErrEmailAlreadyExists
+			// Delete the guest entry since user is now promoted
+			deleteQuery := `DELETE FROM guests WHERE user_id = $1`
+			_, err = tx.Exec(ctx, deleteQuery, user.UserID)
+			if err != nil {
+				return NewDBError("CreateUser", err, "failed to delete guest entry")
+			}
+		} else {
+			// Insert new user (no existing user found)
+			query = `INSERT INTO users (user_name, email, password_hash, is_guest)
+				VALUES ($1, $2, $3, $4)
+				RETURNING user_id, extract(epoch from created_at)::bigint`
+
+			err = tx.QueryRow(ctx, query, user.Name, user.Email, user.PasswordHash, user.Guest).Scan(&user.UserID, &user.CreatedAt)
+			if err != nil {
+				// Check for duplicate key violation (race condition)
+				if IsDuplicateKey(err) {
+					return ErrEmailAlreadyExists
+				}
+				return NewDBError("CreateUser", err, "failed to insert user")
+			}
 		}
-		return NewDBError("CreateUser", err, "failed to insert user")
+
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	user.PasswordHash = nil // Remove password hash after insertion
@@ -70,12 +90,9 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 // May return a DBError (via NewDBError) if any database operation fails.
 func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy string) (models.User, error) {
 	// Check if user already exists with this email
-	existing, err := GetUserFromEmail(ctx, pool, email)
+	_, err := GetUserFromEmail(ctx, pool, email)
 	if err == nil {
-		// User already exists
 		return models.User{}, ErrEmailAlreadyExists
-	} else if err == ErrUserIsGuest {
-		return existing, nil // Guest user already exists, return it
 	} else if err != ErrEmailNotRegistered {
 		// Some other database error occurred
 		return models.User{}, NewDBError("CreateGuest", err, "failed to check existing user")
