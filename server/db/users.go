@@ -112,7 +112,7 @@ func GetUser(ctx context.Context, pool *pgxpool.Pool, userID string) (models.Use
 // Two users are considered related if they share at least one group.
 // This is useful for privacy checks to ensure users can only see information
 // about other users they're connected to through groups.
-// Returns nil if users are related, or ErrUsersNotRelated if not.
+// Returns true if users are related, false otherwise, and an error if the check fails.
 func UsersRelated(ctx context.Context, pool *pgxpool.Pool, userID1, userID2 string) (bool, error) {
 	// Query to check if users share at least one group
 	query := `
