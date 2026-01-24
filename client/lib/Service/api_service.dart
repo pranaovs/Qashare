@@ -92,7 +92,7 @@ class ApiService {
         }),
       );
 
-      //Sucess
+      //Success
       if (response.statusCode==200){
         final data = jsonDecode(response.body);
         return LoginResult.success(
