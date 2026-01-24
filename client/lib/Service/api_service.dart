@@ -146,7 +146,7 @@ class ApiService {
   }
 
   //====================DISPLAY GROUP============
-  static Future<GroupListResult> displayGroup(token) async {
+  static Future<GroupListResult> displayGroup(String token) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/me");
 
     try {
@@ -181,7 +181,7 @@ class ApiService {
 
       return GroupListResult.error("Unexpected error (${response.statusCode})");
     } catch (e) {
-      return GroupListResult.error(e.toString());
+      return GroupListResult.error("Unable to connect to server");
     }
   }
 
