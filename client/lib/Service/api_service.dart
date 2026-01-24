@@ -47,10 +47,17 @@ class ApiService {
         );
       }
 
-      // ❌ DUPLICATE / DB ERROR
+      // ❌ USER ALREADY EXISTS
+      if (response.statusCode == 409) {
+        return RegisterResult.error(
+          "User already exists.",
+        );
+      }
+
+      // ❌ SERVER ERROR
       if (response.statusCode == 500) {
         return RegisterResult.error(
-          "User already exists or server error.",
+          "Server error. Try again later.",
         );
       }
 
