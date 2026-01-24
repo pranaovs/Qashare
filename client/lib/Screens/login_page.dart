@@ -183,7 +183,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _showServerDialog() {
-    final controller = TextEditingController(text: "devbox:8080");
+    final controller = TextEditingController(text: "$_serverUrl");
 
     showDialog(
       context: context,
