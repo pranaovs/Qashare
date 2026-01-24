@@ -10,7 +10,6 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -25,7 +24,10 @@ class _LoginPageState extends State<LoginPage> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40,vertical: 100.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 40,
+              vertical: 100.0,
+            ),
             child: Form(
               key: _formKey,
               child: Column(
@@ -144,15 +146,18 @@ class _LoginPageState extends State<LoginPage> {
                         Icon(
                           Icons.dns,
                           size: 16,
-                          color:Theme.of(context).colorScheme.onSurfaceVariant ,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Server: ${_serverUrl.isEmpty ? "Not configured" : _serverUrl}',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -167,9 +172,6 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                   ),
-
-
-
                 ],
               ),
             ),
@@ -178,7 +180,6 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-
 
   void _showServerDialog() {
     final controller = TextEditingController(text: "devbox:8080");
@@ -268,7 +269,6 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;

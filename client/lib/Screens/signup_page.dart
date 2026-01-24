@@ -9,7 +9,6 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
-
   void _showSuccess(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -29,8 +28,6 @@ class _SignupPageState extends State<SignupPage> {
       ),
     );
   }
-
-
 
   final _formKey = GlobalKey<FormState>();
 
@@ -207,12 +204,16 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                       child: _isLoading
                           ? const CircularProgressIndicator(
-                          color: Colors.white, strokeWidth: 2)
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            )
                           : const Text(
-                        "Sign Up",
-                        style:
-                        TextStyle(color: Colors.white, fontSize: 16),
-                      ),
+                              "Sign Up",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                            ),
                     ),
                   ),
 
@@ -267,7 +268,6 @@ class _SignupPageState extends State<SignupPage> {
       _showError(result.errorMessage ?? "Signup failed");
     }
   }
-
 
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
