@@ -42,11 +42,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: const Text("Profile", style: TextStyle(color: Colors.white)),
-      ),
+      appBar: AppBar(title: const Text("Profile")),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _result!.isSuccess
@@ -66,62 +62,55 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-
-            const CircleAvatar(radius: 60, child: Icon(Icons.person, size: 50)),
-
+            const CircleAvatar(radius: 60, child: Icon(Icons.person, size: 80)),
             const SizedBox(height: 25),
-
-            // -------- NAME --------
             Text(
               _result!.name ?? "",
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-
             const SizedBox(height: 10),
-
-            // -------- EMAIL --------
             Text(
               _result!.email ?? "",
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.outline,
+              ),
             ),
-
             const SizedBox(height: 30),
-
-            // -------- MEMBER SINCE --------
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.calendar_month,
-                  color: Colors.white70,
+                  color: Theme.of(context).colorScheme.outline,
                   size: 18,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   "Member since ${_formatDate(joinedDate)}",
-                  style: const TextStyle(color: Colors.white70),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
               ],
             ),
-
             const Spacer(),
-            // -------- LOGOUT BUTTON --------
             SizedBox(
               width: double.infinity,
               height: 45,
               child: OutlinedButton.icon(
                 onPressed: _confirmLogout,
-                icon: const Icon(Icons.logout, color: Colors.redAccent),
-                label: const Text(
+                icon: Icon(
+                  Icons.logout,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                label: Text(
                   "Logout",
-                  style: TextStyle(color: Colors.redAccent),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.redAccent),
+                  side: BorderSide(color: Theme.of(context).colorScheme.error),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -138,24 +127,23 @@ class _ProfilePageState extends State<ProfilePage> {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: Colors.black,
-        title: const Text("Logout", style: TextStyle(color: Colors.white)),
-        content: const Text(
-          "Are you sure you want to logout?",
-          style: TextStyle(color: Colors.white),
-        ),
+        title: const Text("Logout"),
+        content: const Text("Are you sure you want to logout?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel", style: TextStyle(color: Colors.white)),
+            child: const Text("Cancel"),
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context); // close dialog
-              _handleLogout(); // perform logout
+              Navigator.pop(context);
+              _handleLogout();
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text("Logout", style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text("Logout"),
           ),
         ],
       ),
@@ -168,9 +156,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _handleLogout() async {
     await TokenStorage.clear();
-
     if (!mounted) return;
-
     Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
   }
 
@@ -178,7 +164,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Center(
       child: Text(
         _result!.errorMessage ?? "Error",
-        style: const TextStyle(color: Colors.red),
+        style: TextStyle(color: Theme.of(context).colorScheme.error),
       ),
     );
   }
