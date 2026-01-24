@@ -36,7 +36,10 @@ class _HomePageState extends State<HomePage> {
         ],
       ) ,
       body: Center(
-        child: Text("Home Page"),
+        child: const Text(
+          "Home Page",
+          style: TextStyle(color: Colors.white),
+        ),
       ),
     ); 
   }
