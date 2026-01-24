@@ -250,7 +250,7 @@ class _SignupPageState extends State<SignupPage> {
     final result = await ApiService.registerUser(
       username: _usernameController.text.trim(),
       name: _nameController.text.trim(),
-      email: _emailController.text.trim(),
+      email: _emailController.text.trim().toLowerCase(),
       password: _passwordController.text,
     );
 
