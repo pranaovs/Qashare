@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/utils"
 )
@@ -55,39 +54,38 @@ func ConnectWithConfig(config DBConfig) (*pgxpool.Pool, error) {
 	}
 
 	dbName := strings.TrimPrefix(parsedURL.Path, "/")
-
-	// Try to connect to the database
 	log.Printf("[DB] Attempting to connect to database: %s", dbName)
+
 	pool, err := createPool(ctx, config)
 	if err != nil {
-		// Check if error is due to database not existing
-		if strings.Contains(err.Error(), "database") && strings.Contains(err.Error(), "does not exist") {
-			log.Printf("[DB] Database '%s' does not exist, attempting to create it", dbName)
-
-			// Try to create the database
-			if createErr := createDatabase(config.URL, dbName); createErr != nil {
-				return nil, fmt.Errorf("failed to create database: %w", createErr)
-			}
-
-			// Retry connection after creating database
-			log.Printf("[DB] Retrying connection after database creation")
-			pool, err = createPool(ctx, config)
-			if err != nil {
-				return nil, fmt.Errorf("failed to connect after database creation: %w", err)
-			}
-		} else {
-			return nil, fmt.Errorf("failed to connect to database: %w", err)
-		}
+		return nil, fmt.Errorf("failed to create connection pool: %w", err)
 	}
 
-	// Verify connection with ping
-	if err := pool.Ping(ctx); err != nil {
+	// Verify database connectivity and existence
+	if err := VerifyDatabase(ctx, pool, dbName); err != nil {
 		pool.Close()
-		return nil, fmt.Errorf("failed to ping database: %w", err)
+		return nil, err
 	}
 
 	log.Printf("[DB] Successfully connected to database: %s", dbName)
 	return pool, nil
+}
+
+func VerifyDatabase(ctx context.Context, pool *pgxpool.Pool, dbName string) error {
+	if pool == nil {
+		return fmt.Errorf("connection pool is nil")
+	}
+
+	if err := pool.Ping(ctx); err != nil {
+		// pgx wraps server errors; keep message intact for operators
+		return fmt.Errorf(
+			"database verification failed for '%s': %w",
+			dbName,
+			err,
+		)
+	}
+
+	return nil
 }
 
 // createPool creates a new connection pool with the provided configuration
@@ -105,54 +103,6 @@ func createPool(ctx context.Context, config DBConfig) (*pgxpool.Pool, error) {
 	poolConfig.HealthCheckPeriod = config.HealthCheckPeriod
 
 	return pgxpool.NewWithConfig(ctx, poolConfig)
-}
-
-// createDatabase attempts to create a new database by connecting to the 'postgres' maintenance database
-func createDatabase(dbURL, dbName string) error {
-	// Parse URL and replace database name with 'postgres' to connect to maintenance DB
-	parsedURL, err := url.Parse(dbURL)
-	if err != nil {
-		return fmt.Errorf("failed to parse database URL: %w", err)
-	}
-
-	parsedURL.Path = "/postgres"
-	maintenanceURL := parsedURL.String()
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-
-	// Connect to postgres database
-	conn, err := pgx.Connect(ctx, maintenanceURL)
-	if err != nil {
-		return fmt.Errorf("failed to connect to maintenance database: %w", err)
-	}
-	defer func() {
-		if err := conn.Close(ctx); err != nil {
-			log.Printf("[DB] Warning: failed to close maintenance DB connection: %v", err)
-		}
-	}()
-
-	// Sanitize database name to prevent SQL injection
-	// Database names must be valid PostgreSQL identifiers
-	sanitizedName := sanitizeIdentifier(dbName)
-	createDBSQL := fmt.Sprintf("CREATE DATABASE %s", sanitizedName)
-
-	_, err = conn.Exec(ctx, createDBSQL)
-	if err != nil {
-		return fmt.Errorf("failed to execute CREATE DATABASE: %w", err)
-	}
-
-	log.Printf("[DB] Successfully created database: %s", dbName)
-	return nil
-}
-
-// sanitizeIdentifier properly quotes a PostgreSQL identifier (table/database name)
-// to prevent SQL injection and handle special characters
-func sanitizeIdentifier(name string) string {
-	// Replace any double quotes with escaped double quotes
-	escaped := strings.ReplaceAll(name, `"`, `""`)
-	// Quote the identifier
-	return fmt.Sprintf(`"%s"`, escaped)
 }
 
 // Close gracefully closes the database connection pool

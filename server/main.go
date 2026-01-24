@@ -46,9 +46,9 @@ func initDatabase() (*pgxpool.Pool, error) {
 	log.Println("[INIT] Initializing database connection...")
 
 	// Get database configuration from environment
-	dbURL := utils.GetEnv("DB_URL", "postgres://postgres:postgres@localhost:5432/shared_expenses")
+	dbURL := utils.GetEnv("DB_URL", "postgres://postgres:postgres@localhost:5432/qashare")
 
-	// Connect to database (will auto-create if not exists)
+	// Connects to the PostgreSQL database using the provided URL. The database must already exist.
 	pool, err := db.Connect(dbURL)
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func initDatabase() (*pgxpool.Pool, error) {
 	log.Println("[INIT] Database health check passed")
 
 	// Run migrations
-	migrationsDir := utils.GetEnv("DB_MIGRATIONS_DIR", "db/migrations")
+	migrationsDir := utils.GetEnv("DB_MIGRATIONS_DIR", "migrations")
 	if err := db.Migrate(pool, migrationsDir); err != nil {
 		db.Close(pool)
 		return nil, err
