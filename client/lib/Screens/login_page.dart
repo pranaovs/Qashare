@@ -289,6 +289,7 @@ class _LoginPageState extends State<LoginPage> {
       await TokenStorage.saveToken(result.token!);
 
       Future.delayed(const Duration(milliseconds: 800), () {
+        if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/home');
       });
     } else {
