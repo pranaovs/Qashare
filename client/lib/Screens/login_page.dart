@@ -65,10 +65,6 @@ class _LoginPageState extends State<LoginPage> {
                       if (value == null || value.isEmpty) {
                         return "Enter Email";
                       }
-                      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                      if (!emailRegex.hasMatch(value)) {
-                        return "Enter a valid email";
-                      }
                       return null;
                     },
                   ),
@@ -279,13 +275,15 @@ class _LoginPageState extends State<LoginPage> {
     if (!_formKey.currentState!.validate()) return;
 
     final result = await ApiService.loginUser(
-      email: _usernameController.text.trim().toLowerCase(),
+      email: _usernameController.text.trim(),
       password: _passwordController.text,
     );
 
     if (result.isSuccess) {
       _showSuccess("Login successful");
 
+      // Store JWT token securely via TokenStorage (FlutterSecureStorage).
+      // TODO: Consider additional hardening (e.g., biometrics or token rotation) if required.
       await TokenStorage.saveToken(result.token!);
 
       Future.delayed(const Duration(milliseconds: 800), () {
