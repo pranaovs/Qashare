@@ -119,9 +119,11 @@ class _SignupPageState extends State<SignupPage> {
                       if (value == null || value.trim().isEmpty) {
                         return "Enter email";
                       }
-                      final email = value.trim().toLowerCase();
-                      if (!email.endsWith("@gmail.com")) {
-                        return "Only Gmail addresses allowed";
+                      final email = value.trim();
+                      // Basic email format validation allowing any domain
+                      final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                      if (!emailRegex.hasMatch(email)) {
+                        return "Enter a valid email address";
                       }
                       return null;
                     },
