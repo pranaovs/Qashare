@@ -2,6 +2,7 @@ import "package:http/http.dart" as http;
 import 'package:qashare/Config/api_config.dart';
 import 'dart:convert';
 import 'package:qashare/Models/auth_model.dart';
+import 'package:qashare/Models/group_model.dart';
 import 'package:qashare/Models/user_models.dart';
 
 class ApiService {
@@ -107,6 +108,7 @@ class ApiService {
     }
   }
 
+  //======================GET USER PROFILE===============
   static Future<UserResult> getCurrentUser(String token) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/auth/me");
 
@@ -140,6 +142,84 @@ class ApiService {
       return UserResult.error("Unexpected error (${response.statusCode})");
     } catch (e) {
       return UserResult.error("Unable to connect to server");
+    }
+  }
+
+  //====================DISPLAY GROUP============
+  static Future<GroupListResult> displayGroup(token) async {
+    final url = Uri.parse("${ApiConfig.baseUrl}/groups/me");
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final decode = jsonDecode(response.body);
+
+        if (decode == null) {
+          return GroupListResult.success([]);
+        }
+
+        final List data = decode as List;
+
+        final groups = data.map((item) => Group.fromJson(item)).toList();
+        return GroupListResult.success(groups);
+      }
+
+      if (response.statusCode == 401) {
+        return GroupListResult.error("Session expired. Please login again.");
+      }
+
+      if (response.statusCode == 500) {
+        return GroupListResult.error("Server error. Try again later.");
+      }
+
+      return GroupListResult.error("Unexpected error (${response.statusCode})");
+    } catch (e) {
+      return GroupListResult.error(e.toString());
+    }
+  }
+
+  //=============CREATE GROUP===============
+  static Future<GroupCreateResult> createGroup({
+    required String token,
+    required String name,
+    required String description,
+  }) async {
+    final url = Uri.parse("${ApiConfig.baseUrl}/groups/");
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({"name": name, "description": description}),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final group = Group.fromJson(data);
+        return GroupCreateResult.success(group);
+      }
+      if (response.statusCode == 400) {
+        return GroupCreateResult.error("Invalid request data");
+      }
+      if (response.statusCode == 401) {
+        return GroupCreateResult.error("Session expired. Please login again.");
+      }
+      if (response.statusCode == 500) {
+        return GroupCreateResult.error("Server error. Try again later.");
+      }
+      return GroupCreateResult.error(
+        "Unexpected error (${response.statusCode})",
+      );
+    } catch (e) {
+      return GroupCreateResult.error("Unable to connect to server");
     }
   }
 }

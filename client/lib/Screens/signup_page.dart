@@ -13,7 +13,8 @@ class _SignupPageState extends State<SignupPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: Colors.green,
+        backgroundColor: Theme.of(context).colorScheme.error,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -23,7 +24,9 @@ class _SignupPageState extends State<SignupPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: Colors.redAccent,
+        duration: Duration(milliseconds: 800),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -44,7 +47,6 @@ class _SignupPageState extends State<SignupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -56,22 +58,22 @@ class _SignupPageState extends State<SignupPage> {
                 children: [
                   const SizedBox(height: 60),
 
-                  const Text(
+                  Text(
                     "Create Account",
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 36,
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
 
                   const SizedBox(height: 8),
 
-                  const Text(
+                  Text(
                     "Sign up to get started",
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                   ),
 
                   const SizedBox(height: 30),
@@ -79,7 +81,6 @@ class _SignupPageState extends State<SignupPage> {
                   // -------- NAME --------
                   TextFormField(
                     controller: _nameController,
-                    style: const TextStyle(color: Colors.white),
                     decoration: _inputDecoration("Full Name"),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -94,7 +95,6 @@ class _SignupPageState extends State<SignupPage> {
                   // -------- USERNAME --------
                   TextFormField(
                     controller: _usernameController,
-                    style: const TextStyle(color: Colors.white),
                     decoration: _inputDecoration("Username"),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -110,7 +110,6 @@ class _SignupPageState extends State<SignupPage> {
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    style: const TextStyle(color: Colors.white),
                     decoration: _inputDecoration("Email"),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -132,14 +131,12 @@ class _SignupPageState extends State<SignupPage> {
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscure1,
-                    style: const TextStyle(color: Colors.white),
                     decoration: _inputDecoration("Password").copyWith(
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscure1
                               ? Icons.visibility_outlined
                               : Icons.visibility_off_outlined,
-                          color: Colors.white70,
                         ),
                         onPressed: () {
                           setState(() => _obscure1 = !_obscure1);
@@ -163,14 +160,12 @@ class _SignupPageState extends State<SignupPage> {
                   TextFormField(
                     controller: _confirmPasswordController,
                     obscureText: _obscure2,
-                    style: const TextStyle(color: Colors.white),
                     decoration: _inputDecoration("Confirm Password").copyWith(
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscure2
                               ? Icons.visibility_outlined
                               : Icons.visibility_off_outlined,
-                          color: Colors.white70,
                         ),
                         onPressed: () {
                           setState(() => _obscure2 = !_obscure2);
@@ -197,22 +192,19 @@ class _SignupPageState extends State<SignupPage> {
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _handleSignup,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onPrimary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: _isLoading
-                          ? const CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            )
+                          ? const CircularProgressIndicator(strokeWidth: 2)
                           : const Text(
                               "Sign Up",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
+                              style: TextStyle(fontSize: 16),
                             ),
                     ),
                   ),
@@ -222,9 +214,11 @@ class _SignupPageState extends State<SignupPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         "Already have an account?",
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context),
@@ -273,21 +267,20 @@ class _SignupPageState extends State<SignupPage> {
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white70),
       enabledBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Colors.white38),
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
         borderRadius: BorderRadius.circular(12),
       ),
       focusedBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Colors.blue),
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
         borderRadius: BorderRadius.circular(12),
       ),
       errorBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Colors.redAccent),
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
         borderRadius: BorderRadius.circular(12),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Colors.redAccent),
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
         borderRadius: BorderRadius.circular(12),
       ),
     );

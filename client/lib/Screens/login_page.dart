@@ -21,7 +21,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
@@ -36,22 +35,22 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const SizedBox(height: 80),
 
-                  const Text(
+                  Text(
                     "Welcome back",
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 40,
+                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
 
                   const SizedBox(height: 10),
 
-                  const Text(
+                  Text(
                     "Login into your account",
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                   ),
 
                   const SizedBox(height: 40),
@@ -59,7 +58,6 @@ class _LoginPageState extends State<LoginPage> {
                   // Username
                   TextFormField(
                     controller: _usernameController,
-                    style: const TextStyle(color: Colors.white),
                     decoration: _inputDecoration("Email"),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -75,14 +73,12 @@ class _LoginPageState extends State<LoginPage> {
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscure,
-                    style: const TextStyle(color: Colors.white),
                     decoration: _inputDecoration("Password").copyWith(
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscure
                               ? Icons.visibility_outlined
                               : Icons.visibility_off_outlined,
-                          color: Colors.white70,
                         ),
                         onPressed: () {
                           setState(() => _obscure = !_obscure);
@@ -106,14 +102,17 @@ class _LoginPageState extends State<LoginPage> {
                     child: ElevatedButton(
                       onPressed: _handleLogin,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onPrimary,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadiusGeometry.circular(16),
                         ),
                       ),
                       child: const Text(
                         "Login",
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                        style: TextStyle(fontSize: 16),
                       ),
                     ),
                   ),
@@ -123,9 +122,11 @@ class _LoginPageState extends State<LoginPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         "Don't have an account?",
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
                       ),
                       TextButton(
                         onPressed: () {
@@ -139,7 +140,7 @@ class _LoginPageState extends State<LoginPage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.black26,
+                      color: Theme.of(context).colorScheme.surfaceVariant,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -183,7 +184,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _showServerDialog() {
-    final controller = TextEditingController(text: "$_serverUrl");
+    final controller = TextEditingController(text: _serverUrl);
 
     showDialog(
       context: context,
@@ -215,6 +216,11 @@ class _LoginPageState extends State<LoginPage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text("Server set to $server"),
+                      backgroundColor: Theme.of(context).colorScheme.error,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      duration: const Duration(milliseconds: 1000),
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
@@ -231,21 +237,20 @@ class _LoginPageState extends State<LoginPage> {
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Colors.white70),
       enabledBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Colors.white38),
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
         borderRadius: BorderRadius.circular(12),
       ),
       focusedBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Colors.blue),
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
         borderRadius: BorderRadius.circular(12),
       ),
       errorBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Colors.redAccent),
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
         borderRadius: BorderRadius.circular(12),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Colors.redAccent),
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.error),
         borderRadius: BorderRadius.circular(12),
       ),
     );
@@ -255,7 +260,9 @@ class _LoginPageState extends State<LoginPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: Colors.green,
+        backgroundColor: Theme.of(context).colorScheme.error,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: Duration(milliseconds: 1000),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -265,7 +272,9 @@ class _LoginPageState extends State<LoginPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: Colors.redAccent,
+        duration: Duration(milliseconds: 1000),
+        backgroundColor: Theme.of(context).colorScheme.error,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
       ),
     );
