@@ -3,33 +3,31 @@ import 'package:qashare/Config/api_config.dart';
 import 'dart:convert';
 import 'package:qashare/Models/auth_model.dart';
 
-
 class ApiService {
   // ================= REGISTER =================
   static Future<RegisterResult> registerUser({
     required String username,
     required String name,
     required String email,
-    required String password}) async {
-
-    final url= Uri.parse("${ApiConfig.baseUrl}/auth/register");
+    required String password,
+  }) async {
+    final url = Uri.parse("${ApiConfig.baseUrl}/auth/register");
 
     try {
-      final response = await http.post(url,
-        headers: {
-        "Content-Type":"application/json",
-        },
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "username":username,
-          "name":name,
-          "email":email,
-          "password":password
+          "username": username,
+          "name": name,
+          "email": email,
+          "password": password,
         }),
       );
 
       //Success
-      if (response.statusCode==200){
-        final data=jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
 
         return RegisterResult.success(
           userId: data["user_id"],
@@ -49,26 +47,17 @@ class ApiService {
 
       // ❌ USER ALREADY EXISTS
       if (response.statusCode == 409) {
-        return RegisterResult.error(
-          "User already exists.",
-        );
+        return RegisterResult.error("User already exists.");
       }
 
       // ❌ SERVER ERROR
       if (response.statusCode == 500) {
-        return RegisterResult.error(
-          "Server error. Try again later.",
-        );
+        return RegisterResult.error("Server error. Try again later.");
       }
 
-      return RegisterResult.error(
-        "Unexpected error (${response.statusCode})",
-      );
-
-    }catch(e){
-      return RegisterResult.error(
-        "Cannot connect to server"
-      );
+      return RegisterResult.error("Unexpected error (${response.statusCode})");
+    } catch (e) {
+      return RegisterResult.error("Cannot connect to server");
     }
   }
 
@@ -77,23 +66,18 @@ class ApiService {
   static Future<LoginResult> loginUser({
     required String email,
     required String password,
-  }) async{
-    final url= Uri.parse("${ApiConfig.baseUrl}/auth/login");
+  }) async {
+    final url = Uri.parse("${ApiConfig.baseUrl}/auth/login");
 
-
-    try{
-      final response = await http.post(url,
-        headers: {
-          "Content-Type":"application/json"
-        },
-        body: jsonEncode({
-          "email":email,
-          "password":password
-        }),
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"email": email, "password": password}),
       );
 
       //Success
-      if (response.statusCode==200){
+      if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return LoginResult.success(
           token: data["token"],
@@ -120,7 +104,5 @@ class ApiService {
     } catch (e) {
       return LoginResult.error("Cannot connect to server");
     }
-
   }
 }
-
