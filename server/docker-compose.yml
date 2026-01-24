@@ -10,6 +10,7 @@ services:
     # environment variables or Docker secrets.
     environment:
       - DB_URL=postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-qashare}
+      - GIN_MODE=release
     depends_on:
       - postgres
 
