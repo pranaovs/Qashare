@@ -10,7 +10,7 @@ class ApiService {
     required String username,
     required String name,
     required String email,
-    required String password,}) async{
+    required String password}) async {
 
     final url= Uri.parse("${ApiConfig.baseUrl}/auth/register");
 
