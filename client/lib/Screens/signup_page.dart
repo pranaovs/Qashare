@@ -24,7 +24,7 @@ class _SignupPageState extends State<SignupPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        duration: Duration(milliseconds: 800),
+        duration: const Duration(milliseconds: 800),
         backgroundColor: Theme.of(context).colorScheme.error,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
