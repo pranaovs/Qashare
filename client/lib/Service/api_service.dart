@@ -2,6 +2,7 @@ import "package:http/http.dart" as http;
 import 'package:qashare/Config/api_config.dart';
 import 'dart:convert';
 import 'package:qashare/Models/auth_model.dart';
+import 'package:qashare/Models/user_models.dart';
 
 class ApiService {
   // ================= REGISTER =================
@@ -105,4 +106,41 @@ class ApiService {
       return LoginResult.error("Cannot connect to server");
     }
   }
+
+  static Future<UserResult> getCurrentUser(String token) async{
+    final url = Uri.parse("${ApiConfig.baseUrl}/auth/me");
+
+    try{
+      final response= await http.get(url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+      if (response.statusCode == 200){
+        final data = jsonDecode(response.body);
+
+        return UserResult.success(
+          userId: data["user_id"],
+          name: data["name"],
+          email: data["email"],
+          guest: data["guest"],
+          createdAt: data["created_at"],
+        );
+      }
+      if (response.statusCode == 401) {
+        return UserResult.error("Session expired. Please login again.");
+      }
+
+      if (response.statusCode == 500) {
+        return UserResult.error("Server error. Try again later.");
+      }
+
+      return UserResult.error("Unexpected error (${response.statusCode})");
+    } catch (e) {
+      return UserResult.error("Unable to connect to server");
+    }
+  }
+
+
 }
