@@ -1,5 +1,5 @@
 import "package:http/http.dart" as http;
-import'package:qashare/Config/api_config.dart';
+import 'package:qashare/Config/api_config.dart';
 import 'dart:convert';
 import 'package:qashare/Models/auth_model.dart';
 
