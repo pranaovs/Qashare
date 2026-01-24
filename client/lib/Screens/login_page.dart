@@ -107,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
                           context,
                         ).colorScheme.onPrimary,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadiusGeometry.circular(16),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
                       child: const Text(
