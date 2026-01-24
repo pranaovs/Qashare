@@ -54,7 +54,7 @@ class _CreategroupPageState extends State<CreategroupPage> {
       SnackBar(
         content: Text(msg),
         duration: const Duration(milliseconds: 900),
-        backgroundColor: Theme.of(context).colorScheme.error,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
       ),
