@@ -205,7 +205,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 if (server.isNotEmpty) {
                   setState(() {
-                    _serverUrl=server;
+                    _serverUrl = server;
                   });
                   ApiConfig.setServer(server);
                   Navigator.pop(context);
