@@ -1,6 +1,6 @@
 services:
   qashare:
-    image: ghcr.io/pranaovs/qashare:containerize
+    image: ghcr.io/pranaovs/qashare
     container_name: qashare
     restart: unless-stopped
     ports:
