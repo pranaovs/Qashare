@@ -3,8 +3,6 @@ import 'package:qashare/Config/token_storage.dart';
 import 'package:qashare/Service/api_service.dart';
 import 'package:qashare/Models/user_models.dart';
 
-
-
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -46,10 +44,9 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-          backgroundColor: Colors.black,
-          title: const Text("Profile",
-            style: TextStyle(color: Colors.white),
-          )),
+        backgroundColor: Colors.black,
+        title: const Text("Profile", style: TextStyle(color: Colors.white)),
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _result!.isSuccess
@@ -70,10 +67,7 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             const SizedBox(height: 20),
 
-            const CircleAvatar(
-              radius: 60,
-              child: Icon(Icons.person, size: 50),
-            ),
+            const CircleAvatar(radius: 60, child: Icon(Icons.person, size: 50)),
 
             const SizedBox(height: 25),
 
@@ -92,10 +86,7 @@ class _ProfilePageState extends State<ProfilePage> {
             // -------- EMAIL --------
             Text(
               _result!.email ?? "",
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-              ),
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
             ),
 
             const SizedBox(height: 30),
@@ -148,52 +139,40 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: Colors.black,
-        title: const Text("Logout",
+        title: const Text("Logout", style: TextStyle(color: Colors.white)),
+        content: const Text(
+          "Are you sure you want to logout?",
           style: TextStyle(color: Colors.white),
         ),
-        content: const Text("Are you sure you want to logout?",
-            style: TextStyle(color: Colors.white)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel",
-            style: TextStyle(color: Colors.white)),
+            child: const Text("Cancel", style: TextStyle(color: Colors.white)),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context); // close dialog
-              _handleLogout();         // perform logout
+              _handleLogout(); // perform logout
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-            ),
-            child: const Text("Logout",
-                style: TextStyle(color: Colors.white)
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text("Logout", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
 
-
   String _formatDate(DateTime dt) {
     return "${dt.day}/${dt.month}/${dt.year}";
   }
-
 
   Future<void> _handleLogout() async {
     await TokenStorage.clear();
 
     if (!mounted) return;
 
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/login',
-          (route) => false,
-    );
+    Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
   }
-
 
   Widget _errorView() {
     return Center(

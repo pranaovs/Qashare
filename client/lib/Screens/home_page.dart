@@ -12,35 +12,28 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar:AppBar(
+      appBar: AppBar(
         backgroundColor: Colors.black,
-        title: const Text("My Groups",style: TextStyle(color: Colors.white),),
+        title: const Text("My Groups", style: TextStyle(color: Colors.white)),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 15),
             child: GestureDetector(
-              onTap: (){
+              onTap: () {
                 Navigator.pushNamed(context, "/profile");
               },
               child: const CircleAvatar(
                 radius: 18,
                 backgroundColor: Colors.black,
-                child: Icon(
-                  Icons.person,
-                  color: Colors.white,
-                  size: 30,
-                ),
+                child: Icon(Icons.person, color: Colors.white, size: 30),
               ),
             ),
           ),
         ],
-      ) ,
-      body: Center(
-        child: const Text(
-          "Home Page",
-          style: TextStyle(color: Colors.white),
-        ),
       ),
-    ); 
+      body: Center(
+        child: const Text("Home Page", style: TextStyle(color: Colors.white)),
+      ),
+    );
   }
-} 
+}

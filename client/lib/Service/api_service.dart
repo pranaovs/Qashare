@@ -107,17 +107,18 @@ class ApiService {
     }
   }
 
-  static Future<UserResult> getCurrentUser(String token) async{
+  static Future<UserResult> getCurrentUser(String token) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/auth/me");
 
-    try{
-      final response= await http.get(url,
+    try {
+      final response = await http.get(
+        url,
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
         },
       );
-      if (response.statusCode == 200){
+      if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
         return UserResult.success(
@@ -141,6 +142,4 @@ class ApiService {
       return UserResult.error("Unable to connect to server");
     }
   }
-
-
 }

@@ -36,9 +36,6 @@ class UserResult {
   }
 
   factory UserResult.error(String msg) {
-    return UserResult._(
-      isSuccess: false,
-      errorMessage: msg,
-    );
+    return UserResult._(isSuccess: false, errorMessage: msg);
   }
 }
