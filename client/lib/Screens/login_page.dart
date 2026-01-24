@@ -282,7 +282,6 @@ class _LoginPageState extends State<LoginPage> {
     if (result.isSuccess) {
       _showSuccess("Login successful");
 
-      // TODO: store JWT token securely
       await TokenStorage.saveToken(result.token!);
 
       Future.delayed(const Duration(milliseconds: 800), () {
