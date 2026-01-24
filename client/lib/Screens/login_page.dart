@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:qashare/Config/api_config.dart';
+import 'package:qashare/Config/token_storage.dart';
 import 'package:qashare/Service/api_service.dart';
 
 class LoginPage extends StatefulWidget {
@@ -282,6 +283,7 @@ class _LoginPageState extends State<LoginPage> {
       _showSuccess("Login successful");
 
       // TODO: store JWT token securely
+      await TokenStorage.saveToken(result.token!);
 
       Future.delayed(const Duration(milliseconds: 800), () {
         Navigator.pushReplacementNamed(context, '/home');
