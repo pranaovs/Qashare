@@ -262,7 +262,9 @@ class _SignupPageState extends State<SignupPage> {
 
       // wait a bit so user sees snackbar, then go to login
       Future.delayed(const Duration(seconds: 1), () {
-        Navigator.pop(context);
+        if (mounted) {
+          Navigator.pop(context);
+        }
       });
     } else {
       _showError(result.errorMessage ?? "Signup failed");
