@@ -87,7 +87,7 @@ class _HomePageState extends State<HomePage> {
             Icon(
               Icons.group,
               size: 100,
-              color: Theme.of(context).colorScheme.error,
+              color: Theme.of(context).colorScheme.outline,
             ),
             Text("You are not part of any group yet"),
           ],
