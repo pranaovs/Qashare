@@ -46,7 +46,7 @@ func initDatabase() (*pgxpool.Pool, error) {
 	log.Println("[INIT] Initializing database connection...")
 
 	// Get database configuration from environment
-	dbURL := utils.GetEnv("DB_URL", "postgres://postgres:postgres@localhost:5432/shared_expenses")
+	dbURL := utils.GetEnv("DB_URL", "postgres://postgres:postgres@localhost:5432/qashare")
 
 	// Connect to database (will auto-create if not exists)
 	pool, err := db.Connect(dbURL)
