@@ -12,7 +12,7 @@ services:
       - DB_URL=postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-qashare}
 
   postgres:
-    image: postgres
+    image: postgres:18-alpine
     expose:
       - "5432"
     # WARNING: Default DB credentials are for development only.
