@@ -65,7 +65,7 @@ func initDatabase() (*pgxpool.Pool, error) {
 	log.Println("[INIT] Database health check passed")
 
 	// Run migrations
-	migrationsDir := utils.GetEnv("DB_MIGRATIONS_DIR", "db/migrations")
+	migrationsDir := utils.GetEnv("DB_MIGRATIONS_DIR", "migrations")
 	if err := db.Migrate(pool, migrationsDir); err != nil {
 		db.Close(pool)
 		return nil, err

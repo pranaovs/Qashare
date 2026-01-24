@@ -17,6 +17,7 @@ FROM gcr.io/distroless/base-debian12
 WORKDIR /app
 
 COPY --from=builder /build/qashare /app/qashare
+COPY --from=builder /build/migrations /app/migrations
 
 EXPOSE 8080
 
