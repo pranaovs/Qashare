@@ -279,7 +279,7 @@ class _LoginPageState extends State<LoginPage> {
     if (!_formKey.currentState!.validate()) return;
 
     final result = await ApiService.loginUser(
-      email: _usernameController.text.trim(),
+      email: _usernameController.text.trim().toLowerCase(),
       password: _passwordController.text,
     );
 
