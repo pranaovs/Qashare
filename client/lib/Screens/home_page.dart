@@ -124,7 +124,7 @@ class _HomePageState extends State<HomePage> {
     return Center(
       child: Text(
         _result!.errorMessage ?? "Error",
-        style: const TextStyle(color: Colors.red),
+        style: TextStyle(color: Theme.of(context).colorScheme.error),
       ),
     );
   }

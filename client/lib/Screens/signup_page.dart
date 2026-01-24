@@ -14,6 +14,7 @@ class _SignupPageState extends State<SignupPage> {
       SnackBar(
         content: Text(msg),
         backgroundColor: Theme.of(context).colorScheme.primary,
+        duration: Duration(milliseconds: 800),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
       ),
