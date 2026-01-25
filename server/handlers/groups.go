@@ -172,17 +172,3 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 		"removed_members": req.UserIDs,
 	})
 }
-
-//
-// // ListExpenses lists all expenses for a given group.
-// func (h *GroupsHandler) ListExpenses(c *gin.Context) {
-// 	groupID := middleware.GetGroupID(c)
-//
-// 	group, err := db.GetGroup(c.Request.Context(), h.pool, groupID)
-// 	if err != nil {
-// 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-// 		return
-// 	}
-//
-// 	c.JSON(http.StatusOK, group)
-// }
