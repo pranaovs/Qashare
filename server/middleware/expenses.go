@@ -35,8 +35,7 @@ func VerifyExpenseAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "expense not found"})
-			c.Abort()
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 			return
 		}
 
