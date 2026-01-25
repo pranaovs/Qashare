@@ -46,7 +46,7 @@ func RequireGroupAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		groupID, ok := c.Params.Get("id")
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Group ID not provided"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Group ID not provided"})
 			c.Abort()
 			return
 		}
