@@ -40,3 +40,5 @@ class UserLookupResult {
     return UserLookupResult._(isSuccess: false, errorMessage: msg);
   }
 }
+
+
