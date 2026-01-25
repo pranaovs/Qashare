@@ -23,11 +23,7 @@ func NewExpensesHandler(pool *pgxpool.Pool) *ExpensesHandler {
 }
 
 func (h *ExpensesHandler) Create(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
+	userID := middleware.MustGetUserID(c)
 
 	var expense models.ExpenseDetails
 	if err := c.ShouldBindJSON(&expense); err != nil {
@@ -36,7 +32,13 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	}
 	expense.AddedBy = userID
 
-	if err := db.MemberOfGroup(c.Request.Context(), h.pool, userID, expense.GroupID); err != nil {
+	// Verify user is a member of the group
+	isMember, err := db.MemberOfGroup(c.Request.Context(), h.pool, userID, expense.GroupID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to verify membership"})
+		return
+	}
+	if !isMember {
 		c.JSON(http.StatusForbidden, gin.H{"error": "user not a member of group"})
 		return
 	}
@@ -79,7 +81,7 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 		}
 	}
 
-	err := db.CreateExpense(c.Request.Context(), h.pool, &expense)
+	err = db.CreateExpense(c.Request.Context(), h.pool, &expense)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -89,60 +91,33 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 }
 
 func (h *ExpensesHandler) GetExpense(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
-
-	expenseID := c.Param("id")
-	expense, err := db.GetExpense(c.Request.Context(), h.pool, expenseID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
-
-	if err := db.MemberOfGroup(c.Request.Context(), h.pool, userID, expense.GroupID); err != nil {
-		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
-		return
-	}
-
+	// Expense is already fetched and authorized by middleware
+	expense := middleware.MustGetExpense(c)
 	c.JSON(http.StatusOK, expense)
 }
 
 func (h *ExpensesHandler) Update(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
-
-	expenseID := c.Param("id")
-	if expenseID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing expense id"})
-		return
-	}
+	userID := middleware.MustGetUserID(c)
+	groupID := middleware.MustGetGroupID(c)
+	expense := middleware.MustGetExpense(c)
 
 	var payload models.ExpenseDetails
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
-	payload.ExpenseID = expenseID
+	payload.ExpenseID = expense.ExpenseID
+	payload.GroupID = expense.GroupID
+	payload.AddedBy = expense.AddedBy
+	payload.CreatedAt = expense.CreatedAt
 
-	exp, err := db.GetExpense(c.Request.Context(), h.pool, expenseID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "expense not found"})
-		return
-	}
-
-	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, exp.GroupID)
+	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, groupID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch group"})
 		return
 	}
 
-	if userID != exp.AddedBy && userID != groupCreator {
+	if userID != expense.AddedBy && userID != groupCreator {
 		c.JSON(http.StatusForbidden, gin.H{"error": "not authorized"})
 		return
 	}
@@ -163,7 +138,7 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 		}
 	}
 
-	if err := db.AllMembersOfGroup(c.Request.Context(), h.pool, splitUserIDs, exp.GroupID); err != nil {
+	if err := db.AllMembersOfGroup(c.Request.Context(), h.pool, splitUserIDs, groupID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "split user not in group"})
 		return
 	}
@@ -192,25 +167,11 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 }
 
 func (h *ExpensesHandler) Delete(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
+	userID := middleware.MustGetUserID(c)
+	expense := middleware.MustGetExpense(c)
+	groupID := middleware.MustGetGroupID(c)
 
-	expenseID := c.Param("id")
-	if expenseID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing expense id"})
-		return
-	}
-
-	expense, err := db.GetExpense(c.Request.Context(), h.pool, expenseID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "expense not found"})
-		return
-	}
-
-	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, expense.GroupID)
+	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, groupID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch group"})
 		return
@@ -221,7 +182,7 @@ func (h *ExpensesHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	if err := db.DeleteExpense(c.Request.Context(), h.pool, expenseID); err != nil {
+	if err := db.DeleteExpense(c.Request.Context(), h.pool, expense.ExpenseID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

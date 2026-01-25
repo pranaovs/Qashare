@@ -125,11 +125,10 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.Expe
 			SET title = $2,
 				description = $3,
 				amount = $4,
-				added_by = $5,
-				is_incomplete_amount = $6,
-				is_incomplete_split = $7,
-				latitude = $8,
-				longitude = $9
+				is_incomplete_amount = $5,
+				is_incomplete_split = $6,
+				latitude = $7,
+				longitude = $8
 			WHERE expense_id = $1`
 
 		result, err := tx.Exec(
@@ -139,7 +138,6 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.Expe
 			expense.Title,
 			expense.Description,
 			expense.Amount,
-			expense.AddedBy,
 			expense.IsIncompleteAmount,
 			expense.IsIncompleteSplit,
 			expense.Latitude,

@@ -24,14 +24,9 @@ func NewGroupsHandler(pool *pgxpool.Pool) *GroupsHandler {
 
 func (h *GroupsHandler) Create(c *gin.Context) {
 	group := models.Group{}
-	var ok bool
 	var err error
 
-	group.CreatedBy, ok = middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
+	group.CreatedBy = middleware.MustGetUserID(c)
 
 	var request struct {
 		Name        string `json:"name" binding:"required"`
@@ -60,11 +55,7 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 }
 
 func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
+	userID := middleware.MustGetUserID(c)
 
 	groups, err := db.MemberOfGroups(c.Request.Context(), h.pool, userID)
 	if err != nil {
@@ -75,12 +66,7 @@ func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
 }
 
 func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
-
+	userID := middleware.MustGetUserID(c)
 	groups, err := db.AdminOfGroups(c.Request.Context(), h.pool, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -90,23 +76,7 @@ func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
 }
 
 func (h *GroupsHandler) GetGroup(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
-
-	groupID := c.Param("id")
-
-	err := db.MemberOfGroup(c.Request.Context(), h.pool, userID, groupID)
-	if err != nil {
-		if errors.Is(err, db.ErrNotMember) {
-			c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to verify membership"})
-		}
-		return
-	}
+	groupID := middleware.MustGetGroupID(c)
 
 	group, err := db.GetGroup(c.Request.Context(), h.pool, groupID)
 	if err != nil {
@@ -118,7 +88,7 @@ func (h *GroupsHandler) GetGroup(c *gin.Context) {
 }
 
 func (h *GroupsHandler) AddMembers(c *gin.Context) {
-	groupID := c.Param("id")
+	groupID := middleware.MustGetGroupID(c)
 
 	type request struct {
 		UserIDs []string `json:"user_ids" binding:"required,min=1"`
@@ -130,11 +100,7 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 		return
 	}
 
-	userID, ok := middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
+	userID := middleware.MustGetUserID(c)
 
 	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, groupID)
 	if err != nil {
@@ -177,8 +143,6 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 }
 
 func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
-	groupID := c.Param("id")
-
 	type request struct {
 		UserIDs []string `json:"user_ids" binding:"required,min=1"`
 	}
@@ -189,27 +153,15 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 		return
 	}
 
-	userID, ok := middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
+	userID := middleware.MustGetUserID(c)
+	groupID := middleware.MustGetGroupID(c)
 
-	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, groupID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "group not found"})
-		return
-	}
-	if groupCreator != userID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "only group admin can remove members"})
-		return
-	}
-	if slices.Contains(req.UserIDs, groupCreator) {
+	if slices.Contains(req.UserIDs, userID) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot remove group admin"})
 		return
 	}
 
-	err = db.RemoveGroupMembers(c.Request.Context(), h.pool, groupID, req.UserIDs)
+	err := db.RemoveGroupMembers(c.Request.Context(), h.pool, groupID, req.UserIDs)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to remove members"})
 		return

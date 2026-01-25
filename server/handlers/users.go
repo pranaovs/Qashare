@@ -22,11 +22,7 @@ func NewUsersHandler(pool *pgxpool.Pool) *UsersHandler {
 func (h *UsersHandler) GetUser(c *gin.Context) {
 	qUserID := c.Param("id")
 
-	userID, ok := middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
+	userID := middleware.MustGetUserID(c)
 
 	// Do not allow access to user data if users are not related
 	related, err := db.UsersRelated(c.Request.Context(), h.pool, userID, qUserID)
@@ -49,11 +45,7 @@ func (h *UsersHandler) GetUser(c *gin.Context) {
 }
 
 func (h *UsersHandler) SearchByEmail(c *gin.Context) {
-	_, ok := middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
+	_ = middleware.MustGetUserID(c)
 
 	email, err := utils.ValidateEmail(c.Param("email"))
 	if err != nil {

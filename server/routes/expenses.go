@@ -12,7 +12,7 @@ func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
 	handler := handlers.NewExpensesHandler(pool)
 
 	router.POST("/", middleware.RequireAuth(), handler.Create)
-	router.GET("/:id", middleware.RequireAuth(), handler.GetExpense)
-	router.PUT("/:id", middleware.RequireAuth(), handler.Update)
-	router.DELETE("/:id", middleware.RequireAuth(), handler.Delete)
+	router.GET("/:id", middleware.RequireAuth(), middleware.VerifyExpenseAccess(pool), handler.GetExpense)
+	router.PUT("/:id", middleware.RequireAuth(), middleware.VerifyExpenseAccess(pool), handler.Update)
+	router.DELETE("/:id", middleware.RequireAuth(), middleware.VerifyExpenseAccess(pool), handler.Delete)
 }
