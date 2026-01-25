@@ -138,7 +138,7 @@ class _MembersPageState extends State<MembersPage> {
     return Center(
       child: Text(
         _result!.errorMessage ?? "Error",
-        style: TextStyle(color: Theme.of(context).colorScheme.error),
+        style: const TextStyle(color: Colors.red),
       ),
     );
   }
