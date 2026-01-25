@@ -1,5 +1,5 @@
 class ApiConfig {
-  static String _server = "devbox:8080";
+  static String _server = "qashare.devserver.ts.net:80";
 
   static String get baseUrl => "http://$_server";
 
