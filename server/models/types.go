@@ -44,17 +44,17 @@ type GroupUser struct {
 
 // Expense represents an expense in a group(ID)
 type Expense struct {
-	ExpenseID          string  `json:"expense_id" db:"expense_id"`
-	GroupID            string  `json:"group_id" db:"group_id"`
-	AddedBy            string  `json:"added_by" db:"added_by"`
-	Title              string  `json:"title" db:"title"`
-	Description        string  `json:"description,omitempty" db:"description"`
-	CreatedAt          int64   `json:"created_at" db:"created_at"`
-	Amount             float64 `json:"amount" db:"amount"`
-	IsIncompleteAmount bool    `json:"is_incomplete_amount" db:"is_incomplete_amount"`
-	IsIncompleteSplit  bool    `json:"is_incomplete_split" db:"is_incomplete_split"`
-	Latitude           float64 `json:"latitude,omitempty" db:"latitude"`
-	Longitude          float64 `json:"longitude,omitempty" db:"longitude"`
+	ExpenseID          string   `json:"expense_id" db:"expense_id"`
+	GroupID            string   `json:"group_id" db:"group_id"`
+	AddedBy            *string  `json:"added_by" db:"added_by"`
+	Title              string   `json:"title" db:"title"`
+	Description        *string  `json:"description,omitempty" db:"description"` // pointer because nullable in db
+	CreatedAt          int64    `json:"created_at" db:"created_at"`
+	Amount             float64  `json:"amount" db:"amount"`
+	IsIncompleteAmount bool     `json:"is_incomplete_amount" db:"is_incomplete_amount"`
+	IsIncompleteSplit  bool     `json:"is_incomplete_split" db:"is_incomplete_split"`
+	Latitude           *float64 `json:"latitude,omitempty" db:"latitude"`   // pointer because nullable in db
+	Longitude          *float64 `json:"longitude,omitempty" db:"longitude"` // pointer because nullable in db
 }
 
 // ExpenseDetails represents detailed information about an expense including its splits

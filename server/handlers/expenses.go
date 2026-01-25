@@ -30,7 +30,8 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 		utils.SendError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	expense.AddedBy = userID
+
+	expense.AddedBy = &userID
 
 	// Verify user is a member of the group
 	isMember, err := db.MemberOfGroup(c.Request.Context(), h.pool, userID, expense.GroupID)

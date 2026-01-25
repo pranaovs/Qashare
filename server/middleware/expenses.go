@@ -95,7 +95,7 @@ func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 
 		// If the user is not the group creator or the expense creator, deny access
-		if creatorID != userID && expense.AddedBy != userID {
+		if creatorID != userID && (expense.AddedBy == nil || *expense.AddedBy != userID) {
 			utils.AbortWithStatusJSON(c, http.StatusForbidden, "access denied")
 			return
 		}
