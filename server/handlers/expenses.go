@@ -107,6 +107,9 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 		return
 	}
 	payload.ExpenseID = expense.ExpenseID
+	payload.GroupID = expense.GroupID
+	payload.AddedBy = expense.AddedBy
+	payload.CreatedAt = expense.CreatedAt
 
 	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, groupID)
 	if err != nil {
