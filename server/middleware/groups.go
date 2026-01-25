@@ -52,6 +52,11 @@ func RequireGroupAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 
 		creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, groupID)
+		if err == db.ErrGroupNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "group not found"})
+			c.Abort()
+			return
+		}
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get group creator"})
 			c.Abort()
