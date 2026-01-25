@@ -80,7 +80,7 @@ class _MembersPageState extends State<MembersPage> {
     return Center(
       child: Text(
         _result!.errorMessage ?? "Error",
-        style: const TextStyle(color: Colors.red),
+        style: TextStyle(color: Theme.of(context).colorScheme.error),
       ),
     );
   }
@@ -169,7 +169,7 @@ class _MembersPageState extends State<MembersPage> {
       SnackBar(
         content: Text(msg),
         backgroundColor:
-        error ? Theme.of(context).colorScheme.error : null,
+        error ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary,
         duration: const Duration(milliseconds: 900),
         behavior: SnackBarBehavior.floating,
       ),
