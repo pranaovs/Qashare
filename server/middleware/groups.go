@@ -121,7 +121,7 @@ func GetGroupID(c *gin.Context) (string, bool) {
 	return "", false
 }
 
-// MustGetGroupID retrieves the group ID from the context or URL parameters. Intended for use in handlers.
+// MustGetGroupID retrieves the group ID from the context. Intended for use in handlers.
 // If the group ID is not found, it panics, indicating a server-side misconfiguration.
 func MustGetGroupID(c *gin.Context) string {
 	groupID, ok := GetGroupID(c)
