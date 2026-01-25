@@ -73,7 +73,7 @@ func GetExpenseID(c *gin.Context) (string, bool) {
 	return "", false
 }
 
-// MustGetExpenseID retrieves the group ID from the context or URL parameters. Intended for use in handlers.
+// MustGetExpenseID retrieves the expense ID from the context (set by VerifyExpenseAccess). Intended for use in handlers.
 // Panics if not found, indicating a server-side misconfiguration.
 func MustGetExpenseID(c *gin.Context) string {
 	expenseID, ok := GetExpenseID(c)
