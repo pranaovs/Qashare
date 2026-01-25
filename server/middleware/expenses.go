@@ -61,6 +61,9 @@ func VerifyExpenseAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 	}
 }
 
+// VerifyExpenseAdmin checks if the authenticated user has admin access to the expense specified in the URL parameter "id".
+// A user has admin access if they are the creator of the expense's group or the creator of the expense itself.
+// Sets expenseID and the expense object itself in context to avoid double-fetching.
 func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := MustGetUserID(c)
