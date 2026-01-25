@@ -172,3 +172,17 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 		"removed_members": req.UserIDs,
 	})
 }
+
+func (h *GroupsHandler) ListGroupExpenses(c *gin.Context) {
+	groupID := middleware.MustGetGroupID(c)
+	expenses, err := db.GetExpenses(c.Request.Context(), h.pool, groupID)
+	if err == db.ErrInvalidInput {
+		utils.SendError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err != nil {
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	utils.SendJSON(c, http.StatusOK, expenses)
+}
