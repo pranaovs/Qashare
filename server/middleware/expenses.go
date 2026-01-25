@@ -61,6 +61,53 @@ func VerifyExpenseAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 	}
 }
 
+func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userID := MustGetUserID(c)
+
+		expenseID := c.Param("id")
+		if expenseID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Expense ID not provided"})
+			c.Abort()
+			return
+		}
+
+		// Get the expense to find its group
+		expense, err := db.GetExpense(c.Request.Context(), pool, expenseID)
+		if err == db.ErrExpenseNotFound {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "expense not found"})
+			return
+		}
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+			return
+		}
+
+		creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, expense.GroupID)
+		if err == db.ErrGroupNotFound {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "group not found"})
+			return
+		}
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to verify membership"})
+			c.Abort()
+			return
+		}
+
+		// If the user is not the group creator or the expense creator, deny access
+		if creatorID != userID && expense.AddedBy != userID {
+			c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+			c.Abort()
+			return
+		}
+
+		c.Set(ExpenseKey, expense)
+		c.Set(ExpenseIDKey, expenseID)
+		c.Next()
+	}
+}
+
 func GetExpenseID(c *gin.Context) (string, bool) {
 	expenseIDInterface, exists := c.Get(ExpenseIDKey)
 	if exists {

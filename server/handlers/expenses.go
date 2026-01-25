@@ -97,7 +97,6 @@ func (h *ExpensesHandler) GetExpense(c *gin.Context) {
 }
 
 func (h *ExpensesHandler) Update(c *gin.Context) {
-	userID := middleware.MustGetUserID(c)
 	groupID := middleware.MustGetGroupID(c)
 	expense := middleware.MustGetExpense(c)
 
@@ -106,21 +105,12 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
+
+	// Do not allow changing critical fields
 	payload.ExpenseID = expense.ExpenseID
 	payload.GroupID = expense.GroupID
 	payload.AddedBy = expense.AddedBy
 	payload.CreatedAt = expense.CreatedAt
-
-	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, groupID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch group"})
-		return
-	}
-
-	if userID != expense.AddedBy && userID != groupCreator {
-		c.JSON(http.StatusForbidden, gin.H{"error": "not authorized"})
-		return
-	}
 
 	if len(payload.Splits) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "no splits provided"})
@@ -167,20 +157,7 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 }
 
 func (h *ExpensesHandler) Delete(c *gin.Context) {
-	userID := middleware.MustGetUserID(c)
 	expense := middleware.MustGetExpense(c)
-	groupID := middleware.MustGetGroupID(c)
-
-	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, groupID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch group"})
-		return
-	}
-
-	if userID != expense.AddedBy && userID != groupCreator {
-		c.JSON(http.StatusForbidden, gin.H{"error": "not authorized"})
-		return
-	}
 
 	if err := db.DeleteExpense(c.Request.Context(), h.pool, expense.ExpenseID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
