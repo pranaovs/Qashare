@@ -164,8 +164,8 @@ Distributed under the AGPL-3.0 License. See [`LICENSE`](https://github.com/prana
 
 ## Maintainers
 
-- Sasvat S R - [@sasvat007](https://github.com/sasvat007)
-- S S Kavinthra - [@kav1nthra](https://github.com/kav1nthra)
+- Sasvat S R ([client/](https://github.com/pranaovs/Qashare/tree/main/client)) - [@sasvat007](https://github.com/sasvat007)
+- Pranaov S ([server/](https://github.com/pranaovs/Qashare/tree/main/server)) - [@pranaovs](https://github.com/pranaovs)
 
 ## Contact
 
