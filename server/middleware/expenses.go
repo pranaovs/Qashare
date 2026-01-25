@@ -30,6 +30,10 @@ func VerifyExpenseAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		// Get the expense to find its group
 		expense, err := db.GetExpense(c.Request.Context(), pool, expenseID)
+		if err == db.ErrExpenseNotFound {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "expense not found"})
+			return
+		}
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "expense not found"})
 			c.Abort()
@@ -71,7 +75,7 @@ func GetExpenseID(c *gin.Context) (string, bool) {
 }
 
 // MustGetExpenseID retrieves the group ID from the context or URL parameters. Intended for use in handlers.
-// Aborts the request with a 400 status if not found.
+// Panics if not found, indicating a server-side misconfiguration.
 func MustGetExpenseID(c *gin.Context) string {
 	expenseID, ok := GetExpenseID(c)
 	if !ok {

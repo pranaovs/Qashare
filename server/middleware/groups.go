@@ -17,7 +17,7 @@ func RequireGroupMember(pool *pgxpool.Pool) gin.HandlerFunc {
 		groupID, ok := c.Params.Get("id")
 
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Group ID not provided"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Group ID not provided"})
 			c.Abort()
 			return
 		}
@@ -80,12 +80,18 @@ func RequireGroupOwner(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		groupID, ok := c.Params.Get("id")
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Group ID not provided"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Group ID not provided"})
 			c.Abort()
 			return
 		}
 
 		creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, groupID)
+		if err == db.ErrGroupNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "group not found"})
+			c.Abort()
+			return
+		}
+
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get group creator"})
 			c.Abort()
@@ -121,7 +127,7 @@ func MustGetGroupID(c *gin.Context) string {
 	groupID, ok := GetGroupID(c)
 	if !ok {
 		// not a runtime user error. Gin will recover and return 500.
-		panic("MustGetGroupID: Group ID not found in context. Did you forget to add a RequireGroupMember middleware?")
+		panic("MustGetGroupID: Group ID not found in context. Did you forget to add a group access middleware?")
 	}
 	return groupID
 }
