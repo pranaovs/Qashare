@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -105,4 +106,23 @@ func ExtractUserID(authHeader string) (string, error) {
 	}
 
 	return userID, nil
+}
+
+// AbortWithStatusJSON is a unified helper function that aborts the request
+// and sends a JSON response with the specified HTTP status code and error message.
+// This replaces the pattern of calling c.JSON() followed by c.Abort() separately.
+func AbortWithStatusJSON(c *gin.Context, statusCode int, message string) {
+	c.AbortWithStatusJSON(statusCode, gin.H{"error": message})
+}
+
+// SendJSON is a helper function that sends a JSON response with the specified
+// HTTP status code and data.
+func SendJSON(c *gin.Context, statusCode int, data interface{}) {
+	c.JSON(statusCode, data)
+}
+
+// SendError is a helper function that sends a JSON error response without aborting.
+// Use AbortWithStatusJSON when you need to abort the request chain.
+func SendError(c *gin.Context, statusCode int, message string) {
+	c.JSON(statusCode, gin.H{"error": message})
 }

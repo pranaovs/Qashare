@@ -34,24 +34,24 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.SendError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	group.Name, err = utils.ValidateName(request.Name)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.SendError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	group.Description = request.Description
 	err = db.CreateGroup(c.Request.Context(), h.pool, &group)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, group)
+	utils.SendJSON(c, http.StatusCreated, group)
 }
 
 func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
@@ -59,20 +59,20 @@ func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
 
 	groups, err := db.MemberOfGroups(c.Request.Context(), h.pool, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, groups)
+	utils.SendJSON(c, http.StatusOK, groups)
 }
 
 func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	groups, err := db.AdminOfGroups(c.Request.Context(), h.pool, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, groups)
+	utils.SendJSON(c, http.StatusOK, groups)
 }
 
 func (h *GroupsHandler) GetGroup(c *gin.Context) {
@@ -80,11 +80,11 @@ func (h *GroupsHandler) GetGroup(c *gin.Context) {
 
 	group, err := db.GetGroup(c.Request.Context(), h.pool, groupID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		utils.SendError(c, http.StatusNotFound, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, group)
+	utils.SendJSON(c, http.StatusOK, group)
 }
 
 func (h *GroupsHandler) AddMembers(c *gin.Context) {
@@ -96,7 +96,7 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 
 	var req request
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		utils.SendError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -104,11 +104,11 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 
 	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, groupID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "group not found"})
+		utils.SendError(c, http.StatusNotFound, "group not found")
 		return
 	}
 	if groupCreator != userID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "only group admin can add members"})
+		utils.SendError(c, http.StatusForbidden, "only group admin can add members")
 		return
 	}
 
@@ -120,23 +120,23 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 		} else if errors.Is(err, db.ErrUserNotFound) {
 			continue
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			utils.SendError(c, http.StatusInternalServerError, err.Error())
 			return
 		}
 	}
 
 	if len(validUserIDs) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "no valid user IDs"})
+		utils.SendError(c, http.StatusBadRequest, "no valid user IDs")
 		return
 	}
 
 	err = db.AddGroupMembers(c.Request.Context(), h.pool, groupID, validUserIDs)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to add members"})
+		utils.SendError(c, http.StatusInternalServerError, "failed to add members")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	utils.SendJSON(c, http.StatusOK, gin.H{
 		"message":       "members added successfully",
 		"added_members": validUserIDs,
 	})
@@ -149,7 +149,7 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 
 	var req request
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		utils.SendError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -157,17 +157,17 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 
 	if slices.Contains(req.UserIDs, userID) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot remove group admin"})
+		utils.SendError(c, http.StatusBadRequest, "cannot remove group admin")
 		return
 	}
 
 	err := db.RemoveGroupMembers(c.Request.Context(), h.pool, groupID, req.UserIDs)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to remove members"})
+		utils.SendError(c, http.StatusInternalServerError, "failed to remove members")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	utils.SendJSON(c, http.StatusOK, gin.H{
 		"message":         "members removed",
 		"removed_members": req.UserIDs,
 	})

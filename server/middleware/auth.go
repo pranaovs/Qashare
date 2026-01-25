@@ -14,8 +14,7 @@ func RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-			c.Abort()
+			utils.AbortWithStatusJSON(c, http.StatusUnauthorized, err.Error())
 			return
 		}
 
