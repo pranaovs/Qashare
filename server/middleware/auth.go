@@ -30,7 +30,12 @@ func GetUserID(c *gin.Context) (string, bool) {
 		return "", false
 	}
 
-	return userID.(string), true
+	userIDStr, ok := userID.(string)
+	if !ok {
+		return "", false
+	}
+
+	return userIDStr, true
 }
 
 // MustGetUserID retrieves the user ID from the context. Intended for use in handlers
