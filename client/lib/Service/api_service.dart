@@ -1,9 +1,12 @@
 import "package:http/http.dart" as http;
 import 'package:qashare/Config/api_config.dart';
+import 'package:qashare/Models/add_member_results.dart';
 import 'dart:convert';
 import 'package:qashare/Models/auth_model.dart';
 import 'package:qashare/Models/group_model.dart';
+import 'package:qashare/Models/groupdetail_model.dart';
 import 'package:qashare/Models/user_models.dart';
+import 'package:qashare/Models/userlookup_model.dart';
 
 class ApiService {
   // ================= REGISTER =================
@@ -222,4 +225,139 @@ class ApiService {
       return GroupCreateResult.error("Unable to connect to server");
     }
   }
+
+  static Future<GroupDetailsResult> getGroupDetails({required String token, required String groupId}) async {
+    final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId");
+
+    try{
+      final response= await http.get(url,
+        headers: {
+        "Content-Type":"applicaion/json",
+        "Authorization":"Bearer $token"
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final group = GroupDetails.fromJson(data);
+        return GroupDetailsResult.success(group);
+      }
+
+      if (response.statusCode == 401) {
+        return GroupDetailsResult.error("Session expired. Please login again.");
+      }
+
+      if (response.statusCode == 403) {
+        return GroupDetailsResult.error("You are not a member of this group.");
+      }
+
+      if (response.statusCode == 404) {
+        return GroupDetailsResult.error("Group not found.");
+      }
+
+      if (response.statusCode == 500) {
+        return GroupDetailsResult.error("Server error. Try again later.");
+      }
+
+      return GroupDetailsResult.error("Unexpected error (${response.statusCode})");
+    } catch (e) {
+      return GroupDetailsResult.error(e.toString());
+    }
+  }
+
+  static Future<AddMemberResult> addMembersToGroup({
+    required String token,
+    required String groupId,
+    required List<String> userIds,
+  }) async {
+    final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/members");
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({
+          "user_ids": userIds,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List added = data["added_members"] ?? [];
+        return AddMemberResult.success(List<String>.from(added));
+      }
+
+      if (response.statusCode == 401) {
+        return AddMemberResult.error("Session expired. Please login again.");
+      }
+
+      if (response.statusCode == 403) {
+        return AddMemberResult.error("Only group admin can add members.");
+      }
+
+      if (response.statusCode == 404) {
+        return AddMemberResult.error("Group not found.");
+      }
+
+      if (response.statusCode == 400) {
+        return AddMemberResult.error("Invalid user IDs.");
+      }
+
+      if (response.statusCode == 500) {
+        return AddMemberResult.error("Server error. Try again later.");
+      }
+
+      return AddMemberResult.error("Unexpected error (${response.statusCode})");
+    } catch (e) {
+      return AddMemberResult.error(e.toString());
+    }
+  }
+
+  static Future<UserLookupResult> searchUserByEmail({
+    required String token,
+    required String email,
+  }) async {
+    final url =
+    Uri.parse("${ApiConfig.baseUrl}/users/search/email/$email");
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final user = UserLookup.fromJson(data);
+        return UserLookupResult.success(user);
+      }
+
+      if (response.statusCode == 400) {
+        return UserLookupResult.error("Invalid email format.");
+      }
+
+      if (response.statusCode == 401) {
+        return UserLookupResult.error("Session expired. Please login again.");
+      }
+
+      if (response.statusCode == 500) {
+        return UserLookupResult.error("User not found.");
+      }
+
+      return UserLookupResult.error("Unexpected error.");
+    } catch (e) {
+      return UserLookupResult.error(e.toString());
+    }
+  }
+
+
+
+
+
 }

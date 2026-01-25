@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qashare/Screens/groupdetail_page.dart';
 import '../Config/token_storage.dart';
 import '/Models/group_model.dart';
 import '../Service/api_service.dart';
@@ -111,7 +112,15 @@ class _HomePageState extends State<HomePage> {
               subtitle: Text(g.description),
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
-                // TODO: open group details
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => GroupDetailsPage(
+                        groupId: g.groupId,
+                        groupName: g.name,
+                      ),
+                    ),
+                );
               },
             ),
           );
