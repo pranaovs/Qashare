@@ -93,7 +93,7 @@ func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to verify membership"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get group creator"})
 			c.Abort()
 			return
 		}
