@@ -107,6 +107,7 @@ func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		c.Set(ExpenseKey, expense)
 		c.Set(ExpenseIDKey, expenseID)
+		c.Set(GroupIDKey, expense.GroupID)
 		c.Next()
 	}
 }
