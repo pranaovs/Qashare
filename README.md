@@ -102,6 +102,16 @@ To set up the project locally, follow these instructions for both the client and
     go run .
     ```
 
+#### Running the Server with Docker
+
+1. Download and edit the [`docker-compose.yml`](https://github.com/pranaovs/Qashare/blob/main/server/docker-compose.yml) file to set your environment variables.
+
+2. Run Docker Compose
+
+    ```sh
+    docker compose up
+    ```
+
 #### Installing the client
 
 1. Switch to the project directory
