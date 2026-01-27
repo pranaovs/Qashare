@@ -227,14 +227,18 @@ class ApiService {
     }
   }
 
-  static Future<GroupDetailsResult> getGroupDetails({required String token, required String groupId}) async {
+  static Future<GroupDetailsResult> getGroupDetails({
+    required String token,
+    required String groupId,
+  }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId");
 
-    try{
-      final response= await http.get(url,
+    try {
+      final response = await http.get(
+        url,
         headers: {
-        "Content-Type":"applicaion/json",
-        "Authorization":"Bearer $token"
+          "Content-Type": "applicaion/json",
+          "Authorization": "Bearer $token",
         },
       );
 
@@ -260,7 +264,9 @@ class ApiService {
         return GroupDetailsResult.error("Server error. Try again later.");
       }
 
-      return GroupDetailsResult.error("Unexpected error (${response.statusCode})");
+      return GroupDetailsResult.error(
+        "Unexpected error (${response.statusCode})",
+      );
     } catch (e) {
       return GroupDetailsResult.error(e.toString());
     }
@@ -280,9 +286,7 @@ class ApiService {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
         },
-        body: jsonEncode({
-          "user_ids": userIds,
-        }),
+        body: jsonEncode({"user_ids": userIds}),
       );
 
       if (response.statusCode == 200) {
@@ -321,8 +325,7 @@ class ApiService {
     required String token,
     required String email,
   }) async {
-    final url =
-    Uri.parse("${ApiConfig.baseUrl}/users/search/email/$email");
+    final url = Uri.parse("${ApiConfig.baseUrl}/users/search/email/$email");
 
     try {
       final response = await http.get(
@@ -357,7 +360,6 @@ class ApiService {
     }
   }
 
-
   static Future<AddMemberResult> removeMembersFromGroup({
     required String token,
     required String groupId,
@@ -372,9 +374,7 @@ class ApiService {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
         },
-        body: jsonEncode({
-          "user_ids": userIds,
-        }),
+        body: jsonEncode({"user_ids": userIds}),
       );
 
       if (response.statusCode == 200) {
@@ -446,11 +446,4 @@ class ApiService {
       return BasicResult.error(e.toString());
     }
   }
-
-
-
-
-
-
-
 }

@@ -102,8 +102,9 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
     final req = ExpenseRequest(
       groupId: widget.groupId,
       title: _titleController.text.trim(),
-      description:
-      _descController.text.trim().isEmpty ? null : _descController.text,
+      description: _descController.text.trim().isEmpty
+          ? null
+          : _descController.text,
       amount: double.tryParse(_amountController.text) ?? 0,
       isIncompleteAmount: _incompleteAmount,
       isIncompleteSplit: _incompleteSplit,
@@ -143,51 +144,53 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-              TextFormField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: "Title",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                  ),
+            TextFormField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                labelText: "Title",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
                 ),
-                validator: (v) => v == null || v.isEmpty ? "Required" : null,
               ),
+              validator: (v) => v == null || v.isEmpty ? "Required" : null,
+            ),
 
-              const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-              TextFormField(
-                controller: _descController,
-                decoration: const InputDecoration(
-                  labelText: "Description (optional)",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                  ),
+            TextFormField(
+              controller: _descController,
+              decoration: const InputDecoration(
+                labelText: "Description (optional)",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
                 ),
-                maxLines: 2,
               ),
+              maxLines: 2,
+            ),
 
-              const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-              TextFormField(
-                controller: _amountController,
-                decoration: const InputDecoration(
-                  labelText: "Amount",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                  ),
+            TextFormField(
+              controller: _amountController,
+              decoration: const InputDecoration(
+                labelText: "Amount",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
                 ),
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))
-                ],
-                validator: (v) {
-                  if (_incompleteAmount) return null;
-                  final n = double.tryParse(v ?? "");
-                  if (n == null || n <= 0) return "Invalid amount";
-                  return null;
-                },
               ),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+              ],
+              validator: (v) {
+                if (_incompleteAmount) return null;
+                final n = double.tryParse(v ?? "");
+                if (n == null || n <= 0) return "Invalid amount";
+                return null;
+              },
+            ),
             CheckboxListTile(
               title: const Text("Amount incomplete"),
               value: _incompleteAmount,
@@ -202,59 +205,66 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Split Details",
-                    style:
-                    TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text(
+                  "Split Details",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 TextButton.icon(
                   onPressed: _equalSplit,
                   icon: const Icon(Icons.calculate),
                   label: const Text("Equal"),
-                )
+                ),
               ],
             ),
 
-            ...widget.members.map((m) => Card(
-              child: Column(
-                children: [
-                  CheckboxListTile(
-                    title: Text(m.name),
-                    subtitle: Text(m.email),
-                    value: _selected[m.userId],
-                    onChanged: (v) =>
-                        setState(() => _selected[m.userId] = v ?? false),
-                  ),
-                  if (_selected[m.userId] == true)
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _paid[m.userId],
-                              decoration:
-                              const InputDecoration(labelText: "Paid"),
-                              keyboardType:
-                              const TextInputType.numberWithOptions(
-                                  decimal: true),
+            ...widget.members.map(
+              (m) => Card(
+                child: Column(
+                  children: [
+                    CheckboxListTile(
+                      title: Text(m.name),
+                      subtitle: Text(m.email),
+                      value: _selected[m.userId],
+                      onChanged: (v) =>
+                          setState(() => _selected[m.userId] = v ?? false),
+                    ),
+                    if (_selected[m.userId] == true)
+                      Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                controller: _paid[m.userId],
+                                decoration: const InputDecoration(
+                                  labelText: "Paid",
+                                ),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              controller: _owed[m.userId],
-                              decoration:
-                              const InputDecoration(labelText: "Owes"),
-                              keyboardType:
-                              const TextInputType.numberWithOptions(
-                                  decimal: true),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: TextField(
+                                controller: _owed[m.userId],
+                                decoration: const InputDecoration(
+                                  labelText: "Owes",
+                                ),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    )
-                ],
+                  ],
+                ),
               ),
-            )),
+            ),
 
             const SizedBox(height: 20),
             ElevatedButton(
@@ -262,7 +272,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
               child: _loading
                   ? const CircularProgressIndicator(strokeWidth: 2)
                   : const Text("Create Expense"),
-            )
+            ),
           ],
         ),
       ),
