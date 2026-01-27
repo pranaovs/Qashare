@@ -7,6 +7,7 @@ import (
 	"context"
 	"strings"
 
+	apierrors "github.com/pranaovs/qashare/apierrors"
 	"github.com/pranaovs/qashare/models"
 	"github.com/pranaovs/qashare/utils"
 
@@ -25,15 +26,16 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 	existingUser, err := GetUserFromEmail(ctx, pool, user.Email)
 
 	var query string
-	user.Guest = false
 
+	// Promote guest user if found
 	if err == nil && !existingUser.Guest {
 		// Non-guest user already exists
-		return ErrEmailAlreadyExists
-	} else if err != ErrEmailNotRegistered {
-		// Some other database error occurred
-		return NewDBError("CreateUser", err, "failed to check existing user")
+		return apierrors.ErrEmailAlreadyExists
+	} else if err != nil {
+		return err
 	}
+
+	user.Guest = false
 
 	err = WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
 		if existingUser.Guest {
@@ -45,14 +47,14 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 
 			err = tx.QueryRow(ctx, query, user.Name, user.PasswordHash, user.Guest, user.Email).Scan(&user.UserID, &user.CreatedAt)
 			if err != nil {
-				return NewDBError("CreateUser", err, "failed to update guest user")
+				return err
 			}
 
 			// Delete the guest entry since user is now promoted
 			deleteQuery := `DELETE FROM guests WHERE user_id = $1`
 			_, err = tx.Exec(ctx, deleteQuery, user.UserID)
 			if err != nil {
-				return NewDBError("CreateUser", err, "failed to delete guest entry")
+				return err
 			}
 		} else {
 			// Insert new user (no existing user found)
@@ -64,9 +66,9 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 			if err != nil {
 				// Check for duplicate key violation (race condition)
 				if IsDuplicateKey(err) {
-					return ErrEmailAlreadyExists
+					return apierrors.ErrEmailAlreadyExists
 				}
-				return NewDBError("CreateUser", err, "failed to insert user")
+				return err
 			}
 		}
 
@@ -93,10 +95,9 @@ func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy 
 	// Check if user already exists with this email
 	_, err := GetUserFromEmail(ctx, pool, email)
 	if err == nil {
-		return models.User{}, ErrEmailAlreadyExists
-	} else if err != ErrEmailNotRegistered {
-		// Some other database error occurred
-		return models.User{}, NewDBError("CreateGuest", err, "failed to check existing user")
+		return models.User{}, apierrors.ErrEmailAlreadyExists
+	} else if err != apierrors.ErrUserNotFound {
+		return models.User{}, err
 	}
 
 	var user models.User
@@ -115,9 +116,9 @@ func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy 
 		if err != nil {
 			// Check for duplicate key violation (race condition)
 			if IsDuplicateKey(err) {
-				return ErrEmailAlreadyExists
+				return apierrors.ErrEmailAlreadyExists
 			}
-			return NewDBError("CreateGuest", err, "failed to insert guest user")
+			return err
 		}
 
 		// Record who added this guest user
@@ -126,7 +127,7 @@ func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy 
 
 		_, err = tx.Exec(ctx, query, user.UserID, addedBy)
 		if err != nil {
-			return NewDBError("CreateGuest", err, "failed to record guest addition")
+			return err
 		}
 
 		return nil
@@ -152,10 +153,10 @@ func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (mo
 	)
 
 	if err == pgx.ErrNoRows {
-		return models.User{}, ErrEmailNotRegistered
+		return models.User{}, apierrors.ErrUserNotFound
 	}
 	if err != nil {
-		return models.User{}, NewDBError("GetUserFromEmail", err, "failed to query user")
+		return models.User{}, err
 	}
 
 	return user, nil
@@ -171,10 +172,10 @@ func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (
 
 	err := pool.QueryRow(ctx, query, email).Scan(&userID, &passwordHash)
 	if err == pgx.ErrNoRows {
-		return "", "", ErrEmailNotRegistered
+		return "", "", apierrors.ErrUserNotFound
 	}
 	if err != nil {
-		return "", "", NewDBError("GetUserCredentials", err, "failed to query credentials")
+		return "", "", err
 	}
 
 	return userID, passwordHash, nil
@@ -193,10 +194,10 @@ func GetUser(ctx context.Context, pool *pgxpool.Pool, userID string) (models.Use
 	)
 
 	if err == pgx.ErrNoRows {
-		return models.User{}, ErrUserNotFound
+		return models.User{}, apierrors.ErrUserNotFound
 	}
 	if err != nil {
-		return models.User{}, NewDBError("GetUser", err, "failed to query user")
+		return models.User{}, err
 	}
 
 	return user, nil
@@ -220,7 +221,7 @@ func UsersRelated(ctx context.Context, pool *pgxpool.Pool, userID1, userID2 stri
 	var areRelated bool
 	err := pool.QueryRow(ctx, query, userID1, userID2).Scan(&areRelated)
 	if err != nil {
-		return false, NewDBError("UsersRelated", err, "failed to check user relationship")
+		return false, err
 	}
 
 	return areRelated, nil
@@ -238,7 +239,7 @@ func AdminOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]mo
 
 	rows, err := pool.Query(ctx, query, userID)
 	if err != nil {
-		return nil, NewDBError("AdminOfGroups", err, "failed to query admin groups")
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -248,14 +249,14 @@ func AdminOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]mo
 		var g models.Group
 		err := rows.Scan(&g.GroupID, &g.Name, &g.Description, &g.CreatedBy, &g.CreatedAt)
 		if err != nil {
-			return nil, NewDBError("AdminOfGroups", err, "failed to scan group row")
+			return nil, err
 		}
 		groups = append(groups, g)
 	}
 
 	// Check for any errors during iteration
 	if err := rows.Err(); err != nil {
-		return nil, NewDBError("AdminOfGroups", err, "error iterating group rows")
+		return nil, err
 	}
 
 	return groups, nil
@@ -274,7 +275,7 @@ func MemberOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]m
 
 	rows, err := pool.Query(ctx, query, userID)
 	if err != nil {
-		return nil, NewDBError("MemberOfGroups", err, "failed to query member groups")
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -284,14 +285,14 @@ func MemberOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]m
 		var g models.Group
 		err := rows.Scan(&g.GroupID, &g.Name, &g.Description, &g.CreatedBy, &g.CreatedAt)
 		if err != nil {
-			return nil, NewDBError("MemberOfGroups", err, "failed to scan group row")
+			return nil, err
 		}
 		groups = append(groups, g)
 	}
 
 	// Check for any errors during iteration
 	if err := rows.Err(); err != nil {
-		return nil, NewDBError("MemberOfGroups", err, "error iterating group rows")
+		return nil, err
 	}
 
 	return groups, nil
@@ -303,11 +304,11 @@ func MemberOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]m
 func UserExists(ctx context.Context, pool *pgxpool.Pool, userID string) error {
 	exists, err := RecordExists(ctx, pool, "users", "user_id = $1", userID)
 	if err != nil {
-		return NewDBError("UserExists", err, "failed to check user existence")
+		return err
 	}
 
 	if !exists {
-		return ErrUserNotFound
+		return apierrors.ErrUserNotFound
 	}
 
 	return nil
@@ -320,7 +321,7 @@ func MemberOfGroup(ctx context.Context, pool *pgxpool.Pool, userID, groupID stri
 	exists, err := RecordExists(ctx, pool, "group_members",
 		"user_id = $1 AND group_id = $2", userID, groupID)
 	if err != nil {
-		return false, NewDBError("MemberOfGroup", err, "failed to check group membership")
+		return false, err
 	}
 
 	if !exists {
@@ -349,12 +350,12 @@ func AllMembersOfGroup(ctx context.Context, pool *pgxpool.Pool, userIDs []string
 	var count int
 	err := pool.QueryRow(ctx, query, groupID, uniqueUserIDs).Scan(&count)
 	if err != nil {
-		return NewDBError("AllMembersOfGroup", err, "failed to count group members")
+		return err
 	}
 
 	// If count doesn't match, some users are not members
 	if count != len(uniqueUserIDs) {
-		return ErrNotMember
+		return apierrors.ErrUserNotFound.Msg("one or more users are not members of the group")
 	}
 
 	return nil

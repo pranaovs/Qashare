@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/pranaovs/qashare/apierrors"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/middleware"
 	"github.com/pranaovs/qashare/models"
@@ -41,7 +42,7 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 
 	var expense models.ExpenseDetails
 	if err := c.ShouldBindJSON(&expense); err != nil {
-		utils.SendError(c, http.StatusBadRequest, "invalid request body")
+		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
@@ -50,16 +51,16 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	// Verify user is a member of the group
 	isMember, err := db.MemberOfGroup(c.Request.Context(), h.pool, userID, expense.GroupID)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, "failed to verify membership")
+		utils.SendError(c, err)
 		return
 	}
 	if !isMember {
-		utils.SendError(c, http.StatusForbidden, "user not a member of group")
+		utils.SendError(c, apierrors.ErrUsersNotRelated)
 		return
 	}
 
 	if len(expense.Splits) == 0 {
-		utils.SendError(c, http.StatusBadRequest, "no splits provided")
+		utils.SendError(c, apierrors.ErrBadRequest.Msg("no splits provided"))
 		return
 	}
 
@@ -77,7 +78,7 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	uniqueUserIDs := utils.GetUniqueUserIDs(splitUserIDs)
 
 	if err := db.AllMembersOfGroup(c.Request.Context(), h.pool, uniqueUserIDs, expense.GroupID); err != nil {
-		utils.SendError(c, http.StatusBadRequest, "split user not in group")
+		utils.SendError(c, apierrors.ErrUserNotInGroup)
 		return
 	}
 
@@ -87,18 +88,18 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 			tolerance = 0.01
 		}
 		if math.Abs(paidTotal-expense.Amount) > tolerance {
-			utils.SendError(c, http.StatusBadRequest, "paid split total does not match expense amount")
+			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("paid split total does not match expense amount"))
 			return
 		}
 		if math.Abs(owedTotal-expense.Amount) > tolerance {
-			utils.SendError(c, http.StatusBadRequest, "owed split total does not match expense amount")
+			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("owed split total does not match expense amount"))
 			return
 		}
 	}
 
 	err = db.CreateExpense(c.Request.Context(), h.pool, &expense)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.SendError(c, err)
 		return
 	}
 
@@ -145,7 +146,7 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 
 	var payload models.ExpenseDetails
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		utils.SendError(c, http.StatusBadRequest, "invalid request body")
+		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
@@ -156,7 +157,7 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 	payload.CreatedAt = expense.CreatedAt
 
 	if len(payload.Splits) == 0 {
-		utils.SendError(c, http.StatusBadRequest, "no splits provided")
+		utils.SendError(c, apierrors.ErrInvalidSplit)
 		return
 	}
 
@@ -172,7 +173,7 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 	}
 
 	if err := db.AllMembersOfGroup(c.Request.Context(), h.pool, splitUserIDs, groupID); err != nil {
-		utils.SendError(c, http.StatusBadRequest, "split user not in group")
+		utils.SendError(c, err)
 		return
 	}
 
@@ -182,21 +183,21 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 			tolerance = 0.01
 		}
 		if math.Abs(paidTotal-payload.Amount) > tolerance {
-			utils.SendError(c, http.StatusBadRequest, "paid split total does not match expense amount")
+			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("paid split total does not match expense amount"))
 			return
 		}
 		if math.Abs(owedTotal-payload.Amount) > tolerance {
-			utils.SendError(c, http.StatusBadRequest, "owed split total does not match expense amount")
+			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("owed split total does not match expense amount"))
 			return
 		}
 	}
 
 	if err := db.UpdateExpense(c.Request.Context(), h.pool, &payload); err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.SendError(c, err)
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, gin.H{"message": "expense updated"})
+	utils.SendOK(c, "expense updated")
 }
 
 // Delete godoc
@@ -216,9 +217,9 @@ func (h *ExpensesHandler) Delete(c *gin.Context) {
 	expense := middleware.MustGetExpense(c)
 
 	if err := db.DeleteExpense(c.Request.Context(), h.pool, expense.ExpenseID); err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.SendError(c, err)
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, gin.H{"message": "expense deleted"})
+	utils.SendOK(c, "expense deleted")
 }

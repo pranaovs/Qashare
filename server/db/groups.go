@@ -5,10 +5,10 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"time"
 
+	"github.com/pranaovs/qashare/apierrors"
 	"github.com/pranaovs/qashare/models"
 
 	"github.com/jackc/pgx/v5"
@@ -30,7 +30,7 @@ func CreateGroup(ctx context.Context, pool *pgxpool.Pool, group *models.Group) e
 
 		err := tx.QueryRow(ctx, query, group.Name, group.Description, group.CreatedBy).Scan(&group.GroupID, &group.CreatedAt)
 		if err != nil {
-			return fmt.Errorf("failed to insert group: %w", err)
+			return err
 		}
 
 		// Add creator as the first member
@@ -39,13 +39,13 @@ func CreateGroup(ctx context.Context, pool *pgxpool.Pool, group *models.Group) e
 
 		_, err = tx.Exec(ctx, memberQuery, group.CreatedBy, group.GroupID, time.Now())
 		if err != nil {
-			return fmt.Errorf("failed to add creator as member: %w", err)
+			return err
 		}
 
 		return nil
 	})
 	if err != nil {
-		return NewDBError("CreateGroup", err, "failed to create group")
+		return err
 	}
 
 	return nil
@@ -60,10 +60,10 @@ func GetGroupCreator(ctx context.Context, pool *pgxpool.Pool, groupID string) (s
 
 	err := pool.QueryRow(ctx, query, groupID).Scan(&creatorID)
 	if err == pgx.ErrNoRows {
-		return "", ErrGroupNotFound
+		return "", apierrors.ErrGroupNotFound
 	}
 	if err != nil {
-		return "", NewDBError("GetGroupCreator", err, "failed to query group creator")
+		return "", err
 	}
 
 	return creatorID, nil
@@ -89,10 +89,10 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.G
 	)
 
 	if err == pgx.ErrNoRows {
-		return models.GroupDetails{}, ErrGroupNotFound
+		return models.GroupDetails{}, apierrors.ErrGroupNotFound
 	}
 	if err != nil {
-		return models.GroupDetails{}, NewDBError("GetGroup", err, "failed to query group")
+		return models.GroupDetails{}, err
 	}
 
 	// Fetch group members with user details
@@ -104,7 +104,7 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.G
 
 	rows, err := pool.Query(ctx, membersQuery, groupID)
 	if err != nil {
-		return models.GroupDetails{}, NewDBError("GetGroup", err, "failed to query group members")
+		return models.GroupDetails{}, err
 	}
 	defer rows.Close()
 
@@ -114,14 +114,14 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.G
 		var member models.GroupUser
 		err := rows.Scan(&member.UserID, &member.Name, &member.Email, &member.Guest, &member.JoinedAt)
 		if err != nil {
-			return models.GroupDetails{}, NewDBError("GetGroup", err, "failed to scan member row")
+			return models.GroupDetails{}, err
 		}
 		group.Members = append(group.Members, member)
 	}
 
 	// Check for any errors during iteration
 	if err := rows.Err(); err != nil {
-		return models.GroupDetails{}, NewDBError("GetGroup", err, "error iterating member rows")
+		return models.GroupDetails{}, err
 	}
 
 	return group, nil
@@ -133,7 +133,7 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.G
 // Returns ErrInvalidInput if no user IDs are provided.
 func AddGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, userIDs []string) error {
 	if len(userIDs) == 0 {
-		return ErrInvalidInput
+		return apierrors.ErrBadRequest.Msg("no user IDs provided")
 	}
 
 	// Build batch queries for all users
@@ -156,11 +156,10 @@ func AddGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, us
 	}()
 
 	// Check results for each query
-	for i := range userIDs {
+	for range userIDs {
 		_, err := br.Exec()
 		if err != nil {
-			return NewDBError("AddGroupMembers", err,
-				fmt.Sprintf("failed to add member %d of %d", i+1, len(userIDs)))
+			return err
 		}
 	}
 
@@ -177,7 +176,7 @@ func AddGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID str
 
 	_, err := pool.Exec(ctx, query, userID, groupID, time.Now())
 	if err != nil {
-		return NewDBError("AddGroupMember", err, "failed to add member")
+		return err
 	}
 
 	return nil
@@ -191,12 +190,12 @@ func RemoveGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID 
 
 	result, err := pool.Exec(ctx, query, userID, groupID)
 	if err != nil {
-		return NewDBError("RemoveGroupMember", err, "failed to remove member")
+		return err
 	}
 
 	// Check if any rows were affected
 	if result.RowsAffected() == 0 {
-		return ErrNotMember
+		return apierrors.ErrUserNotInGroup
 	}
 
 	return nil
@@ -207,7 +206,7 @@ func RemoveGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID 
 // Returns ErrInvalidInput if no user IDs are provided.
 func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, userIDs []string) error {
 	if len(userIDs) == 0 {
-		return ErrInvalidInput
+		return apierrors.ErrBadRequest.Msg("no user IDs provided")
 	}
 
 	// Build batch queries for all users
@@ -229,11 +228,10 @@ func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string,
 	}()
 
 	// Check results for each query
-	for i := range userIDs {
+	for range userIDs {
 		_, err := br.Exec()
 		if err != nil {
-			return NewDBError("RemoveGroupMembers", err,
-				fmt.Sprintf("failed to remove member %d of %d", i+1, len(userIDs)))
+			return err
 		}
 	}
 

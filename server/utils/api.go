@@ -6,12 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strconv"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/pranaovs/qashare/apierrors"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -24,12 +25,12 @@ func init() {
 // HashPassword hashes a plaintext password using bcrypt.
 func HashPassword(password string) (string, error) {
 	if password == "" {
-		return "", errors.New("empty password provided")
+		return "", apierrors.ErrInvalidPassword
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return "", err
+		return "", errors.New("failed to hash password")
 	}
 	return string(hash), nil
 }
@@ -53,14 +54,10 @@ func randB64() string {
 var jwtSecret = []byte(GetEnv("JWT_SECRET", randB64()))
 
 func GenerateJWT(userID string) (string, error) {
-	expiryStr := GetEnv("JWT_EXPIRY", "24")
-	expiryHours, err := strconv.Atoi(expiryStr)
-	if err != nil || expiryHours <= 0 {
-		return "", fmt.Errorf("invalid JWT_EXPIRY value: %q, must be a positive integer", expiryStr)
-	}
+	expiryHours := GetEnvDuration("JWT_EXPIRY", 60*24) // Default to 24 hours
 	claims := jwt.MapClaims{
 		"user_id": userID,
-		"exp":     time.Now().Add(time.Duration(expiryHours) * time.Hour).Unix(),
+		"exp":     time.Now().Add(expiryHours).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -119,4 +116,12 @@ func AbortWithStatusJSON(c *gin.Context, statusCode int, message string) {
 // HTTP status code and data.
 func SendJSON(c *gin.Context, statusCode int, data interface{}) {
 	c.JSON(statusCode, data)
+}
+
+func SendOK(c *gin.Context, message string) {
+	c.JSON(http.StatusOK, gin.H{"message": message})
+}
+
+func SendData(c *gin.Context, data any) {
+	c.JSON(http.StatusOK, data)
 }

@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"slices"
 
+	"github.com/pranaovs/qashare/apierrors"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/middleware"
 	"github.com/pranaovs/qashare/models"
@@ -47,20 +47,20 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
 	group.Name, err = utils.ValidateName(request.Name)
 	if err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, apierrors.ErrInvalidName)
 		return
 	}
 
 	group.Description = request.Description
 	err = db.CreateGroup(c.Request.Context(), h.pool, &group)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.SendError(c, err)
 		return
 	}
 
@@ -82,7 +82,7 @@ func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
 
 	groups, err := db.MemberOfGroups(c.Request.Context(), h.pool, userID)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.SendError(c, err)
 		return
 	}
 	utils.SendJSON(c, http.StatusOK, groups)
@@ -102,7 +102,7 @@ func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	groups, err := db.AdminOfGroups(c.Request.Context(), h.pool, userID)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.SendError(c, err)
 		return
 	}
 	utils.SendJSON(c, http.StatusOK, groups)
@@ -125,7 +125,7 @@ func (h *GroupsHandler) GetGroup(c *gin.Context) {
 
 	group, err := db.GetGroup(c.Request.Context(), h.pool, groupID)
 	if err != nil {
-		utils.SendError(c, http.StatusNotFound, err.Error())
+		utils.SendError(c, err)
 		return
 	}
 
@@ -157,7 +157,7 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 
 	var req request
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.SendError(c, http.StatusBadRequest, "invalid request body")
+		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
@@ -165,11 +165,11 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 
 	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, groupID)
 	if err != nil {
-		utils.SendError(c, http.StatusNotFound, "group not found")
+		utils.SendError(c, apierrors.ErrGroupNotFound)
 		return
 	}
 	if groupCreator != userID {
-		utils.SendError(c, http.StatusForbidden, "only group admin can add members")
+		utils.SendError(c, apierrors.ErrNoPermissions)
 		return
 	}
 
@@ -178,22 +178,20 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 		err := db.UserExists(c.Request.Context(), h.pool, uid)
 		if err == nil {
 			validUserIDs = append(validUserIDs, uid)
-		} else if errors.Is(err, db.ErrUserNotFound) {
-			continue
 		} else {
-			utils.SendError(c, http.StatusInternalServerError, err.Error())
+			utils.SendError(c, err)
 			return
 		}
 	}
 
 	if len(validUserIDs) == 0 {
-		utils.SendError(c, http.StatusBadRequest, "no valid user IDs")
+		utils.SendError(c, apierrors.ErrUserNotFound.Msg("No valid user IDs provided"))
 		return
 	}
 
 	err = db.AddGroupMembers(c.Request.Context(), h.pool, groupID, validUserIDs)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, "failed to add members")
+		utils.SendError(c, err)
 		return
 	}
 
@@ -225,7 +223,7 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 
 	var req request
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.SendError(c, http.StatusBadRequest, "invalid request body")
+		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
@@ -233,13 +231,13 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 
 	if slices.Contains(req.UserIDs, userID) {
-		utils.SendError(c, http.StatusBadRequest, "cannot remove group admin")
+		utils.SendError(c, apierrors.ErrBadRequest.Msg("cannot remove self from group"))
 		return
 	}
 
 	err := db.RemoveGroupMembers(c.Request.Context(), h.pool, groupID, req.UserIDs)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, "failed to remove members")
+		utils.SendError(c, err)
 		return
 	}
 
@@ -265,13 +263,9 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 func (h *GroupsHandler) ListGroupExpenses(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 	expenses, err := db.GetExpenses(c.Request.Context(), h.pool, groupID)
-	if err == db.ErrInvalidInput {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
-		return
-	}
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.SendError(c, err)
 		return
 	}
-	utils.SendJSON(c, http.StatusOK, expenses)
+	utils.SendData(c, expenses)
 }

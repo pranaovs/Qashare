@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/pranaovs/qashare/apierrors"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/middleware"
 	"github.com/pranaovs/qashare/models"
@@ -39,7 +40,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
@@ -48,26 +49,26 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	user.Name, err = utils.ValidateName(request.Name)
 	if err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, err)
 		return
 	}
 
 	user.Email, err = utils.ValidateEmail(request.Email)
 	if err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, err)
 		return
 	}
 
 	passwordHash, err := utils.HashPassword(request.Password)
 	if err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, err)
 		return
 	}
 	user.PasswordHash = &passwordHash
 
 	err = db.CreateUser(c.Request.Context(), h.pool, &user)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.SendError(c, err)
 		return
 	}
 
@@ -93,13 +94,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
 	email, err := utils.ValidateEmail(request.Email)
 	if err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, err)
 		return
 	}
 
@@ -107,18 +108,18 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	userID, savedPassword, err := db.GetUserCredentials(c.Request.Context(), h.pool, email)
 	if err != nil {
-		utils.SendError(c, http.StatusUnauthorized, "invalid email or password")
+		utils.SendError(c, apierrors.ErrBadCredentials)
 		return
 	}
 
 	if ok := utils.CheckPassword(password, savedPassword); !ok {
-		utils.SendError(c, http.StatusUnauthorized, "invalid email or password")
+		utils.SendError(c, apierrors.ErrBadCredentials)
 		return
 	}
 
 	token, err := utils.GenerateJWT(userID)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, "failed to create token")
+		utils.SendError(c, err)
 		return
 	}
 
@@ -145,7 +146,7 @@ func (h *AuthHandler) Me(c *gin.Context) {
 
 	user, err := db.GetUser(c.Request.Context(), h.pool, userID)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.SendError(c, err)
 		return
 	}
 
@@ -173,19 +174,19 @@ func (h *AuthHandler) RegisterGuest(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
 	email, err := utils.ValidateEmail(request.Email)
 	if err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, err)
 		return
 	}
 
 	user, err := db.CreateGuest(c.Request.Context(), h.pool, email, userID)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.SendError(c, err)
 		return
 	}
 
