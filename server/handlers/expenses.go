@@ -31,17 +31,19 @@ func NewExpensesHandler(pool *pgxpool.Pool) *ExpensesHandler {
 // @Security BearerAuth
 // @Param request body models.ExpenseDetails true "Expense details with splits"
 // @Success 201 {object} models.ExpenseDetails
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 403 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Router /expenses/ [post]
 func (h *ExpensesHandler) Create(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 
 	var expense models.ExpenseDetails
 	if err := c.ShouldBindJSON(&expense); err != nil {
-		utils.SendError(c, http.StatusBadRequest, "invalid request body")
+		utils.LogWarn("Failed to bind JSON for expense creation", "user_id", userID, "error", err.Error())
+		utils.SendErrorWithCode(c, http.StatusBadRequest,
+			models.NewErrorResponse("invalid request body", models.ErrCodeValidation, err.Error()))
 		return
 	}
 
@@ -50,16 +52,22 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	// Verify user is a member of the group
 	isMember, err := db.MemberOfGroup(c.Request.Context(), h.pool, userID, expense.GroupID)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, "failed to verify membership")
+		utils.LogError("Failed to verify group membership", "user_id", userID, "group_id", expense.GroupID, "error", err.Error())
+		errResp := utils.MapDBError(err)
+		utils.SendErrorWithCode(c, http.StatusInternalServerError, errResp)
 		return
 	}
 	if !isMember {
-		utils.SendError(c, http.StatusForbidden, "user not a member of group")
+		utils.LogWarn("User not a member of group", "user_id", userID, "group_id", expense.GroupID)
+		utils.SendErrorWithCode(c, http.StatusForbidden,
+			models.NewErrorResponse("user not a member of group", models.ErrCodeForbidden, ""))
 		return
 	}
 
 	if len(expense.Splits) == 0 {
-		utils.SendError(c, http.StatusBadRequest, "no splits provided")
+		utils.LogWarn("No splits provided for expense", "user_id", userID, "group_id", expense.GroupID)
+		utils.SendErrorWithCode(c, http.StatusBadRequest,
+			models.NewErrorResponse("no splits provided", models.ErrCodeValidation, ""))
 		return
 	}
 
@@ -77,7 +85,9 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	uniqueUserIDs := utils.GetUniqueUserIDs(splitUserIDs)
 
 	if err := db.AllMembersOfGroup(c.Request.Context(), h.pool, uniqueUserIDs, expense.GroupID); err != nil {
-		utils.SendError(c, http.StatusBadRequest, "split user not in group")
+		utils.LogWarn("Split user not in group", "user_id", userID, "group_id", expense.GroupID, "error", err.Error())
+		utils.SendErrorWithCode(c, http.StatusBadRequest,
+			models.NewErrorResponse("split user not in group", models.ErrCodeValidation, err.Error()))
 		return
 	}
 
@@ -87,21 +97,32 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 			tolerance = 0.01
 		}
 		if math.Abs(paidTotal-expense.Amount) > tolerance {
-			utils.SendError(c, http.StatusBadRequest, "paid split total does not match expense amount")
+			utils.LogWarn("Paid split total mismatch", "user_id", userID, "group_id", expense.GroupID, "paid_total", paidTotal, "amount", expense.Amount)
+			utils.SendErrorWithCode(c, http.StatusBadRequest,
+				models.NewErrorResponse("paid split total does not match expense amount", models.ErrCodeValidation, ""))
 			return
 		}
 		if math.Abs(owedTotal-expense.Amount) > tolerance {
-			utils.SendError(c, http.StatusBadRequest, "owed split total does not match expense amount")
+			utils.LogWarn("Owed split total mismatch", "user_id", userID, "group_id", expense.GroupID, "owed_total", owedTotal, "amount", expense.Amount)
+			utils.SendErrorWithCode(c, http.StatusBadRequest,
+				models.NewErrorResponse("owed split total does not match expense amount", models.ErrCodeValidation, ""))
 			return
 		}
 	}
 
 	err = db.CreateExpense(c.Request.Context(), h.pool, &expense)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.LogError("Failed to create expense", "user_id", userID, "group_id", expense.GroupID, "error", err.Error())
+		errResp := utils.MapDBError(err)
+		status := http.StatusInternalServerError
+		if errResp.Code == models.ErrCodeConflict {
+			status = http.StatusConflict
+		}
+		utils.SendErrorWithCode(c, status, errResp)
 		return
 	}
 
+	utils.LogInfo("Expense created successfully", "user_id", userID, "expense_id", expense.ExpenseID, "group_id", expense.GroupID)
 	utils.SendJSON(c, http.StatusCreated, expense)
 }
 
@@ -113,13 +134,14 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Expense ID"
 // @Success 200 {object} models.ExpenseDetails
-// @Failure 401 {object} map[string]string
-// @Failure 403 {object} map[string]string
-// @Failure 404 {object} map[string]string
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
 // @Router /expenses/{id} [get]
 func (h *ExpensesHandler) GetExpense(c *gin.Context) {
 	// Expense is already fetched and authorized by middleware
 	expense := middleware.MustGetExpense(c)
+	utils.LogInfo("Expense retrieved", "expense_id", expense.ExpenseID)
 	utils.SendJSON(c, http.StatusOK, expense)
 }
 
@@ -133,11 +155,11 @@ func (h *ExpensesHandler) GetExpense(c *gin.Context) {
 // @Param id path string true "Expense ID"
 // @Param request body models.ExpenseDetails true "Updated expense details"
 // @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 403 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Router /expenses/{id} [put]
 func (h *ExpensesHandler) Update(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
@@ -145,7 +167,9 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 
 	var payload models.ExpenseDetails
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		utils.SendError(c, http.StatusBadRequest, "invalid request body")
+		utils.LogWarn("Failed to bind JSON for expense update", "expense_id", expense.ExpenseID, "error", err.Error())
+		utils.SendErrorWithCode(c, http.StatusBadRequest,
+			models.NewErrorResponse("invalid request body", models.ErrCodeValidation, err.Error()))
 		return
 	}
 
@@ -156,7 +180,9 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 	payload.CreatedAt = expense.CreatedAt
 
 	if len(payload.Splits) == 0 {
-		utils.SendError(c, http.StatusBadRequest, "no splits provided")
+		utils.LogWarn("No splits provided for expense update", "expense_id", expense.ExpenseID)
+		utils.SendErrorWithCode(c, http.StatusBadRequest,
+			models.NewErrorResponse("no splits provided", models.ErrCodeValidation, ""))
 		return
 	}
 
@@ -172,7 +198,9 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 	}
 
 	if err := db.AllMembersOfGroup(c.Request.Context(), h.pool, splitUserIDs, groupID); err != nil {
-		utils.SendError(c, http.StatusBadRequest, "split user not in group")
+		utils.LogWarn("Split user not in group for expense update", "expense_id", expense.ExpenseID, "group_id", groupID, "error", err.Error())
+		utils.SendErrorWithCode(c, http.StatusBadRequest,
+			models.NewErrorResponse("split user not in group", models.ErrCodeValidation, err.Error()))
 		return
 	}
 
@@ -182,20 +210,33 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 			tolerance = 0.01
 		}
 		if math.Abs(paidTotal-payload.Amount) > tolerance {
-			utils.SendError(c, http.StatusBadRequest, "paid split total does not match expense amount")
+			utils.LogWarn("Paid split total mismatch on update", "expense_id", expense.ExpenseID, "paid_total", paidTotal, "amount", payload.Amount)
+			utils.SendErrorWithCode(c, http.StatusBadRequest,
+				models.NewErrorResponse("paid split total does not match expense amount", models.ErrCodeValidation, ""))
 			return
 		}
 		if math.Abs(owedTotal-payload.Amount) > tolerance {
-			utils.SendError(c, http.StatusBadRequest, "owed split total does not match expense amount")
+			utils.LogWarn("Owed split total mismatch on update", "expense_id", expense.ExpenseID, "owed_total", owedTotal, "amount", payload.Amount)
+			utils.SendErrorWithCode(c, http.StatusBadRequest,
+				models.NewErrorResponse("owed split total does not match expense amount", models.ErrCodeValidation, ""))
 			return
 		}
 	}
 
 	if err := db.UpdateExpense(c.Request.Context(), h.pool, &payload); err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.LogError("Failed to update expense", "expense_id", expense.ExpenseID, "error", err.Error())
+		errResp := utils.MapDBError(err)
+		status := http.StatusInternalServerError
+		if errResp.Code == models.ErrCodeNotFound {
+			status = http.StatusNotFound
+		} else if errResp.Code == models.ErrCodeConflict {
+			status = http.StatusConflict
+		}
+		utils.SendErrorWithCode(c, status, errResp)
 		return
 	}
 
+	utils.LogInfo("Expense updated successfully", "expense_id", expense.ExpenseID)
 	utils.SendJSON(c, http.StatusOK, gin.H{"message": "expense updated"})
 }
 
@@ -207,18 +248,25 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Expense ID"
 // @Success 200 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 403 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 404 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Router /expenses/{id} [delete]
 func (h *ExpensesHandler) Delete(c *gin.Context) {
 	expense := middleware.MustGetExpense(c)
 
 	if err := db.DeleteExpense(c.Request.Context(), h.pool, expense.ExpenseID); err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.LogError("Failed to delete expense", "expense_id", expense.ExpenseID, "error", err.Error())
+		errResp := utils.MapDBError(err)
+		status := http.StatusInternalServerError
+		if errResp.Code == models.ErrCodeNotFound {
+			status = http.StatusNotFound
+		}
+		utils.SendErrorWithCode(c, status, errResp)
 		return
 	}
 
+	utils.LogInfo("Expense deleted successfully", "expense_id", expense.ExpenseID)
 	utils.SendJSON(c, http.StatusOK, gin.H{"message": "expense deleted"})
 }
