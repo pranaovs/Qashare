@@ -79,9 +79,22 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
           : _errorView(),
       
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: (){
-        //TODO: navigate to expense
-      },
+        onPressed: () async {
+          final group = _result!.group!;
+
+          final created = await Navigator.pushNamed(
+            context,
+            "/create-expense",
+            arguments: {
+              "groupId": widget.groupId,
+              "members": group.members,
+            },
+          );
+
+          if (created == true) {
+            _loadDetails(); // refresh expenses after adding
+          }
+        },
         icon: const Icon(Icons.add),
         label: const Text("Add Expense"),
       ),

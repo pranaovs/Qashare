@@ -54,6 +54,7 @@ class _MembersPageState extends State<MembersPage> {
     );
   }
 
+
   Widget _memberList() {
     final members = _result!.group!.members;
 
@@ -62,19 +63,82 @@ class _MembersPageState extends State<MembersPage> {
       itemCount: members.length,
       itemBuilder: (_, i) {
         final m = members[i];
+        final isAdmin = i == 0; // first member = admin
+
         return Card(
           child: ListTile(
             leading: const CircleAvatar(child: Icon(Icons.person)),
             title: Text(m.name),
             subtitle: Text(m.email),
-            trailing: m.guest
-                ? const Text("Guest", style: TextStyle(fontSize: 12))
-                : null,
+
+            trailing: isAdmin
+                ? const Text(
+              "Admin",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            )
+                : IconButton(
+              icon: const Icon(Icons.remove_circle_outline),
+              color: Colors.redAccent,
+              onPressed: () => _confirmRemove(m.userId, m.name),
+            ),
           ),
         );
       },
     );
   }
+
+
+  void _confirmRemove(String userId, String name) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Remove Member"),
+        content: Text("Remove $name from this group?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _removeMember(userId);
+            },
+            child:  Text("Remove",
+              style: TextStyle(color: Theme.of(context).colorScheme.onError),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _removeMember(String userId) async {
+    final token = await TokenStorage.getToken();
+    if (token == null) return;
+
+    final res = await ApiService.removeMembersFromGroup(
+      token: token,
+      groupId: widget.groupId,
+      userIds: [userId],
+    );
+
+    if (res.isSuccess) {
+      _showSnack("Member removed", false);
+      _loadMembers(); // refresh list
+    } else {
+      _showSnack(res.errorMessage ?? "Failed to remove member", true);
+    }
+  }
+
+
+
 
   Widget _errorView() {
     return Center(

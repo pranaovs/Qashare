@@ -3,6 +3,7 @@ import 'package:qashare/Config/api_config.dart';
 import 'package:qashare/Models/add_member_results.dart';
 import 'dart:convert';
 import 'package:qashare/Models/auth_model.dart';
+import 'package:qashare/Models/expense_model.dart';
 import 'package:qashare/Models/group_model.dart';
 import 'package:qashare/Models/groupdetail_model.dart';
 import 'package:qashare/Models/user_models.dart';
@@ -355,6 +356,98 @@ class ApiService {
       return UserLookupResult.error(e.toString());
     }
   }
+
+
+  static Future<AddMemberResult> removeMembersFromGroup({
+    required String token,
+    required String groupId,
+    required List<String> userIds,
+  }) async {
+    final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/members");
+
+    try {
+      final response = await http.delete(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({
+          "user_ids": userIds,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List removed = data["removed_members"] ?? [];
+        return AddMemberResult.success(List<String>.from(removed));
+      }
+
+      if (response.statusCode == 401) {
+        return AddMemberResult.error("Session expired.");
+      }
+
+      if (response.statusCode == 403) {
+        return AddMemberResult.error("Only admin can remove members.");
+      }
+
+      if (response.statusCode == 400) {
+        return AddMemberResult.error("Cannot remove admin or invalid user.");
+      }
+
+      if (response.statusCode == 404) {
+        return AddMemberResult.error("Group not found.");
+      }
+
+      return AddMemberResult.error("Server error.");
+    } catch (e) {
+      return AddMemberResult.error(e.toString());
+    }
+  }
+
+  static Future<BasicResult> createExpenseAdvanced({
+    required String token,
+    required ExpenseRequest request,
+  }) async {
+    final url = Uri.parse("${ApiConfig.baseUrl}/expenses/");
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode(request.toJson()),
+      );
+
+      if (response.statusCode == 200) {
+        return BasicResult.success();
+      }
+
+      if (response.statusCode == 401) {
+        return BasicResult.error("Session expired");
+      }
+
+      if (response.statusCode == 403) {
+        return BasicResult.error("Not a group member");
+      }
+
+      if (response.statusCode == 400) {
+        return BasicResult.error("Split does not match total amount");
+      }
+
+      if (response.statusCode == 500) {
+        return BasicResult.error("Server error");
+      }
+
+      return BasicResult.error("Unexpected error");
+    } catch (e) {
+      return BasicResult.error(e.toString());
+    }
+  }
+
+
 
 
 
