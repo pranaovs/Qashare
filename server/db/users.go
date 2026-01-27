@@ -315,19 +315,19 @@ func UserExists(ctx context.Context, pool *pgxpool.Pool, userID string) error {
 
 // MemberOfGroup checks if a user is a member of a specific group.
 // This is used for authorization checks before allowing group operations.
-// Returns nil if user is a member, or ErrNotMember if not.
-func MemberOfGroup(ctx context.Context, pool *pgxpool.Pool, userID, groupID string) error {
+// Returns (true, nil) if the user is a member, (false, nil) if not, or a non-nil error if the membership check fails.
+func MemberOfGroup(ctx context.Context, pool *pgxpool.Pool, userID, groupID string) (bool, error) {
 	exists, err := RecordExists(ctx, pool, "group_members",
 		"user_id = $1 AND group_id = $2", userID, groupID)
 	if err != nil {
-		return NewDBError("MemberOfGroup", err, "failed to check group membership")
+		return false, NewDBError("MemberOfGroup", err, "failed to check group membership")
 	}
 
 	if !exists {
-		return ErrNotMember
+		return false, nil
 	}
 
-	return nil
+	return true, nil
 }
 
 // AllMembersOfGroup verifies that all users in the provided list are members of the group.

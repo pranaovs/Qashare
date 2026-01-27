@@ -125,11 +125,10 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.Expe
 			SET title = $2,
 				description = $3,
 				amount = $4,
-				added_by = $5,
-				is_incomplete_amount = $6,
-				is_incomplete_split = $7,
-				latitude = $8,
-				longitude = $9
+				is_incomplete_amount = $5,
+				is_incomplete_split = $6,
+				latitude = $7,
+				longitude = $8
 			WHERE expense_id = $1`
 
 		result, err := tx.Exec(
@@ -139,7 +138,6 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.Expe
 			expense.Title,
 			expense.Description,
 			expense.Amount,
-			expense.AddedBy,
 			expense.IsIncompleteAmount,
 			expense.IsIncompleteSplit,
 			expense.Latitude,
@@ -237,7 +235,7 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 	}
 
 	// Fetch expense splits
-	splitsQuery := `SELECT user_id, amount, is_paid 
+	splitsQuery := `SELECT user_id, amount, is_paid
 		FROM expense_splits 
 		WHERE expense_id = $1
 		ORDER BY is_paid DESC, user_id`
@@ -295,4 +293,66 @@ func DeleteExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) er
 	}
 
 	return nil
+}
+
+// GetExpenses retrieves all expenses for a given group, ordered by creation time descending.
+// Returns an empty slice if no expenses are found.
+// Returns an error if the groupID is empty or the operation fails.
+func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID string) ([]models.Expense, error) {
+	// TODO: Add pagination support for large datasets
+
+	// Validate input
+	if groupID == "" {
+		return nil, ErrInvalidInput
+	}
+
+	// Query to get all expenses for the group
+	expensesQuery := `SELECT expense_id,
+		group_id,
+		added_by,
+		title,
+		description,
+		extract(epoch from created_at)::bigint,
+		amount,
+		is_incomplete_amount,
+		is_incomplete_split,
+		latitude,
+		longitude
+	FROM expenses
+	WHERE group_id = $1
+	ORDER BY created_at DESC`
+
+	rows, err := pool.Query(ctx, expensesQuery, groupID)
+	if err != nil {
+		return nil, NewDBError("GetExpenses", err, "failed to query expenses")
+	}
+	defer rows.Close()
+
+	var expenses []models.Expense
+	for rows.Next() {
+		var expense models.Expense
+		err = rows.Scan(
+			&expense.ExpenseID,
+			&expense.GroupID,
+			&expense.AddedBy,
+			&expense.Title,
+			&expense.Description,
+			&expense.CreatedAt,
+			&expense.Amount,
+			&expense.IsIncompleteAmount,
+			&expense.IsIncompleteSplit,
+			&expense.Latitude,
+			&expense.Longitude,
+		)
+		if err != nil {
+			return nil, NewDBError("GetExpenses", err, "failed to scan expense row")
+		}
+		expenses = append(expenses, expense)
+	}
+
+	// Check for any errors during iteration
+	if err := rows.Err(); err != nil {
+		return nil, NewDBError("GetExpenses", err, "error iterating expense rows")
+	}
+	return expenses, nil
 }

@@ -22,7 +22,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Login only when we intend to push
       - name: Log in to GitHub Container Registry
+        if: github.ref == 'refs/heads/main' || github.ref_type == 'tag'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -35,29 +40,23 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            # 1. BRANCHES: Each branch gets its own tag
-            type=ref,event=branch
+            # main branch gets :main
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
 
-            # 2. MAIN ONLY: 'latest' tag points to the main branch
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-
-            # 3. TAGS: Semver matching
+            # semver tags (releases only)
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
 
-            # 4. TAGS ONLY: 'stable' tag points to the latest git tag release
+            # latest & stable ONLY from tags
+            type=raw,value=latest,enable=${{ github.ref_type == 'tag' }}
             type=raw,value=stable,enable=${{ github.ref_type == 'tag' }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push
+      - name: Build (push only on main or tags)
         uses: docker/build-push-action@v5
         with:
-          # Changed context to the subdirectory containing your Dockerfile
           context: ./server
-          push: true
+          push: ${{ github.ref == 'refs/heads/main' || github.ref_type == 'tag' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

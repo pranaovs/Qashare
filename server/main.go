@@ -18,6 +18,24 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// @title Qashare API
+// @version 1.0
+// @description API for managing shared expenses, groups, and user authentication
+
+// @contact.name Pranaov S
+// @contact.email qashare.contact@pranaovs.me
+
+// @license.name AGPL-3.0
+// @license.url https://www.gnu.org/licenses/agpl-3.0.en.html
+
+// @host localhost:8080
+// @BasePath /
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
+
 func main() {
 	if err := run(); err != nil {
 		log.Fatal(err)

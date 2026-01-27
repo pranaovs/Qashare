@@ -22,16 +22,24 @@ func NewGroupsHandler(pool *pgxpool.Pool) *GroupsHandler {
 	return &GroupsHandler{pool: pool}
 }
 
+// Create godoc
+// @Summary Create a new group
+// @Description Create a new group with the logged in user as the creator
+// @Tags groups
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body object{name=string,description=string} true "Group details"
+// @Success 201 {object} models.Group
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /groups/ [post]
 func (h *GroupsHandler) Create(c *gin.Context) {
 	group := models.Group{}
-	var ok bool
 	var err error
 
-	group.CreatedBy, ok = middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
+	group.CreatedBy = middleware.MustGetUserID(c)
 
 	var request struct {
 		Name        string `json:"name" binding:"required"`
@@ -39,86 +47,109 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.SendError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	group.Name, err = utils.ValidateName(request.Name)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.SendError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	group.Description = request.Description
 	err = db.CreateGroup(c.Request.Context(), h.pool, &group)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, group)
+	utils.SendJSON(c, http.StatusCreated, group)
 }
 
+// ListUserGroups godoc
+// @Summary List user's groups
+// @Description Get all groups the logged in user is a member of
+// @Tags groups
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} models.Group
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /groups/me [get]
 func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
+	userID := middleware.MustGetUserID(c)
 
 	groups, err := db.MemberOfGroups(c.Request.Context(), h.pool, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, groups)
+	utils.SendJSON(c, http.StatusOK, groups)
 }
 
+// ListAdminGroups godoc
+// @Summary List groups user administers
+// @Description Get all groups that the authenticated user created (is admin of)
+// @Tags groups
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} models.Group
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /groups/admin [get]
 func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
-
+	userID := middleware.MustGetUserID(c)
 	groups, err := db.AdminOfGroups(c.Request.Context(), h.pool, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, groups)
+	utils.SendJSON(c, http.StatusOK, groups)
 }
 
+// GetGroup godoc
+// @Summary Get group details
+// @Description Get detailed information about a group
+// @Tags groups
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Group ID"
+// @Success 200 {object} models.GroupDetails
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /groups/{id} [get]
 func (h *GroupsHandler) GetGroup(c *gin.Context) {
-	userID, ok := middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
-
-	groupID := c.Param("id")
-
-	err := db.MemberOfGroup(c.Request.Context(), h.pool, userID, groupID)
-	if err != nil {
-		if errors.Is(err, db.ErrNotMember) {
-			c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to verify membership"})
-		}
-		return
-	}
+	groupID := middleware.MustGetGroupID(c)
 
 	group, err := db.GetGroup(c.Request.Context(), h.pool, groupID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		utils.SendError(c, http.StatusNotFound, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, group)
+	utils.SendJSON(c, http.StatusOK, group)
 }
 
+// AddMembers godoc
+// @Summary Add members to group
+// @Description Add one or more users to a group (requires group admin permission)
+// @Tags groups
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Group ID"
+// @Param request body object{user_ids=[]string} true "User IDs to add"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /groups/{id}/members [post]
 func (h *GroupsHandler) AddMembers(c *gin.Context) {
-	groupID := c.Param("id")
+	groupID := middleware.MustGetGroupID(c)
 
 	type request struct {
 		UserIDs []string `json:"user_ids" binding:"required,min=1"`
@@ -126,23 +157,19 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 
 	var req request
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		utils.SendError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	userID, ok := middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-		return
-	}
+	userID := middleware.MustGetUserID(c)
 
 	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, groupID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "group not found"})
+		utils.SendError(c, http.StatusNotFound, "group not found")
 		return
 	}
 	if groupCreator != userID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "only group admin can add members"})
+		utils.SendError(c, http.StatusForbidden, "only group admin can add members")
 		return
 	}
 
@@ -154,69 +181,97 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 		} else if errors.Is(err, db.ErrUserNotFound) {
 			continue
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			utils.SendError(c, http.StatusInternalServerError, err.Error())
 			return
 		}
 	}
 
 	if len(validUserIDs) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "no valid user IDs"})
+		utils.SendError(c, http.StatusBadRequest, "no valid user IDs")
 		return
 	}
 
 	err = db.AddGroupMembers(c.Request.Context(), h.pool, groupID, validUserIDs)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to add members"})
+		utils.SendError(c, http.StatusInternalServerError, "failed to add members")
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	utils.SendJSON(c, http.StatusOK, gin.H{
 		"message":       "members added successfully",
 		"added_members": validUserIDs,
 	})
 }
 
+// RemoveMembers godoc
+// @Summary Remove members from group
+// @Description Remove one or more users from a group (requires group admin permission)
+// @Tags groups
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Group ID"
+// @Param request body object{user_ids=[]string} true "User IDs to remove"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /groups/{id}/members [delete]
 func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
-	groupID := c.Param("id")
-
 	type request struct {
 		UserIDs []string `json:"user_ids" binding:"required,min=1"`
 	}
 
 	var req request
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		utils.SendError(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	userID, ok := middleware.GetUserID(c)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+	userID := middleware.MustGetUserID(c)
+	groupID := middleware.MustGetGroupID(c)
+
+	if slices.Contains(req.UserIDs, userID) {
+		utils.SendError(c, http.StatusBadRequest, "cannot remove group admin")
 		return
 	}
 
-	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, groupID)
+	err := db.RemoveGroupMembers(c.Request.Context(), h.pool, groupID, req.UserIDs)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "group not found"})
-		return
-	}
-	if groupCreator != userID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "only group admin can remove members"})
-		return
-	}
-	if slices.Contains(req.UserIDs, groupCreator) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "cannot remove group admin"})
+		utils.SendError(c, http.StatusInternalServerError, "failed to remove members")
 		return
 	}
 
-	err = db.RemoveGroupMembers(c.Request.Context(), h.pool, groupID, req.UserIDs)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to remove members"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
+	utils.SendJSON(c, http.StatusOK, gin.H{
 		"message":         "members removed",
 		"removed_members": req.UserIDs,
 	})
+}
+
+// ListGroupExpenses godoc
+// @Summary List group expenses
+// @Description Get all expenses of a group
+// @Tags groups
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Group ID"
+// @Success 200 {array} models.Expense
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /groups/{id}/expenses [get]
+func (h *GroupsHandler) ListGroupExpenses(c *gin.Context) {
+	groupID := middleware.MustGetGroupID(c)
+	expenses, err := db.GetExpenses(c.Request.Context(), h.pool, groupID)
+	if err == db.ErrInvalidInput {
+		utils.SendError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err != nil {
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	utils.SendJSON(c, http.StatusOK, expenses)
 }

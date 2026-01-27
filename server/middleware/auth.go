@@ -14,8 +14,7 @@ func RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-			c.Abort()
+			utils.AbortWithStatusJSON(c, http.StatusUnauthorized, err.Error())
 			return
 		}
 
@@ -30,6 +29,21 @@ func GetUserID(c *gin.Context) (string, bool) {
 		return "", false
 	}
 
-	id, ok := userID.(string)
-	return id, ok
+	userIDStr, ok := userID.(string)
+	if !ok {
+		return "", false
+	}
+
+	return userIDStr, true
+}
+
+// MustGetUserID retrieves the user ID from the context. Intended for use in handlers
+// If the user ID is not found, it panics, indicating a server-side misconfiguration.
+func MustGetUserID(c *gin.Context) string {
+	userID, ok := GetUserID(c)
+	if !ok {
+		// not a runtime user error. Gin will recover and return 500.
+		panic("MustGetUserID: user ID not found in context. Did you forget to add the RequireAuth middleware?")
+	}
+	return userID
 }

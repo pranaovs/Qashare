@@ -32,6 +32,7 @@
   - [Installation](#installation)
     - [Installing the client](#installing-the-client)
     - [Running the Server](#running-the-server)
+- [API Documentation](#api-documentation)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
@@ -102,6 +103,16 @@ To set up the project locally, follow these instructions for both the client and
     go run .
     ```
 
+#### Running the Server with Docker
+
+1. Download and edit the [`docker-compose.yml`](https://github.com/pranaovs/Qashare/blob/main/server/docker-compose.yml) file to set your environment variables.
+
+2. Run Docker Compose
+
+    ```sh
+    docker compose up
+    ```
+
 #### Installing the client
 
 1. Switch to the project directory
@@ -121,6 +132,30 @@ To set up the project locally, follow these instructions for both the client and
     ```sh
     flutter run
     ```
+
+## API Documentation
+
+The Qashare API is documented using Swagger/OpenAPI. Once the server is running, you can access the interactive API documentation at:
+
+```
+http://localhost:8080/swagger/index.html
+```
+
+The Swagger UI provides:
+- Complete API endpoint documentation
+- Request/response schemas for all operations
+- Interactive testing capability (try out API calls directly from the browser)
+- Authentication using JWT Bearer tokens
+
+### API Endpoints
+
+The API includes the following endpoint groups:
+
+- **Authentication** (`/auth/*`): User registration, login, and guest user management
+- **Users** (`/users/*`): User profile and search operations
+- **Groups** (`/groups/*`): Group creation, membership management, and expense listing
+- **Expenses** (`/expenses/*`): Expense creation, retrieval, updates, and deletion
+- **Health** (`/health`): Server health check endpoint
 
 ## Roadmap
 
@@ -164,8 +199,8 @@ Distributed under the AGPL-3.0 License. See [`LICENSE`](https://github.com/prana
 
 ## Maintainers
 
-- Sasvat S R - [@sasvat007](https://github.com/sasvat007)
-- S S Kavinthra - [@kav1nthra](https://github.com/kav1nthra)
+- Sasvat S R ([client/](https://github.com/pranaovs/Qashare/tree/main/client)) - [@sasvat007](https://github.com/sasvat007)
+- Pranaov S ([server/](https://github.com/pranaovs/Qashare/tree/main/server)) - [@pranaovs](https://github.com/pranaovs)
 
 ## Contact
 
