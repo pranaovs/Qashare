@@ -21,7 +21,7 @@ func NewUsersHandler(pool *pgxpool.Pool) *UsersHandler {
 
 // GetUser godoc
 // @Summary Get user by ID
-// @Description Get user information by user ID (requires users to be related through groups)
+// @Description Get user information by user ID (users must be related through a common group)
 // @Tags users
 // @Produce json
 // @Security BearerAuth

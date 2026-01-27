@@ -129,13 +129,12 @@ definitions:
 host: localhost:8080
 info:
   contact:
-    email: support@qashare.com
-    name: API Support
+    email: qashare.contact@pranaovs.me
+    name: Pranaov S
   description: API for managing shared expenses, groups, and user authentication
   license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-  termsOfService: http://swagger.io/terms/
+    name: AGPL-3.0
+    url: https://www.gnu.org/licenses/agpl-3.0.en.html
   title: Qashare API
   version: "1.0"
 paths:
@@ -143,7 +142,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new guest user by email (requires authentication)
+      description: Create a new guest user by email (requires authentication). Used
+        to add non-registered users to groups. Name will be set to [name]@domain.tld
       parameters:
       - description: Guest user email
         in: body
@@ -262,7 +262,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new user account with name, email, and password
+      description: Create a new user account
       parameters:
       - description: User registration details
         in: body
@@ -303,7 +303,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new expense with splits for a group
+      description: Create a new expense with splits for a group. The logged in user
+        will be set as the AddedBy user.
       parameters:
       - description: Expense details with splits
         in: body
@@ -497,7 +498,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new group with the authenticated user as the creator
+      description: Create a new group with the logged in user as the creator
       parameters:
       - description: Group details
         in: body
@@ -542,7 +543,7 @@ paths:
       - groups
   /groups/{id}:
     get:
-      description: Get detailed information about a group including its members
+      description: Get detailed information about a group
       parameters:
       - description: Group ID
         in: path
@@ -581,7 +582,7 @@ paths:
       - groups
   /groups/{id}/expenses:
     get:
-      description: Get all expenses for a specific group
+      description: Get all expenses of a group
       parameters:
       - description: Group ID
         in: path
@@ -780,7 +781,7 @@ paths:
       - groups
   /groups/me:
     get:
-      description: Get all groups that the authenticated user is a member of
+      description: Get all groups the logged in user is a member of
       produces:
       - application/json
       responses:
@@ -822,8 +823,8 @@ paths:
       - health
   /users/{id}:
     get:
-      description: Get user information by user ID (requires users to be related through
-        groups)
+      description: Get user information by user ID (users must be related through
+        a common group)
       parameters:
       - description: User ID
         in: path

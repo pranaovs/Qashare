@@ -24,7 +24,7 @@ func NewGroupsHandler(pool *pgxpool.Pool) *GroupsHandler {
 
 // Create godoc
 // @Summary Create a new group
-// @Description Create a new group with the authenticated user as the creator
+// @Description Create a new group with the logged in user as the creator
 // @Tags groups
 // @Accept json
 // @Produce json
@@ -69,7 +69,7 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 
 // ListUserGroups godoc
 // @Summary List user's groups
-// @Description Get all groups that the authenticated user is a member of
+// @Description Get all groups the logged in user is a member of
 // @Tags groups
 // @Produce json
 // @Security BearerAuth
@@ -110,7 +110,7 @@ func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
 
 // GetGroup godoc
 // @Summary Get group details
-// @Description Get detailed information about a group including its members
+// @Description Get detailed information about a group
 // @Tags groups
 // @Produce json
 // @Security BearerAuth
@@ -251,7 +251,7 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 
 // ListGroupExpenses godoc
 // @Summary List group expenses
-// @Description Get all expenses for a specific group
+// @Description Get all expenses of a group
 // @Tags groups
 // @Produce json
 // @Security BearerAuth

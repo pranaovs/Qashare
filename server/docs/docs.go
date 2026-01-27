@@ -9,14 +9,13 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "http://swagger.io/terms/",
         "contact": {
-            "name": "API Support",
-            "email": "support@qashare.com"
+            "name": "Pranaov S",
+            "email": "qashare.contact@pranaovs.me"
         },
         "license": {
-            "name": "MIT",
-            "url": "https://opensource.org/licenses/MIT"
+            "name": "AGPL-3.0",
+            "url": "https://www.gnu.org/licenses/agpl-3.0.en.html"
         },
         "version": "{{.Version}}"
     },
@@ -30,7 +29,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new guest user by email (requires authentication)",
+                "description": "Create a new guest user by email (requires authentication). Used to add non-registered users to groups. Name will be set to [name]@domain.tld",
                 "consumes": [
                     "application/json"
                 ],
@@ -211,7 +210,7 @@ const docTemplate = `{
         },
         "/auth/register": {
             "post": {
-                "description": "Create a new user account with name, email, and password",
+                "description": "Create a new user account",
                 "consumes": [
                     "application/json"
                 ],
@@ -279,7 +278,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new expense with splits for a group",
+                "description": "Create a new expense with splits for a group. The logged in user will be set as the AddedBy user.",
                 "consumes": [
                     "application/json"
                 ],
@@ -578,7 +577,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new group with the authenticated user as the creator",
+                "description": "Create a new group with the logged in user as the creator",
                 "consumes": [
                     "application/json"
                 ],
@@ -698,7 +697,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all groups that the authenticated user is a member of",
+                "description": "Get all groups the logged in user is a member of",
                 "produces": [
                     "application/json"
                 ],
@@ -744,7 +743,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get detailed information about a group including its members",
+                "description": "Get detailed information about a group",
                 "produces": [
                     "application/json"
                 ],
@@ -805,7 +804,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all expenses for a specific group",
+                "description": "Get all expenses of a group",
                 "produces": [
                     "application/json"
                 ],
@@ -1148,7 +1147,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get user information by user ID (requires users to be related through groups)",
+                "description": "Get user information by user ID (users must be related through a common group)",
                 "produces": [
                     "application/json"
                 ],

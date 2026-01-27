@@ -24,7 +24,7 @@ func NewExpensesHandler(pool *pgxpool.Pool) *ExpensesHandler {
 
 // Create godoc
 // @Summary Create a new expense
-// @Description Create a new expense with splits for a group
+// @Description Create a new expense with splits for a group. The logged in user will be set as the AddedBy user.
 // @Tags expenses
 // @Accept json
 // @Produce json

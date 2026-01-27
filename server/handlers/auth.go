@@ -22,7 +22,7 @@ func NewAuthHandler(pool *pgxpool.Pool) *AuthHandler {
 
 // Register godoc
 // @Summary Register a new user
-// @Description Create a new user account with name, email, and password
+// @Description Create a new user account
 // @Tags auth
 // @Accept json
 // @Produce json
@@ -154,7 +154,7 @@ func (h *AuthHandler) Me(c *gin.Context) {
 
 // RegisterGuest godoc
 // @Summary Register a guest user
-// @Description Create a new guest user by email (requires authentication)
+// @Description Create a new guest user by email (requires authentication). Used to add non-registered users to groups. Name will be set to [name]@domain.tld
 // @Tags auth
 // @Accept json
 // @Produce json

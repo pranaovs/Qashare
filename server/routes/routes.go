@@ -3,9 +3,9 @@ package routes
 import (
 	"net/http"
 
-	_ "github.com/pranaovs/qashare/docs" // Import swagger docs
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/pranaovs/qashare/docs" // Import swagger docs
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
