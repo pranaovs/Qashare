@@ -21,6 +21,14 @@ func init() {
 	Loadenv()
 }
 
+// JWT-related errors
+var (
+	ErrAuthHeaderMissing = errors.New("authorization header missing or malformed")
+	ErrInvalidToken      = errors.New("invalid token")
+	ErrExpiredToken      = errors.New("expired token")
+	ErrInvalidClaims     = errors.New("invalid token claims")
+)
+
 // Passwords
 
 // HashPassword hashes a plaintext password using bcrypt.
@@ -71,7 +79,7 @@ func GenerateJWT(userID string) (string, error) {
 
 func ExtractClaims(authHeader string) (jwt.MapClaims, error) {
 	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-		return nil, errors.New("authorization header missing or malformed")
+		return nil, ErrAuthHeaderMissing
 	}
 
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
@@ -83,14 +91,14 @@ func ExtractClaims(authHeader string) (jwt.MapClaims, error) {
 		return []byte(jwtSecret), nil
 	})
 	if err != nil {
-		return nil, errors.New("invalid token")
+		return nil, ErrInvalidToken
 	}
 	if !token.Valid {
-		return nil, errors.New("expired token")
+		return nil, ErrExpiredToken
 	}
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return nil, errors.New("invalid token claims")
+		return nil, ErrInvalidClaims
 	}
 
 	return claims, nil
@@ -104,7 +112,7 @@ func ExtractUserID(authHeader string) (string, error) {
 
 	userID, ok := claims["user_id"].(string)
 	if !ok {
-		return "", errors.New("invalid token claims")
+		return "", ErrInvalidClaims
 	}
 
 	return userID, nil
@@ -119,8 +127,10 @@ func AbortWithStatusJSON(c *gin.Context, statusCode int, message string) {
 
 // AbortWithError aborts the request and sends a structured error response
 func AbortWithError(c *gin.Context, statusCode int, errResp models.ErrorResponse) {
-	LogError(c.Request.Context(), "Request aborted with error",
-		fmt.Errorf("%s", errResp.Error),
+	// Log the error response being sent (original error was already logged by caller)
+	logger := Logger()
+	logger.ErrorContext(c.Request.Context(), "Request aborted with error",
+		"error", errResp.Error,
 		"code", errResp.Code,
 		"message", errResp.Message,
 		"status", statusCode,
@@ -144,8 +154,10 @@ func SendError(c *gin.Context, statusCode int, message string) {
 
 // SendErrorWithCode sends a structured error response with error code
 func SendErrorWithCode(c *gin.Context, statusCode int, errResp models.ErrorResponse) {
-	LogError(c.Request.Context(), "Error response sent",
-		fmt.Errorf("%s", errResp.Error),
+	// Log the error response being sent (original error was already logged by caller)
+	logger := Logger()
+	logger.ErrorContext(c.Request.Context(), "Error response sent",
+		"error", errResp.Error,
 		"code", errResp.Code,
 		"message", errResp.Message,
 		"status", statusCode,

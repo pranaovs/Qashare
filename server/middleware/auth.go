@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/pranaovs/qashare/models"
@@ -17,14 +18,21 @@ func RequireAuth() gin.HandlerFunc {
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
 			utils.LogWarn(ctx, "Authentication failed", "error", err.Error(), "path", c.Request.URL.Path)
-			errCode := models.ErrCodeInvalidToken
-			if err.Error() == "expired token" {
-				errCode = models.ErrCodeExpiredToken
-			} else if err.Error() == "authorization header missing or malformed" {
-				errCode = models.ErrCodeUnauthorized
+			
+			// Map specific JWT errors to appropriate error codes
+			errResp := models.ErrorResponse{}
+			switch {
+			case errors.Is(err, utils.ErrExpiredToken):
+				errResp = models.NewSimpleErrorResponse(err.Error(), models.ErrCodeExpiredToken)
+			case errors.Is(err, utils.ErrAuthHeaderMissing):
+				errResp = models.NewSimpleErrorResponse(err.Error(), models.ErrCodeUnauthorized)
+			case errors.Is(err, utils.ErrInvalidToken), errors.Is(err, utils.ErrInvalidClaims):
+				errResp = models.NewSimpleErrorResponse(err.Error(), models.ErrCodeInvalidToken)
+			default:
+				errResp = models.NewSimpleErrorResponse(err.Error(), models.ErrCodeInvalidToken)
 			}
-			utils.AbortWithError(c, http.StatusUnauthorized,
-				models.NewSimpleErrorResponse(err.Error(), errCode))
+			
+			utils.AbortWithError(c, http.StatusUnauthorized, errResp)
 			return
 		}
 
