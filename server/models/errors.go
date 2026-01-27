@@ -7,6 +7,48 @@ type ErrorResponse struct {
 	Message string `json:"message,omitempty" example:"The provided email format is invalid"`
 }
 
+// ValidationErrorResponse represents a 400 Bad Request validation error
+type ValidationErrorResponse struct {
+	Error   string `json:"error" example:"invalid request body"`
+	Code    string `json:"code" example:"VALIDATION_ERROR"`
+	Message string `json:"message,omitempty" example:"The provided email format is invalid"`
+}
+
+// UnauthorizedErrorResponse represents a 401 Unauthorized error
+type UnauthorizedErrorResponse struct {
+	Error   string `json:"error" example:"invalid token"`
+	Code    string `json:"code" example:"INVALID_TOKEN"`
+	Message string `json:"message,omitempty" example:""`
+}
+
+// ForbiddenErrorResponse represents a 403 Forbidden error
+type ForbiddenErrorResponse struct {
+	Error   string `json:"error" example:"access denied"`
+	Code    string `json:"code" example:"FORBIDDEN"`
+	Message string `json:"message,omitempty" example:""`
+}
+
+// NotFoundErrorResponse represents a 404 Not Found error
+type NotFoundErrorResponse struct {
+	Error   string `json:"error" example:"resource not found"`
+	Code    string `json:"code" example:"NOT_FOUND"`
+	Message string `json:"message,omitempty" example:""`
+}
+
+// ConflictErrorResponse represents a 409 Conflict error
+type ConflictErrorResponse struct {
+	Error   string `json:"error" example:"resource already exists"`
+	Code    string `json:"code" example:"CONFLICT"`
+	Message string `json:"message,omitempty" example:""`
+}
+
+// InternalErrorResponse represents a 500 Internal Server Error
+type InternalErrorResponse struct {
+	Error   string `json:"error" example:"internal server error"`
+	Code    string `json:"code" example:"INTERNAL_ERROR"`
+	Message string `json:"message,omitempty" example:"An unexpected error occurred"`
+}
+
 // ErrorCode constants for stable error identification
 const (
 	// General errors

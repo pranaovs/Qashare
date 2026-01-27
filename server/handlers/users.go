@@ -28,10 +28,10 @@ func NewUsersHandler(pool *pgxpool.Pool) *UsersHandler {
 // @Security BearerAuth
 // @Param id path string true "User ID"
 // @Success 200 {object} models.User
-// @Failure 400 {object} models.ErrorResponse
-// @Failure 401 {object} models.ErrorResponse
-// @Failure 403 {object} models.ErrorResponse
-// @Failure 500 {object} models.ErrorResponse
+// @Failure 401 {object} models.UnauthorizedErrorResponse
+// @Failure 403 {object} models.ForbiddenErrorResponse
+// @Failure 404 {object} models.NotFoundErrorResponse
+// @Failure 500 {object} models.InternalErrorResponse
 // @Router /users/{id} [get]
 func (h *UsersHandler) GetUser(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -75,9 +75,10 @@ func (h *UsersHandler) GetUser(c *gin.Context) {
 // @Security BearerAuth
 // @Param email path string true "User Email"
 // @Success 200 {object} models.User
-// @Failure 400 {object} models.ErrorResponse
-// @Failure 401 {object} models.ErrorResponse
-// @Failure 500 {object} models.ErrorResponse
+// @Failure 400 {object} models.ValidationErrorResponse
+// @Failure 401 {object} models.UnauthorizedErrorResponse
+// @Failure 404 {object} models.NotFoundErrorResponse
+// @Failure 500 {object} models.InternalErrorResponse
 // @Router /users/search/email/{email} [get]
 func (h *UsersHandler) SearchByEmail(c *gin.Context) {
 	ctx := c.Request.Context()
