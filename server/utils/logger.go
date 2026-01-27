@@ -13,7 +13,7 @@ func init() {
 	opts := &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}
-	
+
 	// Check environment for debug mode
 	if GetEnvBool("DEBUG", false) {
 		opts.Level = slog.LevelDebug

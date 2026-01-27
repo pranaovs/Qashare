@@ -18,7 +18,7 @@ func RequireAuth() gin.HandlerFunc {
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
 			utils.LogWarn(ctx, "Authentication failed", "error", err.Error(), "path", c.Request.URL.Path)
-			
+
 			// Map specific JWT errors to appropriate error codes
 			errResp := models.ErrorResponse{}
 			switch {
@@ -31,7 +31,7 @@ func RequireAuth() gin.HandlerFunc {
 			default:
 				errResp = models.NewSimpleErrorResponse(err.Error(), models.ErrCodeInvalidToken)
 			}
-			
+
 			utils.AbortWithError(c, http.StatusUnauthorized, errResp)
 			return
 		}

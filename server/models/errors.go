@@ -10,14 +10,14 @@ type ErrorResponse struct {
 // ErrorCode constants for stable error identification
 const (
 	// General errors
-	ErrCodeInternal       = "INTERNAL_ERROR"
-	ErrCodeBadRequest     = "BAD_REQUEST"
-	ErrCodeValidation     = "VALIDATION_ERROR"
-	ErrCodeNotFound       = "NOT_FOUND"
-	ErrCodeConflict       = "CONFLICT"
-	ErrCodeUnauthorized   = "UNAUTHORIZED"
-	ErrCodeForbidden      = "FORBIDDEN"
-	ErrCodeInvalidInput   = "INVALID_INPUT"
+	ErrCodeInternal     = "INTERNAL_ERROR"
+	ErrCodeBadRequest   = "BAD_REQUEST"
+	ErrCodeValidation   = "VALIDATION_ERROR"
+	ErrCodeNotFound     = "NOT_FOUND"
+	ErrCodeConflict     = "CONFLICT"
+	ErrCodeUnauthorized = "UNAUTHORIZED"
+	ErrCodeForbidden    = "FORBIDDEN"
+	ErrCodeInvalidInput = "INVALID_INPUT"
 
 	// User-specific errors
 	ErrCodeUserNotFound       = "USER_NOT_FOUND"
@@ -29,15 +29,15 @@ const (
 	ErrCodeExpiredToken       = "EXPIRED_TOKEN"
 
 	// Group-specific errors
-	ErrCodeGroupNotFound    = "GROUP_NOT_FOUND"
-	ErrCodeNotMember        = "NOT_MEMBER"
-	ErrCodeNotGroupCreator  = "NOT_GROUP_CREATOR"
+	ErrCodeGroupNotFound   = "GROUP_NOT_FOUND"
+	ErrCodeNotMember       = "NOT_MEMBER"
+	ErrCodeNotGroupCreator = "NOT_GROUP_CREATOR"
 
 	// Expense-specific errors
-	ErrCodeExpenseNotFound     = "EXPENSE_NOT_FOUND"
-	ErrCodeInvalidAmount       = "INVALID_AMOUNT"
-	ErrCodeTitleRequired       = "TITLE_REQUIRED"
-	ErrCodeExpenseIDRequired   = "EXPENSE_ID_REQUIRED"
+	ErrCodeExpenseNotFound   = "EXPENSE_NOT_FOUND"
+	ErrCodeInvalidAmount     = "INVALID_AMOUNT"
+	ErrCodeTitleRequired     = "TITLE_REQUIRED"
+	ErrCodeExpenseIDRequired = "EXPENSE_ID_REQUIRED"
 )
 
 // NewErrorResponse creates a new error response with code and message
