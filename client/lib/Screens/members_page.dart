@@ -54,7 +54,6 @@ class _MembersPageState extends State<MembersPage> {
     );
   }
 
-
   Widget _memberList() {
     final members = _result!.group!.members;
 
