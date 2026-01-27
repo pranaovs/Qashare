@@ -22,6 +22,20 @@ func NewExpensesHandler(pool *pgxpool.Pool) *ExpensesHandler {
 	return &ExpensesHandler{pool: pool}
 }
 
+// Create godoc
+// @Summary Create a new expense
+// @Description Create a new expense with splits for a group
+// @Tags expenses
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body models.ExpenseDetails true "Expense details with splits"
+// @Success 201 {object} models.ExpenseDetails
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /expenses/ [post]
 func (h *ExpensesHandler) Create(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 
@@ -91,12 +105,40 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	utils.SendJSON(c, http.StatusCreated, expense)
 }
 
+// GetExpense godoc
+// @Summary Get expense details
+// @Description Get detailed information about an expense including splits
+// @Tags expenses
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Expense ID"
+// @Success 200 {object} models.ExpenseDetails
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /expenses/{id} [get]
 func (h *ExpensesHandler) GetExpense(c *gin.Context) {
 	// Expense is already fetched and authorized by middleware
 	expense := middleware.MustGetExpense(c)
 	utils.SendJSON(c, http.StatusOK, expense)
 }
 
+// Update godoc
+// @Summary Update an expense
+// @Description Update an existing expense (requires being group admin or expense creator)
+// @Tags expenses
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Expense ID"
+// @Param request body models.ExpenseDetails true "Updated expense details"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /expenses/{id} [put]
 func (h *ExpensesHandler) Update(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 	expense := middleware.MustGetExpense(c)
@@ -157,6 +199,19 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 	utils.SendJSON(c, http.StatusOK, gin.H{"message": "expense updated"})
 }
 
+// Delete godoc
+// @Summary Delete an expense
+// @Description Delete an expense (requires being group admin or expense creator)
+// @Tags expenses
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Expense ID"
+// @Success 200 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /expenses/{id} [delete]
 func (h *ExpensesHandler) Delete(c *gin.Context) {
 	expense := middleware.MustGetExpense(c)
 
