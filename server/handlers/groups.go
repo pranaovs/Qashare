@@ -22,6 +22,19 @@ func NewGroupsHandler(pool *pgxpool.Pool) *GroupsHandler {
 	return &GroupsHandler{pool: pool}
 }
 
+// Create godoc
+// @Summary Create a new group
+// @Description Create a new group with the logged in user as the creator
+// @Tags groups
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body object{name=string,description=string} true "Group details"
+// @Success 201 {object} models.Group
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /groups/ [post]
 func (h *GroupsHandler) Create(c *gin.Context) {
 	group := models.Group{}
 	var err error
@@ -54,6 +67,16 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 	utils.SendJSON(c, http.StatusCreated, group)
 }
 
+// ListUserGroups godoc
+// @Summary List user's groups
+// @Description Get all groups the logged in user is a member of
+// @Tags groups
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} models.Group
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /groups/me [get]
 func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 
@@ -65,6 +88,16 @@ func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
 	utils.SendJSON(c, http.StatusOK, groups)
 }
 
+// ListAdminGroups godoc
+// @Summary List groups user administers
+// @Description Get all groups that the authenticated user created (is admin of)
+// @Tags groups
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} models.Group
+// @Failure 401 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /groups/admin [get]
 func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	groups, err := db.AdminOfGroups(c.Request.Context(), h.pool, userID)
@@ -75,6 +108,18 @@ func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
 	utils.SendJSON(c, http.StatusOK, groups)
 }
 
+// GetGroup godoc
+// @Summary Get group details
+// @Description Get detailed information about a group
+// @Tags groups
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Group ID"
+// @Success 200 {object} models.GroupDetails
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /groups/{id} [get]
 func (h *GroupsHandler) GetGroup(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 
@@ -87,6 +132,22 @@ func (h *GroupsHandler) GetGroup(c *gin.Context) {
 	utils.SendJSON(c, http.StatusOK, group)
 }
 
+// AddMembers godoc
+// @Summary Add members to group
+// @Description Add one or more users to a group (requires group admin permission)
+// @Tags groups
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Group ID"
+// @Param request body object{user_ids=[]string} true "User IDs to add"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /groups/{id}/members [post]
 func (h *GroupsHandler) AddMembers(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 
@@ -142,6 +203,21 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 	})
 }
 
+// RemoveMembers godoc
+// @Summary Remove members from group
+// @Description Remove one or more users from a group (requires group admin permission)
+// @Tags groups
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Group ID"
+// @Param request body object{user_ids=[]string} true "User IDs to remove"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /groups/{id}/members [delete]
 func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 	type request struct {
 		UserIDs []string `json:"user_ids" binding:"required,min=1"`
@@ -173,6 +249,19 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 	})
 }
 
+// ListGroupExpenses godoc
+// @Summary List group expenses
+// @Description Get all expenses of a group
+// @Tags groups
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Group ID"
+// @Success 200 {array} models.Expense
+// @Failure 400 {object} map[string]string
+// @Failure 401 {object} map[string]string
+// @Failure 403 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /groups/{id}/expenses [get]
 func (h *GroupsHandler) ListGroupExpenses(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 	expenses, err := db.GetExpenses(c.Request.Context(), h.pool, groupID)
