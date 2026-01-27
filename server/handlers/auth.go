@@ -75,7 +75,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	err = db.CreateUser(ctx, h.pool, &user)
 	if err != nil {
-		errResp := utils.MapDBError(err)
+		errResp := mapDBError(err)
 		status := http.StatusInternalServerError
 		if errResp.Code == models.ErrCodeEmailExists {
 			status = http.StatusConflict
@@ -172,7 +172,7 @@ func (h *AuthHandler) Me(c *gin.Context) {
 
 	user, err := db.GetUser(ctx, h.pool, userID)
 	if err != nil {
-		errResp := utils.MapDBError(err)
+		errResp := mapDBError(err)
 		status := http.StatusInternalServerError
 		if errResp.Code == models.ErrCodeUserNotFound {
 			status = http.StatusNotFound
@@ -221,7 +221,7 @@ func (h *AuthHandler) RegisterGuest(c *gin.Context) {
 
 	user, err := db.CreateGuest(ctx, h.pool, email, userID)
 	if err != nil {
-		errResp := utils.MapDBError(err)
+		errResp := mapDBError(err)
 		status := http.StatusInternalServerError
 		if errResp.Code == models.ErrCodeEmailExists {
 			status = http.StatusConflict

@@ -1,11 +1,13 @@
 package middleware
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/db"
+	"github.com/pranaovs/qashare/models"
 	"github.com/pranaovs/qashare/utils"
 )
 
@@ -14,22 +16,29 @@ const GroupIDKey = "groupID"
 // RequireGroupMember checks if the authenticated user is a member of the group
 func RequireGroupMember(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
 		userID := MustGetUserID(c)
 		groupID, ok := c.Params.Get("id")
 
 		if !ok {
-			utils.AbortWithStatusJSON(c, http.StatusBadRequest, "Group ID not provided")
+			utils.LogWarn(ctx, "Group ID not provided in request", "user_id", userID, "path", c.Request.URL.Path)
+			utils.AbortWithError(c, http.StatusBadRequest,
+				models.NewSimpleErrorResponse("Group ID not provided", models.ErrCodeInvalidInput))
 			return
 		}
 
-		ok, err := db.MemberOfGroup(c.Request.Context(), pool, userID, groupID)
+		ok, err := db.MemberOfGroup(ctx, pool, userID, groupID)
 		if err != nil {
-			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to verify membership")
+			utils.LogError(ctx, "Failed to verify group membership", err, "user_id", userID, "group_id", groupID)
+			utils.AbortWithError(c, http.StatusInternalServerError,
+				models.NewSimpleErrorResponse("failed to verify membership", models.ErrCodeInternal))
 			return
 		}
 
 		if !ok {
-			utils.AbortWithStatusJSON(c, http.StatusForbidden, "user is not a member of the group")
+			utils.LogWarn(ctx, "User is not a member of the group", "user_id", userID, "group_id", groupID)
+			utils.AbortWithError(c, http.StatusForbidden,
+				models.NewSimpleErrorResponse("user is not a member of the group", models.ErrCodeNotMember))
 			return
 		}
 
@@ -40,26 +49,35 @@ func RequireGroupMember(pool *pgxpool.Pool) gin.HandlerFunc {
 
 func RequireGroupAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
 		userID := MustGetUserID(c)
 
 		groupID, ok := c.Params.Get("id")
 		if !ok {
-			utils.AbortWithStatusJSON(c, http.StatusBadRequest, "Group ID not provided")
+			utils.LogWarn(ctx, "Group ID not provided in request", "user_id", userID, "path", c.Request.URL.Path)
+			utils.AbortWithError(c, http.StatusBadRequest,
+				models.NewSimpleErrorResponse("Group ID not provided", models.ErrCodeInvalidInput))
 			return
 		}
 
-		creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, groupID)
-		if err == db.ErrGroupNotFound {
-			utils.AbortWithStatusJSON(c, http.StatusNotFound, "group not found")
+		creatorID, err := db.GetGroupCreator(ctx, pool, groupID)
+		if errors.Is(err, db.ErrGroupNotFound) {
+			utils.LogWarn(ctx, "Group not found", "group_id", groupID, "user_id", userID)
+			utils.AbortWithError(c, http.StatusNotFound,
+				models.NewSimpleErrorResponse("group not found", models.ErrCodeGroupNotFound))
 			return
 		}
 		if err != nil {
-			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to get group creator")
+			utils.LogError(ctx, "Failed to get group creator", err, "group_id", groupID, "user_id", userID)
+			utils.AbortWithError(c, http.StatusInternalServerError,
+				models.NewSimpleErrorResponse("failed to get group creator", models.ErrCodeInternal))
 			return
 		}
 
 		if creatorID != userID {
-			utils.AbortWithStatusJSON(c, http.StatusForbidden, "not the group admin")
+			utils.LogWarn(ctx, "User is not the group admin", "user_id", userID, "group_id", groupID, "creator_id", creatorID)
+			utils.AbortWithError(c, http.StatusForbidden,
+				models.NewSimpleErrorResponse("not the group admin", models.ErrCodeNotGroupCreator))
 			return
 		}
 
@@ -70,27 +88,36 @@ func RequireGroupAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 
 func RequireGroupOwner(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
 		userID := MustGetUserID(c)
 
 		groupID, ok := c.Params.Get("id")
 		if !ok {
-			utils.AbortWithStatusJSON(c, http.StatusBadRequest, "Group ID not provided")
+			utils.LogWarn(ctx, "Group ID not provided in request", "user_id", userID, "path", c.Request.URL.Path)
+			utils.AbortWithError(c, http.StatusBadRequest,
+				models.NewSimpleErrorResponse("Group ID not provided", models.ErrCodeInvalidInput))
 			return
 		}
 
-		creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, groupID)
-		if err == db.ErrGroupNotFound {
-			utils.AbortWithStatusJSON(c, http.StatusNotFound, "group not found")
+		creatorID, err := db.GetGroupCreator(ctx, pool, groupID)
+		if errors.Is(err, db.ErrGroupNotFound) {
+			utils.LogWarn(ctx, "Group not found", "group_id", groupID, "user_id", userID)
+			utils.AbortWithError(c, http.StatusNotFound,
+				models.NewSimpleErrorResponse("group not found", models.ErrCodeGroupNotFound))
 			return
 		}
 
 		if err != nil {
-			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to get group creator")
+			utils.LogError(ctx, "Failed to get group creator", err, "group_id", groupID, "user_id", userID)
+			utils.AbortWithError(c, http.StatusInternalServerError,
+				models.NewSimpleErrorResponse("failed to get group creator", models.ErrCodeInternal))
 			return
 		}
 
 		if creatorID != userID {
-			utils.AbortWithStatusJSON(c, http.StatusForbidden, "not the group owner")
+			utils.LogWarn(ctx, "User is not the group owner", "user_id", userID, "group_id", groupID, "creator_id", creatorID)
+			utils.AbortWithError(c, http.StatusForbidden,
+				models.NewSimpleErrorResponse("not the group owner", models.ErrCodeNotGroupCreator))
 			return
 		}
 

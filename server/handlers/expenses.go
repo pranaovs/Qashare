@@ -53,7 +53,7 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	isMember, err := db.MemberOfGroup(c.Request.Context(), h.pool, userID, expense.GroupID)
 	if err != nil {
 		utils.LogError(c.Request.Context(), "Failed to verify group membership", err, "user_id", userID, "group_id", expense.GroupID)
-		errResp := utils.MapDBError(err)
+		errResp := mapDBError(err)
 		utils.SendErrorWithCode(c, http.StatusInternalServerError, errResp)
 		return
 	}
@@ -113,7 +113,7 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	err = db.CreateExpense(c.Request.Context(), h.pool, &expense)
 	if err != nil {
 		utils.LogError(c.Request.Context(), "Failed to create expense", err, "user_id", userID, "group_id", expense.GroupID)
-		errResp := utils.MapDBError(err)
+		errResp := mapDBError(err)
 		status := http.StatusInternalServerError
 		if errResp.Code == models.ErrCodeConflict {
 			status = http.StatusConflict
@@ -225,7 +225,7 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 
 	if err := db.UpdateExpense(c.Request.Context(), h.pool, &payload); err != nil {
 		utils.LogError(c.Request.Context(), "Failed to update expense", err, "expense_id", expense.ExpenseID)
-		errResp := utils.MapDBError(err)
+		errResp := mapDBError(err)
 		status := http.StatusInternalServerError
 		if errResp.Code == models.ErrCodeNotFound {
 			status = http.StatusNotFound
@@ -258,7 +258,7 @@ func (h *ExpensesHandler) Delete(c *gin.Context) {
 
 	if err := db.DeleteExpense(c.Request.Context(), h.pool, expense.ExpenseID); err != nil {
 		utils.LogError(c.Request.Context(), "Failed to delete expense", err, "expense_id", expense.ExpenseID)
-		errResp := utils.MapDBError(err)
+		errResp := mapDBError(err)
 		status := http.StatusInternalServerError
 		if errResp.Code == models.ErrCodeNotFound {
 			status = http.StatusNotFound

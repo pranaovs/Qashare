@@ -55,7 +55,7 @@ func (h *UsersHandler) GetUser(c *gin.Context) {
 
 	result, err := db.GetUser(ctx, h.pool, qUserID)
 	if err != nil {
-		errResp := utils.MapDBError(err)
+		errResp := mapDBError(err)
 		status := http.StatusInternalServerError
 		if errResp.Code == models.ErrCodeUserNotFound {
 			status = http.StatusNotFound
@@ -92,7 +92,7 @@ func (h *UsersHandler) SearchByEmail(c *gin.Context) {
 
 	user, err := db.GetUserFromEmail(ctx, h.pool, email)
 	if err != nil {
-		errResp := utils.MapDBError(err)
+		errResp := mapDBError(err)
 		status := http.StatusInternalServerError
 		if errResp.Code == models.ErrCodeUserNotFound || errResp.Code == models.ErrCodeEmailNotRegistered {
 			status = http.StatusNotFound

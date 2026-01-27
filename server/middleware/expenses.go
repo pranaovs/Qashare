@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -20,34 +21,45 @@ const (
 // Sets expenseID, groupID, and the expense object itself in context to avoid double-fetching.
 func VerifyExpenseAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
 		userID := MustGetUserID(c)
 
 		expenseID := c.Param("id")
 		if expenseID == "" {
-			utils.AbortWithStatusJSON(c, http.StatusBadRequest, "Expense ID not provided")
+			utils.LogWarn(ctx, "Expense ID not provided in request", "user_id", userID, "path", c.Request.URL.Path)
+			utils.AbortWithError(c, http.StatusBadRequest,
+				models.NewSimpleErrorResponse("Expense ID not provided", models.ErrCodeInvalidInput))
 			return
 		}
 
 		// Get the expense to find its group
-		expense, err := db.GetExpense(c.Request.Context(), pool, expenseID)
-		if err == db.ErrExpenseNotFound {
-			utils.AbortWithStatusJSON(c, http.StatusNotFound, "expense not found")
+		expense, err := db.GetExpense(ctx, pool, expenseID)
+		if errors.Is(err, db.ErrExpenseNotFound) {
+			utils.LogWarn(ctx, "Expense not found", "expense_id", expenseID, "user_id", userID)
+			utils.AbortWithError(c, http.StatusNotFound,
+				models.NewSimpleErrorResponse("expense not found", models.ErrCodeExpenseNotFound))
 			return
 		}
 		if err != nil {
-			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "internal server error")
+			utils.LogError(ctx, "Failed to get expense", err, "expense_id", expenseID, "user_id", userID)
+			utils.AbortWithError(c, http.StatusInternalServerError,
+				models.NewSimpleErrorResponse("internal server error", models.ErrCodeInternal))
 			return
 		}
 
 		// Check if user is a member of the expense's group
-		isMember, err := db.MemberOfGroup(c.Request.Context(), pool, userID, expense.GroupID)
+		isMember, err := db.MemberOfGroup(ctx, pool, userID, expense.GroupID)
 		if err != nil {
-			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to verify membership")
+			utils.LogError(ctx, "Failed to verify group membership", err, "user_id", userID, "group_id", expense.GroupID)
+			utils.AbortWithError(c, http.StatusInternalServerError,
+				models.NewSimpleErrorResponse("failed to verify membership", models.ErrCodeInternal))
 			return
 		}
 
 		if !isMember {
-			utils.AbortWithStatusJSON(c, http.StatusForbidden, "access denied")
+			utils.LogWarn(ctx, "User is not a member of expense's group", "user_id", userID, "expense_id", expenseID, "group_id", expense.GroupID)
+			utils.AbortWithError(c, http.StatusForbidden,
+				models.NewSimpleErrorResponse("access denied", models.ErrCodeForbidden))
 			return
 		}
 
@@ -64,39 +76,52 @@ func VerifyExpenseAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 // Sets expenseID and the expense object itself in context to avoid double-fetching.
 func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
 		userID := MustGetUserID(c)
 
 		expenseID := c.Param("id")
 		if expenseID == "" {
-			utils.AbortWithStatusJSON(c, http.StatusBadRequest, "Expense ID not provided")
+			utils.LogWarn(ctx, "Expense ID not provided in request", "user_id", userID, "path", c.Request.URL.Path)
+			utils.AbortWithError(c, http.StatusBadRequest,
+				models.NewSimpleErrorResponse("Expense ID not provided", models.ErrCodeInvalidInput))
 			return
 		}
 
 		// Get the expense to find its group
-		expense, err := db.GetExpense(c.Request.Context(), pool, expenseID)
-		if err == db.ErrExpenseNotFound {
-			utils.AbortWithStatusJSON(c, http.StatusNotFound, "expense not found")
+		expense, err := db.GetExpense(ctx, pool, expenseID)
+		if errors.Is(err, db.ErrExpenseNotFound) {
+			utils.LogWarn(ctx, "Expense not found", "expense_id", expenseID, "user_id", userID)
+			utils.AbortWithError(c, http.StatusNotFound,
+				models.NewSimpleErrorResponse("expense not found", models.ErrCodeExpenseNotFound))
 			return
 		}
 		if err != nil {
-			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "internal server error")
+			utils.LogError(ctx, "Failed to get expense", err, "expense_id", expenseID, "user_id", userID)
+			utils.AbortWithError(c, http.StatusInternalServerError,
+				models.NewSimpleErrorResponse("internal server error", models.ErrCodeInternal))
 			return
 		}
 
-		creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, expense.GroupID)
-		if err == db.ErrGroupNotFound {
-			utils.AbortWithStatusJSON(c, http.StatusNotFound, "group not found")
+		creatorID, err := db.GetGroupCreator(ctx, pool, expense.GroupID)
+		if errors.Is(err, db.ErrGroupNotFound) {
+			utils.LogWarn(ctx, "Group not found for expense", "group_id", expense.GroupID, "expense_id", expenseID)
+			utils.AbortWithError(c, http.StatusNotFound,
+				models.NewSimpleErrorResponse("group not found", models.ErrCodeGroupNotFound))
 			return
 		}
 
 		if err != nil {
-			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to get group creator")
+			utils.LogError(ctx, "Failed to get group creator", err, "group_id", expense.GroupID, "expense_id", expenseID)
+			utils.AbortWithError(c, http.StatusInternalServerError,
+				models.NewSimpleErrorResponse("failed to get group creator", models.ErrCodeInternal))
 			return
 		}
 
 		// If the user is not the group creator or the expense creator, deny access
 		if creatorID != userID && (expense.AddedBy == nil || *expense.AddedBy != userID) {
-			utils.AbortWithStatusJSON(c, http.StatusForbidden, "access denied")
+			utils.LogWarn(ctx, "User is not expense admin", "user_id", userID, "expense_id", expenseID, "group_creator", creatorID)
+			utils.AbortWithError(c, http.StatusForbidden,
+				models.NewSimpleErrorResponse("access denied", models.ErrCodeForbidden))
 			return
 		}
 

@@ -1,14 +1,13 @@
-package utils
+package handlers
 
 import (
 	"errors"
-
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/models"
 )
 
-// MapDBError maps database errors to structured API error responses
-func MapDBError(err error) models.ErrorResponse {
+// mapDBError maps database errors to structured API error responses
+func mapDBError(err error) models.ErrorResponse {
 	if err == nil {
 		return models.NewSimpleErrorResponse("unknown error", models.ErrCodeInternal)
 	}
