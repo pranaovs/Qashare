@@ -32,6 +32,7 @@
   - [Installation](#installation)
     - [Installing the client](#installing-the-client)
     - [Running the Server](#running-the-server)
+- [API Documentation](#api-documentation)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
@@ -131,6 +132,30 @@ To set up the project locally, follow these instructions for both the client and
     ```sh
     flutter run
     ```
+
+## API Documentation
+
+The Qashare API is documented using Swagger/OpenAPI. Once the server is running, you can access the interactive API documentation at:
+
+```
+http://localhost:8080/swagger/index.html
+```
+
+The Swagger UI provides:
+- Complete API endpoint documentation
+- Request/response schemas for all operations
+- Interactive testing capability (try out API calls directly from the browser)
+- Authentication using JWT Bearer tokens
+
+### API Endpoints
+
+The API includes the following endpoint groups:
+
+- **Authentication** (`/auth/*`): User registration, login, and guest user management
+- **Users** (`/users/*`): User profile and search operations
+- **Groups** (`/groups/*`): Group creation, membership management, and expense listing
+- **Expenses** (`/expenses/*`): Expense creation, retrieval, updates, and deletion
+- **Health** (`/health`): Server health check endpoint
 
 ## Roadmap
 
