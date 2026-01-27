@@ -54,7 +54,6 @@ class _MembersPageState extends State<MembersPage> {
     );
   }
 
-
   Widget _memberList() {
     final members = _result!.group!.members;
 
@@ -73,23 +72,19 @@ class _MembersPageState extends State<MembersPage> {
 
             trailing: isAdmin
                 ? const Text(
-              "Admin",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            )
+                    "Admin",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  )
                 : IconButton(
-              icon: const Icon(Icons.remove_circle_outline),
-              color: Colors.redAccent,
-              onPressed: () => _confirmRemove(m.userId, m.name),
-            ),
+                    icon: const Icon(Icons.remove_circle_outline),
+                    color: Colors.redAccent,
+                    onPressed: () => _confirmRemove(m.userId, m.name),
+                  ),
           ),
         );
       },
     );
   }
-
 
   void _confirmRemove(String userId, String name) {
     showDialog(
@@ -110,7 +105,8 @@ class _MembersPageState extends State<MembersPage> {
               Navigator.pop(ctx);
               _removeMember(userId);
             },
-            child:  Text("Remove",
+            child: Text(
+              "Remove",
               style: TextStyle(color: Theme.of(context).colorScheme.onError),
             ),
           ),
@@ -136,9 +132,6 @@ class _MembersPageState extends State<MembersPage> {
       _showSnack(res.errorMessage ?? "Failed to remove member", true);
     }
   }
-
-
-
 
   Widget _errorView() {
     return Center(
@@ -166,9 +159,7 @@ class _MembersPageState extends State<MembersPage> {
               TextField(
                 controller: controller,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: "Email address",
-                ),
+                decoration: const InputDecoration(labelText: "Email address"),
               ),
               if (loading)
                 const Padding(
@@ -186,40 +177,40 @@ class _MembersPageState extends State<MembersPage> {
               onPressed: loading
                   ? null
                   : () async {
-                final email = controller.text.trim();
-                if (email.isEmpty) return;
+                      final email = controller.text.trim();
+                      if (email.isEmpty) return;
 
-                setLocal(() => loading = true);
+                      setLocal(() => loading = true);
 
-                final token = await TokenStorage.getToken();
-                if (token == null) return;
+                      final token = await TokenStorage.getToken();
+                      if (token == null) return;
 
-                final lookup = await ApiService.searchUserByEmail(
-                  token: token,
-                  email: email,
-                );
+                      final lookup = await ApiService.searchUserByEmail(
+                        token: token,
+                        email: email,
+                      );
 
-                if (!lookup.isSuccess) {
-                  Navigator.pop(ctx);
-                  _showSnack(lookup.errorMessage!, true);
-                  return;
-                }
+                      if (!lookup.isSuccess) {
+                        Navigator.pop(ctx);
+                        _showSnack(lookup.errorMessage!, true);
+                        return;
+                      }
 
-                final addResult = await ApiService.addMembersToGroup(
-                  token: token,
-                  groupId: widget.groupId,
-                  userIds: [lookup.user!.userId],
-                );
+                      final addResult = await ApiService.addMembersToGroup(
+                        token: token,
+                        groupId: widget.groupId,
+                        userIds: [lookup.user!.userId],
+                      );
 
-                Navigator.pop(ctx);
+                      Navigator.pop(ctx);
 
-                if (addResult.isSuccess) {
-                  _showSnack("Member added", false);
-                  _loadMembers();
-                } else {
-                  _showSnack(addResult.errorMessage!, true);
-                }
-              },
+                      if (addResult.isSuccess) {
+                        _showSnack("Member added", false);
+                        _loadMembers();
+                      } else {
+                        _showSnack(addResult.errorMessage!, true);
+                      }
+                    },
               child: const Text("Add"),
             ),
           ],
@@ -232,12 +223,12 @@ class _MembersPageState extends State<MembersPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor:
-        error ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary,
+        backgroundColor: error
+            ? Theme.of(context).colorScheme.error
+            : Theme.of(context).colorScheme.primary,
         duration: const Duration(milliseconds: 900),
         behavior: SnackBarBehavior.floating,
       ),
     );
   }
 }
-

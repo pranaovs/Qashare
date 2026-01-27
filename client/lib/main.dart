@@ -45,17 +45,15 @@ class MyApp extends StatelessWidget {
             '/profile': (context) => const ProfilePage(),
             '/creategroup': (context) => const CreategroupPage(),
             "/create-expense": (context) {
-              final args = ModalRoute
-                  .of(context)!
-                  .settings
-                  .arguments
-              as Map<String, dynamic>;
+              final args =
+                  ModalRoute.of(context)!.settings.arguments
+                      as Map<String, dynamic>;
 
               return CreateExpensePage(
                 groupId: args["groupId"],
                 members: args["members"],
               );
-            }// Add more routes as needed
+            }, // Add more routes as needed
           },
         );
       },
