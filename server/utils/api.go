@@ -120,9 +120,3 @@ func AbortWithStatusJSON(c *gin.Context, statusCode int, message string) {
 func SendJSON(c *gin.Context, statusCode int, data interface{}) {
 	c.JSON(statusCode, data)
 }
-
-// SendError is a helper function that sends a JSON error response without aborting.
-// Use AbortWithStatusJSON when you need to abort the request chain.
-func SendError(c *gin.Context, statusCode int, message string) {
-	c.JSON(statusCode, gin.H{"error": message})
-}
