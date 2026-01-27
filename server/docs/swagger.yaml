@@ -1,12 +1,72 @@
 basePath: /
 definitions:
-  models.ConflictErrorResponse:
+  models.ErrBadRequest:
     properties:
       code:
-        example: CONFLICT
+        example: Bad Request
+        type: string
+      error:
+        example: invalid request body
+        type: string
+      message:
+        example: The provided email format is invalid
+        type: string
+    type: object
+  models.ErrConflict:
+    properties:
+      code:
+        example: Conflict
         type: string
       error:
         example: resource already exists
+        type: string
+      message:
+        example: ""
+        type: string
+    type: object
+  models.ErrForbidden:
+    properties:
+      code:
+        example: Forbidden
+        type: string
+      error:
+        example: access denied
+        type: string
+      message:
+        example: ""
+        type: string
+    type: object
+  models.ErrInternalServer:
+    properties:
+      code:
+        example: Internal Server Error
+        type: string
+      error:
+        example: internal server error
+        type: string
+      message:
+        example: An unexpected error occurred
+        type: string
+    type: object
+  models.ErrNotFound:
+    properties:
+      code:
+        example: Not Found
+        type: string
+      error:
+        example: resource not found
+        type: string
+      message:
+        example: ""
+        type: string
+    type: object
+  models.ErrUnauthorized:
+    properties:
+      code:
+        example: Unauthorized
+        type: string
+      error:
+        example: invalid token
         type: string
       message:
         example: ""
@@ -82,18 +142,6 @@ definitions:
       user_id:
         type: string
     type: object
-  models.ForbiddenErrorResponse:
-    properties:
-      code:
-        example: FORBIDDEN
-        type: string
-      error:
-        example: access denied
-        type: string
-      message:
-        example: ""
-        type: string
-    type: object
   models.Group:
     properties:
       created_at:
@@ -137,42 +185,6 @@ definitions:
       user_id:
         type: string
     type: object
-  models.InternalErrorResponse:
-    properties:
-      code:
-        example: INTERNAL_ERROR
-        type: string
-      error:
-        example: internal server error
-        type: string
-      message:
-        example: An unexpected error occurred
-        type: string
-    type: object
-  models.NotFoundErrorResponse:
-    properties:
-      code:
-        example: NOT_FOUND
-        type: string
-      error:
-        example: resource not found
-        type: string
-      message:
-        example: ""
-        type: string
-    type: object
-  models.UnauthorizedErrorResponse:
-    properties:
-      code:
-        example: INVALID_TOKEN
-        type: string
-      error:
-        example: invalid token
-        type: string
-      message:
-        example: ""
-        type: string
-    type: object
   models.User:
     properties:
       created_at:
@@ -184,18 +196,6 @@ definitions:
       name:
         type: string
       user_id:
-        type: string
-    type: object
-  models.ValidationErrorResponse:
-    properties:
-      code:
-        example: VALIDATION_ERROR
-        type: string
-      error:
-        example: invalid request body
-        type: string
-      message:
-        example: The provided email format is invalid
         type: string
     type: object
 host: localhost:8080
@@ -236,19 +236,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ValidationErrorResponse'
+            $ref: '#/definitions/models.ErrBadRequest'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.UnauthorizedErrorResponse'
+            $ref: '#/definitions/models.ErrUnauthorized'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/models.ConflictErrorResponse'
+            $ref: '#/definitions/models.ErrConflict'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.InternalErrorResponse'
+            $ref: '#/definitions/models.ErrInternalServer'
       security:
       - BearerAuth: []
       summary: Register a guest user
@@ -283,15 +283,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ValidationErrorResponse'
+            $ref: '#/definitions/models.ErrBadRequest'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.UnauthorizedErrorResponse'
+            $ref: '#/definitions/models.ErrUnauthorized'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.InternalErrorResponse'
+            $ref: '#/definitions/models.ErrInternalServer'
       summary: Login user
       tags:
       - auth
@@ -308,15 +308,15 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.UnauthorizedErrorResponse'
+            $ref: '#/definitions/models.ErrUnauthorized'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.NotFoundErrorResponse'
+            $ref: '#/definitions/models.ErrNotFound'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.InternalErrorResponse'
+            $ref: '#/definitions/models.ErrInternalServer'
       security:
       - BearerAuth: []
       summary: Get current user
@@ -351,15 +351,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ValidationErrorResponse'
+            $ref: '#/definitions/models.ErrBadRequest'
         "409":
           description: Conflict
           schema:
-            $ref: '#/definitions/models.ConflictErrorResponse'
+            $ref: '#/definitions/models.ErrConflict'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.InternalErrorResponse'
+            $ref: '#/definitions/models.ErrInternalServer'
       summary: Register a new user
       tags:
       - auth
@@ -386,19 +386,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ValidationErrorResponse'
+            $ref: '#/definitions/models.ErrBadRequest'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.UnauthorizedErrorResponse'
+            $ref: '#/definitions/models.ErrUnauthorized'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/models.ForbiddenErrorResponse'
+            $ref: '#/definitions/models.ErrForbidden'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.InternalErrorResponse'
+            $ref: '#/definitions/models.ErrInternalServer'
       security:
       - BearerAuth: []
       summary: Create a new expense
@@ -425,19 +425,19 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.UnauthorizedErrorResponse'
+            $ref: '#/definitions/models.ErrUnauthorized'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/models.ForbiddenErrorResponse'
+            $ref: '#/definitions/models.ErrForbidden'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.NotFoundErrorResponse'
+            $ref: '#/definitions/models.ErrNotFound'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.InternalErrorResponse'
+            $ref: '#/definitions/models.ErrInternalServer'
       security:
       - BearerAuth: []
       summary: Delete an expense
@@ -461,15 +461,15 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.UnauthorizedErrorResponse'
+            $ref: '#/definitions/models.ErrUnauthorized'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/models.ForbiddenErrorResponse'
+            $ref: '#/definitions/models.ErrForbidden'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.NotFoundErrorResponse'
+            $ref: '#/definitions/models.ErrNotFound'
       security:
       - BearerAuth: []
       summary: Get expense details
@@ -504,23 +504,23 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ValidationErrorResponse'
+            $ref: '#/definitions/models.ErrBadRequest'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.UnauthorizedErrorResponse'
+            $ref: '#/definitions/models.ErrUnauthorized'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/models.ForbiddenErrorResponse'
+            $ref: '#/definitions/models.ErrForbidden'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.NotFoundErrorResponse'
+            $ref: '#/definitions/models.ErrNotFound'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.InternalErrorResponse'
+            $ref: '#/definitions/models.ErrInternalServer'
       security:
       - BearerAuth: []
       summary: Update an expense
@@ -553,15 +553,15 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ValidationErrorResponse'
+            $ref: '#/definitions/models.ErrBadRequest'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.UnauthorizedErrorResponse'
+            $ref: '#/definitions/models.ErrUnauthorized'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.InternalErrorResponse'
+            $ref: '#/definitions/models.ErrInternalServer'
       security:
       - BearerAuth: []
       summary: Create a new group
@@ -586,15 +586,15 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.UnauthorizedErrorResponse'
+            $ref: '#/definitions/models.ErrUnauthorized'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/models.ForbiddenErrorResponse'
+            $ref: '#/definitions/models.ErrForbidden'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.NotFoundErrorResponse'
+            $ref: '#/definitions/models.ErrNotFound'
       security:
       - BearerAuth: []
       summary: Get group details
@@ -621,19 +621,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ValidationErrorResponse'
+            $ref: '#/definitions/models.ErrBadRequest'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.UnauthorizedErrorResponse'
+            $ref: '#/definitions/models.ErrUnauthorized'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/models.ForbiddenErrorResponse'
+            $ref: '#/definitions/models.ErrForbidden'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.InternalErrorResponse'
+            $ref: '#/definitions/models.ErrInternalServer'
       security:
       - BearerAuth: []
       summary: List group expenses
@@ -672,19 +672,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ValidationErrorResponse'
+            $ref: '#/definitions/models.ErrBadRequest'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.UnauthorizedErrorResponse'
+            $ref: '#/definitions/models.ErrUnauthorized'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/models.ForbiddenErrorResponse'
+            $ref: '#/definitions/models.ErrForbidden'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.InternalErrorResponse'
+            $ref: '#/definitions/models.ErrInternalServer'
       security:
       - BearerAuth: []
       summary: Remove members from group
@@ -722,23 +722,23 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ValidationErrorResponse'
+            $ref: '#/definitions/models.ErrBadRequest'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.UnauthorizedErrorResponse'
+            $ref: '#/definitions/models.ErrUnauthorized'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/models.ForbiddenErrorResponse'
+            $ref: '#/definitions/models.ErrForbidden'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.NotFoundErrorResponse'
+            $ref: '#/definitions/models.ErrNotFound'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.InternalErrorResponse'
+            $ref: '#/definitions/models.ErrInternalServer'
       security:
       - BearerAuth: []
       summary: Add members to group
@@ -759,11 +759,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.UnauthorizedErrorResponse'
+            $ref: '#/definitions/models.ErrUnauthorized'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.InternalErrorResponse'
+            $ref: '#/definitions/models.ErrInternalServer'
       security:
       - BearerAuth: []
       summary: List groups user administers
@@ -784,11 +784,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.UnauthorizedErrorResponse'
+            $ref: '#/definitions/models.ErrUnauthorized'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.InternalErrorResponse'
+            $ref: '#/definitions/models.ErrInternalServer'
       security:
       - BearerAuth: []
       summary: List user's groups
@@ -827,19 +827,19 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.UnauthorizedErrorResponse'
+            $ref: '#/definitions/models.ErrUnauthorized'
         "403":
           description: Forbidden
           schema:
-            $ref: '#/definitions/models.ForbiddenErrorResponse'
+            $ref: '#/definitions/models.ErrForbidden'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.NotFoundErrorResponse'
+            $ref: '#/definitions/models.ErrNotFound'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.InternalErrorResponse'
+            $ref: '#/definitions/models.ErrInternalServer'
       security:
       - BearerAuth: []
       summary: Get user by ID
@@ -864,19 +864,19 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/models.ValidationErrorResponse'
+            $ref: '#/definitions/models.ErrBadRequest'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/models.UnauthorizedErrorResponse'
+            $ref: '#/definitions/models.ErrUnauthorized'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/models.NotFoundErrorResponse'
+            $ref: '#/definitions/models.ErrNotFound'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/models.InternalErrorResponse'
+            $ref: '#/definitions/models.ErrInternalServer'
       security:
       - BearerAuth: []
       summary: Search user by email

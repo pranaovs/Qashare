@@ -31,9 +31,9 @@ func NewGroupsHandler(pool *pgxpool.Pool) *GroupsHandler {
 // @Security BearerAuth
 // @Param request body object{name=string,description=string} true "Group details"
 // @Success 201 {object} models.Group
-// @Failure 400 {object} models.ValidationErrorResponse
-// @Failure 401 {object} models.UnauthorizedErrorResponse
-// @Failure 500 {object} models.InternalErrorResponse
+// @Failure 400 {object} models.ErrBadRequest
+// @Failure 401 {object} models.ErrUnauthorized
+// @Failure 500 {object} models.ErrInternalServer
 // @Router /groups/ [post]
 func (h *GroupsHandler) Create(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -86,8 +86,8 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {array} models.Group
-// @Failure 401 {object} models.UnauthorizedErrorResponse
-// @Failure 500 {object} models.InternalErrorResponse
+// @Failure 401 {object} models.ErrUnauthorized
+// @Failure 500 {object} models.ErrInternalServer
 // @Router /groups/me [get]
 func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -111,8 +111,8 @@ func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {array} models.Group
-// @Failure 401 {object} models.UnauthorizedErrorResponse
-// @Failure 500 {object} models.InternalErrorResponse
+// @Failure 401 {object} models.ErrUnauthorized
+// @Failure 500 {object} models.ErrInternalServer
 // @Router /groups/admin [get]
 func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -136,9 +136,9 @@ func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Group ID"
 // @Success 200 {object} models.GroupDetails
-// @Failure 401 {object} models.UnauthorizedErrorResponse
-// @Failure 403 {object} models.ForbiddenErrorResponse
-// @Failure 404 {object} models.NotFoundErrorResponse
+// @Failure 401 {object} models.ErrUnauthorized
+// @Failure 403 {object} models.ErrForbidden
+// @Failure 404 {object} models.ErrNotFound
 // @Router /groups/{id} [get]
 func (h *GroupsHandler) GetGroup(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -170,11 +170,11 @@ func (h *GroupsHandler) GetGroup(c *gin.Context) {
 // @Param id path string true "Group ID"
 // @Param request body object{user_ids=[]string} true "User IDs to add"
 // @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} models.ValidationErrorResponse
-// @Failure 401 {object} models.UnauthorizedErrorResponse
-// @Failure 403 {object} models.ForbiddenErrorResponse
-// @Failure 404 {object} models.NotFoundErrorResponse
-// @Failure 500 {object} models.InternalErrorResponse
+// @Failure 400 {object} models.ErrBadRequest
+// @Failure 401 {object} models.ErrUnauthorized
+// @Failure 403 {object} models.ErrForbidden
+// @Failure 404 {object} models.ErrNotFound
+// @Failure 500 {object} models.ErrInternalServer
 // @Router /groups/{id}/members [post]
 func (h *GroupsHandler) AddMembers(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -260,10 +260,10 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 // @Param id path string true "Group ID"
 // @Param request body object{user_ids=[]string} true "User IDs to remove"
 // @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} models.ValidationErrorResponse
-// @Failure 401 {object} models.UnauthorizedErrorResponse
-// @Failure 403 {object} models.ForbiddenErrorResponse
-// @Failure 500 {object} models.InternalErrorResponse
+// @Failure 400 {object} models.ErrBadRequest
+// @Failure 401 {object} models.ErrUnauthorized
+// @Failure 403 {object} models.ErrForbidden
+// @Failure 500 {object} models.ErrInternalServer
 // @Router /groups/{id}/members [delete]
 func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -312,10 +312,10 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Group ID"
 // @Success 200 {array} models.Expense
-// @Failure 400 {object} models.ValidationErrorResponse
-// @Failure 401 {object} models.UnauthorizedErrorResponse
-// @Failure 403 {object} models.ForbiddenErrorResponse
-// @Failure 500 {object} models.InternalErrorResponse
+// @Failure 400 {object} models.ErrBadRequest
+// @Failure 401 {object} models.ErrUnauthorized
+// @Failure 403 {object} models.ErrForbidden
+// @Failure 500 {object} models.ErrInternalServer
 // @Router /groups/{id}/expenses [get]
 func (h *GroupsHandler) ListGroupExpenses(c *gin.Context) {
 	ctx := c.Request.Context()

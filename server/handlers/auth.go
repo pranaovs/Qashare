@@ -28,9 +28,9 @@ func NewAuthHandler(pool *pgxpool.Pool) *AuthHandler {
 // @Produce json
 // @Param request body object{name=string,email=string,password=string} true "User registration details"
 // @Success 201 {object} models.User
-// @Failure 400 {object} models.ValidationErrorResponse
-// @Failure 409 {object} models.ConflictErrorResponse
-// @Failure 500 {object} models.InternalErrorResponse
+// @Failure 400 {object} models.ErrBadRequest
+// @Failure 409 {object} models.ErrConflict
+// @Failure 500 {object} models.ErrInternalServer
 // @Router /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -97,9 +97,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 // @Produce json
 // @Param request body object{email=string,password=string} true "User login credentials"
 // @Success 200 {object} map[string]string
-// @Failure 400 {object} models.ValidationErrorResponse
-// @Failure 401 {object} models.UnauthorizedErrorResponse
-// @Failure 500 {object} models.InternalErrorResponse
+// @Failure 400 {object} models.ErrBadRequest
+// @Failure 401 {object} models.ErrUnauthorized
+// @Failure 500 {object} models.ErrInternalServer
 // @Router /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -162,9 +162,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} models.User
-// @Failure 401 {object} models.UnauthorizedErrorResponse
-// @Failure 404 {object} models.NotFoundErrorResponse
-// @Failure 500 {object} models.InternalErrorResponse
+// @Failure 401 {object} models.ErrUnauthorized
+// @Failure 404 {object} models.ErrNotFound
+// @Failure 500 {object} models.ErrInternalServer
 // @Router /auth/me [get]
 func (h *AuthHandler) Me(c *gin.Context) {
 	ctx := c.Request.Context()
@@ -195,10 +195,10 @@ func (h *AuthHandler) Me(c *gin.Context) {
 // @Security BearerAuth
 // @Param request body object{email=string} true "Guest user email"
 // @Success 201 {object} models.User
-// @Failure 400 {object} models.ValidationErrorResponse
-// @Failure 401 {object} models.UnauthorizedErrorResponse
-// @Failure 409 {object} models.ConflictErrorResponse
-// @Failure 500 {object} models.InternalErrorResponse
+// @Failure 400 {object} models.ErrBadRequest
+// @Failure 401 {object} models.ErrUnauthorized
+// @Failure 409 {object} models.ErrConflict
+// @Failure 500 {object} models.ErrInternalServer
 // @Router /auth/guest [post]
 func (h *AuthHandler) RegisterGuest(c *gin.Context) {
 	ctx := c.Request.Context()

@@ -3,83 +3,83 @@ package models
 // ErrorResponse represents a standardized error response for the API
 type ErrorResponse struct {
 	Error   string `json:"error" example:"Invalid input"`
-	Code    string `json:"code" example:"VALIDATION_ERROR"`
+	Code    string `json:"code" example:"Bad Request"`
 	Message string `json:"message,omitempty" example:"The provided email format is invalid"`
 }
 
-// ValidationErrorResponse represents a 400 Bad Request validation error
-type ValidationErrorResponse struct {
+// ErrBadRequest represents a 400 Bad Request validation error
+type ErrBadRequest struct {
 	Error   string `json:"error" example:"invalid request body"`
-	Code    string `json:"code" example:"VALIDATION_ERROR"`
+	Code    string `json:"code" example:"Bad Request"`
 	Message string `json:"message,omitempty" example:"The provided email format is invalid"`
 }
 
-// UnauthorizedErrorResponse represents a 401 Unauthorized error
-type UnauthorizedErrorResponse struct {
+// ErrUnauthorized represents a 401 Unauthorized error
+type ErrUnauthorized struct {
 	Error   string `json:"error" example:"invalid token"`
-	Code    string `json:"code" example:"INVALID_TOKEN"`
+	Code    string `json:"code" example:"Unauthorized"`
 	Message string `json:"message,omitempty" example:""`
 }
 
-// ForbiddenErrorResponse represents a 403 Forbidden error
-type ForbiddenErrorResponse struct {
+// ErrForbidden represents a 403 Forbidden error
+type ErrForbidden struct {
 	Error   string `json:"error" example:"access denied"`
-	Code    string `json:"code" example:"FORBIDDEN"`
+	Code    string `json:"code" example:"Forbidden"`
 	Message string `json:"message,omitempty" example:""`
 }
 
-// NotFoundErrorResponse represents a 404 Not Found error
-type NotFoundErrorResponse struct {
+// ErrNotFound represents a 404 Not Found error
+type ErrNotFound struct {
 	Error   string `json:"error" example:"resource not found"`
-	Code    string `json:"code" example:"NOT_FOUND"`
+	Code    string `json:"code" example:"Not Found"`
 	Message string `json:"message,omitempty" example:""`
 }
 
-// ConflictErrorResponse represents a 409 Conflict error
-type ConflictErrorResponse struct {
+// ErrConflict represents a 409 Conflict error
+type ErrConflict struct {
 	Error   string `json:"error" example:"resource already exists"`
-	Code    string `json:"code" example:"CONFLICT"`
+	Code    string `json:"code" example:"Conflict"`
 	Message string `json:"message,omitempty" example:""`
 }
 
-// InternalErrorResponse represents a 500 Internal Server Error
-type InternalErrorResponse struct {
+// ErrInternalServer represents a 500 Internal Server Error
+type ErrInternalServer struct {
 	Error   string `json:"error" example:"internal server error"`
-	Code    string `json:"code" example:"INTERNAL_ERROR"`
+	Code    string `json:"code" example:"Internal Server Error"`
 	Message string `json:"message,omitempty" example:"An unexpected error occurred"`
 }
 
-// ErrorCode constants for stable error identification
+// ErrorCode constants for stable error identification using standard HTTP status text
 const (
-	// General errors
-	ErrCodeInternal     = "INTERNAL_ERROR"
-	ErrCodeBadRequest   = "BAD_REQUEST"
-	ErrCodeValidation   = "VALIDATION_ERROR"
-	ErrCodeNotFound     = "NOT_FOUND"
-	ErrCodeConflict     = "CONFLICT"
-	ErrCodeUnauthorized = "UNAUTHORIZED"
-	ErrCodeForbidden    = "FORBIDDEN"
-	ErrCodeInvalidInput = "INVALID_INPUT"
+	// General errors - using standard HTTP status text
+	ErrCodeInternal     = "Internal Server Error"
+	ErrCodeBadRequest   = "Bad Request"
+	ErrCodeValidation   = "Bad Request"
+	ErrCodeNotFound     = "Not Found"
+	ErrCodeConflict     = "Conflict"
+	ErrCodeUnauthorized = "Unauthorized"
+	ErrCodeForbidden    = "Forbidden"
+	ErrCodeInvalidInput = "Bad Request"
 
 	// User-specific errors
-	ErrCodeUserNotFound       = "USER_NOT_FOUND"
-	ErrCodeEmailExists        = "EMAIL_ALREADY_EXISTS"
-	ErrCodeEmailNotRegistered = "EMAIL_NOT_REGISTERED"
-	ErrCodeUsersNotRelated    = "USERS_NOT_RELATED"
-	ErrCodeInvalidCredentials = "INVALID_CREDENTIALS"
-	ErrCodeInvalidToken       = "INVALID_TOKEN"
-	ErrCodeExpiredToken       = "EXPIRED_TOKEN"
+	ErrCodeUserNotFound       = "Not Found"
+	ErrCodeEmailExists        = "Conflict"
+	ErrCodeEmailNotRegistered = "Not Found"
+	ErrCodeUsersNotRelated    = "Forbidden"
+	ErrCodeInvalidCredentials = "Unauthorized"
+	ErrCodeInvalidToken       = "Unauthorized"
+	ErrCodeExpiredToken       = "Unauthorized"
 
 	// Group-specific errors
-	ErrCodeGroupNotFound   = "GROUP_NOT_FOUND"
-	ErrCodeNotMember       = "NOT_MEMBER"
-	ErrCodeNotGroupCreator = "NOT_GROUP_CREATOR"
+	ErrCodeGroupNotFound   = "Not Found"
+	ErrCodeNotMember       = "Forbidden"
+	ErrCodeNotGroupCreator = "Forbidden"
 
 	// Expense-specific errors
-	ErrCodeExpenseNotFound   = "EXPENSE_NOT_FOUND"
-	ErrCodeInvalidAmount     = "INVALID_AMOUNT"
-	ErrCodeTitleRequired     = "TITLE_REQUIRED"
-	ErrCodeExpenseIDRequired = "EXPENSE_ID_REQUIRED"
+	ErrCodeExpenseNotFound   = "Not Found"
+	ErrCodeInvalidAmount     = "Bad Request"
+	ErrCodeTitleRequired     = "Bad Request"
+	ErrCodeExpenseIDRequired = "Bad Request"
 )
 
 // NewErrorResponse creates a new error response with code and message

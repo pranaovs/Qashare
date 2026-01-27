@@ -66,25 +66,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/models.ValidationErrorResponse"
+                            "$ref": "#/definitions/models.ErrBadRequest"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/models.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/models.ErrUnauthorized"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/models.ConflictErrorResponse"
+                            "$ref": "#/definitions/models.ErrConflict"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/models.InternalErrorResponse"
+                            "$ref": "#/definitions/models.ErrInternalServer"
                         }
                     }
                 }
@@ -135,19 +135,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/models.ValidationErrorResponse"
+                            "$ref": "#/definitions/models.ErrBadRequest"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/models.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/models.ErrUnauthorized"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/models.InternalErrorResponse"
+                            "$ref": "#/definitions/models.ErrInternalServer"
                         }
                     }
                 }
@@ -178,19 +178,19 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/models.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/models.ErrUnauthorized"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/models.NotFoundErrorResponse"
+                            "$ref": "#/definitions/models.ErrNotFound"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/models.InternalErrorResponse"
+                            "$ref": "#/definitions/models.ErrInternalServer"
                         }
                     }
                 }
@@ -241,19 +241,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/models.ValidationErrorResponse"
+                            "$ref": "#/definitions/models.ErrBadRequest"
                         }
                     },
                     "409": {
                         "description": "Conflict",
                         "schema": {
-                            "$ref": "#/definitions/models.ConflictErrorResponse"
+                            "$ref": "#/definitions/models.ErrConflict"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/models.InternalErrorResponse"
+                            "$ref": "#/definitions/models.ErrInternalServer"
                         }
                     }
                 }
@@ -298,25 +298,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/models.ValidationErrorResponse"
+                            "$ref": "#/definitions/models.ErrBadRequest"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/models.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/models.ErrUnauthorized"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/models.ForbiddenErrorResponse"
+                            "$ref": "#/definitions/models.ErrForbidden"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/models.InternalErrorResponse"
+                            "$ref": "#/definitions/models.ErrInternalServer"
                         }
                     }
                 }
@@ -356,19 +356,19 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/models.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/models.ErrUnauthorized"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/models.ForbiddenErrorResponse"
+                            "$ref": "#/definitions/models.ErrForbidden"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/models.NotFoundErrorResponse"
+                            "$ref": "#/definitions/models.ErrNotFound"
                         }
                     }
                 }
@@ -421,31 +421,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/models.ValidationErrorResponse"
+                            "$ref": "#/definitions/models.ErrBadRequest"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/models.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/models.ErrUnauthorized"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/models.ForbiddenErrorResponse"
+                            "$ref": "#/definitions/models.ErrForbidden"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/models.NotFoundErrorResponse"
+                            "$ref": "#/definitions/models.ErrNotFound"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/models.InternalErrorResponse"
+                            "$ref": "#/definitions/models.ErrInternalServer"
                         }
                     }
                 }
@@ -486,25 +486,25 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/models.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/models.ErrUnauthorized"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/models.ForbiddenErrorResponse"
+                            "$ref": "#/definitions/models.ErrForbidden"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/models.NotFoundErrorResponse"
+                            "$ref": "#/definitions/models.ErrNotFound"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/models.InternalErrorResponse"
+                            "$ref": "#/definitions/models.ErrInternalServer"
                         }
                     }
                 }
@@ -557,19 +557,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/models.ValidationErrorResponse"
+                            "$ref": "#/definitions/models.ErrBadRequest"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/models.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/models.ErrUnauthorized"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/models.InternalErrorResponse"
+                            "$ref": "#/definitions/models.ErrInternalServer"
                         }
                     }
                 }
@@ -603,13 +603,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/models.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/models.ErrUnauthorized"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/models.InternalErrorResponse"
+                            "$ref": "#/definitions/models.ErrInternalServer"
                         }
                     }
                 }
@@ -643,13 +643,13 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/models.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/models.ErrUnauthorized"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/models.InternalErrorResponse"
+                            "$ref": "#/definitions/models.ErrInternalServer"
                         }
                     }
                 }
@@ -689,19 +689,19 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/models.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/models.ErrUnauthorized"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/models.ForbiddenErrorResponse"
+                            "$ref": "#/definitions/models.ErrForbidden"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/models.NotFoundErrorResponse"
+                            "$ref": "#/definitions/models.ErrNotFound"
                         }
                     }
                 }
@@ -744,25 +744,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/models.ValidationErrorResponse"
+                            "$ref": "#/definitions/models.ErrBadRequest"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/models.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/models.ErrUnauthorized"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/models.ForbiddenErrorResponse"
+                            "$ref": "#/definitions/models.ErrForbidden"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/models.InternalErrorResponse"
+                            "$ref": "#/definitions/models.ErrInternalServer"
                         }
                     }
                 }
@@ -823,31 +823,31 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/models.ValidationErrorResponse"
+                            "$ref": "#/definitions/models.ErrBadRequest"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/models.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/models.ErrUnauthorized"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/models.ForbiddenErrorResponse"
+                            "$ref": "#/definitions/models.ErrForbidden"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/models.NotFoundErrorResponse"
+                            "$ref": "#/definitions/models.ErrNotFound"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/models.InternalErrorResponse"
+                            "$ref": "#/definitions/models.ErrInternalServer"
                         }
                     }
                 }
@@ -906,25 +906,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/models.ValidationErrorResponse"
+                            "$ref": "#/definitions/models.ErrBadRequest"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/models.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/models.ErrUnauthorized"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/models.ForbiddenErrorResponse"
+                            "$ref": "#/definitions/models.ErrForbidden"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/models.InternalErrorResponse"
+                            "$ref": "#/definitions/models.ErrInternalServer"
                         }
                     }
                 }
@@ -984,25 +984,25 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/models.ValidationErrorResponse"
+                            "$ref": "#/definitions/models.ErrBadRequest"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/models.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/models.ErrUnauthorized"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/models.NotFoundErrorResponse"
+                            "$ref": "#/definitions/models.ErrNotFound"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/models.InternalErrorResponse"
+                            "$ref": "#/definitions/models.ErrInternalServer"
                         }
                     }
                 }
@@ -1042,25 +1042,25 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/models.UnauthorizedErrorResponse"
+                            "$ref": "#/definitions/models.ErrUnauthorized"
                         }
                     },
                     "403": {
                         "description": "Forbidden",
                         "schema": {
-                            "$ref": "#/definitions/models.ForbiddenErrorResponse"
+                            "$ref": "#/definitions/models.ErrForbidden"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/models.NotFoundErrorResponse"
+                            "$ref": "#/definitions/models.ErrNotFound"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/models.InternalErrorResponse"
+                            "$ref": "#/definitions/models.ErrInternalServer"
                         }
                     }
                 }
@@ -1068,16 +1068,101 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "models.ConflictErrorResponse": {
+        "models.ErrBadRequest": {
             "type": "object",
             "properties": {
                 "code": {
                     "type": "string",
-                    "example": "CONFLICT"
+                    "example": "Bad Request"
+                },
+                "error": {
+                    "type": "string",
+                    "example": "invalid request body"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "The provided email format is invalid"
+                }
+            }
+        },
+        "models.ErrConflict": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "Conflict"
                 },
                 "error": {
                     "type": "string",
                     "example": "resource already exists"
+                },
+                "message": {
+                    "type": "string",
+                    "example": ""
+                }
+            }
+        },
+        "models.ErrForbidden": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "Forbidden"
+                },
+                "error": {
+                    "type": "string",
+                    "example": "access denied"
+                },
+                "message": {
+                    "type": "string",
+                    "example": ""
+                }
+            }
+        },
+        "models.ErrInternalServer": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "Internal Server Error"
+                },
+                "error": {
+                    "type": "string",
+                    "example": "internal server error"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "An unexpected error occurred"
+                }
+            }
+        },
+        "models.ErrNotFound": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "Not Found"
+                },
+                "error": {
+                    "type": "string",
+                    "example": "resource not found"
+                },
+                "message": {
+                    "type": "string",
+                    "example": ""
+                }
+            }
+        },
+        "models.ErrUnauthorized": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "Unauthorized"
+                },
+                "error": {
+                    "type": "string",
+                    "example": "invalid token"
                 },
                 "message": {
                     "type": "string",
@@ -1188,23 +1273,6 @@ const docTemplate = `{
                 }
             }
         },
-        "models.ForbiddenErrorResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "example": "FORBIDDEN"
-                },
-                "error": {
-                    "type": "string",
-                    "example": "access denied"
-                },
-                "message": {
-                    "type": "string",
-                    "example": ""
-                }
-            }
-        },
         "models.Group": {
             "type": "object",
             "properties": {
@@ -1271,57 +1339,6 @@ const docTemplate = `{
                 }
             }
         },
-        "models.InternalErrorResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "example": "INTERNAL_ERROR"
-                },
-                "error": {
-                    "type": "string",
-                    "example": "internal server error"
-                },
-                "message": {
-                    "type": "string",
-                    "example": "An unexpected error occurred"
-                }
-            }
-        },
-        "models.NotFoundErrorResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "example": "NOT_FOUND"
-                },
-                "error": {
-                    "type": "string",
-                    "example": "resource not found"
-                },
-                "message": {
-                    "type": "string",
-                    "example": ""
-                }
-            }
-        },
-        "models.UnauthorizedErrorResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "example": "INVALID_TOKEN"
-                },
-                "error": {
-                    "type": "string",
-                    "example": "invalid token"
-                },
-                "message": {
-                    "type": "string",
-                    "example": ""
-                }
-            }
-        },
         "models.User": {
             "type": "object",
             "properties": {
@@ -1339,23 +1356,6 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "string"
-                }
-            }
-        },
-        "models.ValidationErrorResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "example": "VALIDATION_ERROR"
-                },
-                "error": {
-                    "type": "string",
-                    "example": "invalid request body"
-                },
-                "message": {
-                    "type": "string",
-                    "example": "The provided email format is invalid"
                 }
             }
         }
