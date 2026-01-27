@@ -8,7 +8,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/pranaovs/qashare/apierrors"
 	"github.com/pranaovs/qashare/models"
 
 	"github.com/jackc/pgx/v5"
@@ -53,14 +52,14 @@ func CreateGroup(ctx context.Context, pool *pgxpool.Pool, group *models.Group) e
 
 // GetGroupCreator retrieves the user ID of the group creator.
 // This is a lightweight query that only returns the creator ID, useful for authorization checks.
-// Returns ErrGroupNotFound if no group with the ID exists.
+// Returns ErrNotFound if no group with the ID exists.
 func GetGroupCreator(ctx context.Context, pool *pgxpool.Pool, groupID string) (string, error) {
 	var creatorID string
 	query := `SELECT created_by FROM groups WHERE group_id = $1`
 
 	err := pool.QueryRow(ctx, query, groupID).Scan(&creatorID)
 	if err == pgx.ErrNoRows {
-		return "", apierrors.ErrGroupNotFound
+		return "", ErrNotFound.WithMessage("group with id %s not found", groupID)
 	}
 	if err != nil {
 		return "", err
@@ -71,7 +70,7 @@ func GetGroupCreator(ctx context.Context, pool *pgxpool.Pool, groupID string) (s
 
 // GetGroup retrieves complete group information including all members.
 // Returns a models.GroupDetails struct with full details and a list of all group members.
-// Returns ErrGroupNotFound if no group with the ID exists.
+// Returns ErrNotFound if no group with the ID exists.
 func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.GroupDetails, error) {
 	var group models.GroupDetails
 
@@ -89,7 +88,7 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.G
 	)
 
 	if err == pgx.ErrNoRows {
-		return models.GroupDetails{}, apierrors.ErrGroupNotFound
+		return models.GroupDetails{}, ErrNotFound.WithMessage("group with id %s not found", groupID)
 	}
 	if err != nil {
 		return models.GroupDetails{}, err
@@ -133,7 +132,7 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.G
 // Returns ErrInvalidInput if no user IDs are provided.
 func AddGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, userIDs []string) error {
 	if len(userIDs) == 0 {
-		return apierrors.ErrBadRequest.Msg("no user IDs provided")
+		return ErrInvalidInput.WithMessage("no user IDs provided")
 	}
 
 	// Build batch queries for all users
@@ -195,7 +194,7 @@ func RemoveGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID 
 
 	// Check if any rows were affected
 	if result.RowsAffected() == 0 {
-		return apierrors.ErrUserNotInGroup
+		return ErrNotFound.WithMessage("user %s is not a member of group %s", userID, groupID)
 	}
 
 	return nil
@@ -206,7 +205,7 @@ func RemoveGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID 
 // Returns ErrInvalidInput if no user IDs are provided.
 func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, userIDs []string) error {
 	if len(userIDs) == 0 {
-		return apierrors.ErrBadRequest.Msg("no user IDs provided")
+		return ErrInvalidInput.WithMessage("no user IDs provided")
 	}
 
 	// Build batch queries for all users

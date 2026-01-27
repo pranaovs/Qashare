@@ -32,10 +32,11 @@ func NewExpensesHandler(pool *pgxpool.Pool) *ExpensesHandler {
 // @Security BearerAuth
 // @Param request body models.ExpenseDetails true "Expense details with splits"
 // @Success 201 {object} models.ExpenseDetails
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 403 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} apierrors.AppError "Invalid request or split validation failed"
+// @Failure 401 {object} apierrors.AppError "Unauthorized"
+// @Failure 403 {object} apierrors.AppError "User not in group"
+// @Failure 404 {object} apierrors.AppError "Group not found"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /expenses/ [post]
 func (h *ExpensesHandler) Create(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
@@ -78,7 +79,11 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	uniqueUserIDs := utils.GetUniqueUserIDs(splitUserIDs)
 
 	if err := db.AllMembersOfGroup(c.Request.Context(), h.pool, uniqueUserIDs, expense.GroupID); err != nil {
-		utils.SendError(c, apierrors.ErrUserNotInGroup)
+		if db.IsNotFound(err) {
+			utils.SendError(c, apierrors.ErrUserNotInGroup)
+			return
+		}
+		utils.SendError(c, err)
 		return
 	}
 
@@ -99,6 +104,10 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 
 	err = db.CreateExpense(c.Request.Context(), h.pool, &expense)
 	if err != nil {
+		if db.IsNotFound(err) {
+			utils.SendError(c, apierrors.ErrGroupNotFound)
+			return
+		}
 		utils.SendError(c, err)
 		return
 	}
@@ -114,9 +123,10 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Expense ID"
 // @Success 200 {object} models.ExpenseDetails
-// @Failure 401 {object} map[string]string
-// @Failure 403 {object} map[string]string
-// @Failure 404 {object} map[string]string
+// @Failure 401 {object} apierrors.AppError "Unauthorized"
+// @Failure 403 {object} apierrors.AppError "Not a member of the group"
+// @Failure 404 {object} apierrors.AppError "Expense not found"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /expenses/{id} [get]
 func (h *ExpensesHandler) GetExpense(c *gin.Context) {
 	// Expense is already fetched and authorized by middleware
@@ -134,11 +144,11 @@ func (h *ExpensesHandler) GetExpense(c *gin.Context) {
 // @Param id path string true "Expense ID"
 // @Param request body models.ExpenseDetails true "Updated expense details"
 // @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 403 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} apierrors.AppError "Invalid request or split validation failed"
+// @Failure 401 {object} apierrors.AppError "Unauthorized"
+// @Failure 403 {object} apierrors.AppError "Not group admin or expense creator"
+// @Failure 404 {object} apierrors.AppError "Expense not found"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /expenses/{id} [put]
 func (h *ExpensesHandler) Update(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
@@ -208,15 +218,19 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Expense ID"
 // @Success 200 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 403 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 401 {object} apierrors.AppError "Unauthorized"
+// @Failure 403 {object} apierrors.AppError "Not group admin or expense creator"
+// @Failure 404 {object} apierrors.AppError "Expense not found"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /expenses/{id} [delete]
 func (h *ExpensesHandler) Delete(c *gin.Context) {
 	expense := middleware.MustGetExpense(c)
 
 	if err := db.DeleteExpense(c.Request.Context(), h.pool, expense.ExpenseID); err != nil {
+		if db.IsNotFound(err) {
+			utils.SendError(c, apierrors.ErrExpenseNotFound)
+			return
+		}
 		utils.SendError(c, err)
 		return
 	}

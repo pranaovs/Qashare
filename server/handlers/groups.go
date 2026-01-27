@@ -31,9 +31,9 @@ func NewGroupsHandler(pool *pgxpool.Pool) *GroupsHandler {
 // @Security BearerAuth
 // @Param request body object{name=string,description=string} true "Group details"
 // @Success 201 {object} models.Group
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} apierrors.AppError "Invalid request or name"
+// @Failure 401 {object} apierrors.AppError "Unauthorized"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /groups/ [post]
 func (h *GroupsHandler) Create(c *gin.Context) {
 	group := models.Group{}
@@ -74,8 +74,8 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {array} models.Group
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 401 {object} apierrors.AppError "Unauthorized"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /groups/me [get]
 func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
@@ -95,8 +95,8 @@ func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {array} models.Group
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 401 {object} apierrors.AppError "Unauthorized"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /groups/admin [get]
 func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
@@ -116,15 +116,20 @@ func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Group ID"
 // @Success 200 {object} models.GroupDetails
-// @Failure 401 {object} map[string]string
-// @Failure 403 {object} map[string]string
-// @Failure 404 {object} map[string]string
+// @Failure 401 {object} apierrors.AppError "Unauthorized"
+// @Failure 403 {object} apierrors.AppError "Not a member of the group"
+// @Failure 404 {object} apierrors.AppError "Group not found"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /groups/{id} [get]
 func (h *GroupsHandler) GetGroup(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 
 	group, err := db.GetGroup(c.Request.Context(), h.pool, groupID)
 	if err != nil {
+		if db.IsNotFound(err) {
+			utils.SendError(c, apierrors.ErrGroupNotFound)
+			return
+		}
 		utils.SendError(c, err)
 		return
 	}
@@ -142,11 +147,11 @@ func (h *GroupsHandler) GetGroup(c *gin.Context) {
 // @Param id path string true "Group ID"
 // @Param request body object{user_ids=[]string} true "User IDs to add"
 // @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 403 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} apierrors.AppError "Invalid request"
+// @Failure 401 {object} apierrors.AppError "Unauthorized"
+// @Failure 403 {object} apierrors.AppError "Not group admin"
+// @Failure 404 {object} apierrors.AppError "Group or user not found"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /groups/{id}/members [post]
 func (h *GroupsHandler) AddMembers(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
@@ -165,7 +170,11 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 
 	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, groupID)
 	if err != nil {
-		utils.SendError(c, apierrors.ErrGroupNotFound)
+		if db.IsNotFound(err) {
+			utils.SendError(c, apierrors.ErrGroupNotFound)
+			return
+		}
+		utils.SendError(c, err)
 		return
 	}
 	if groupCreator != userID {
@@ -179,6 +188,10 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 		if err == nil {
 			validUserIDs = append(validUserIDs, uid)
 		} else {
+			if db.IsNotFound(err) {
+				utils.SendError(c, apierrors.ErrUserNotFound)
+				return
+			}
 			utils.SendError(c, err)
 			return
 		}
@@ -211,10 +224,11 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 // @Param id path string true "Group ID"
 // @Param request body object{user_ids=[]string} true "User IDs to remove"
 // @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 403 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} apierrors.AppError "Invalid request"
+// @Failure 401 {object} apierrors.AppError "Unauthorized"
+// @Failure 403 {object} apierrors.AppError "Not group admin"
+// @Failure 404 {object} apierrors.AppError "User not in group"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /groups/{id}/members [delete]
 func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 	type request struct {

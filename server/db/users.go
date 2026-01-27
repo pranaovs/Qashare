@@ -7,7 +7,6 @@ import (
 	"context"
 	"strings"
 
-	apierrors "github.com/pranaovs/qashare/apierrors"
 	"github.com/pranaovs/qashare/models"
 	"github.com/pranaovs/qashare/utils"
 
@@ -17,10 +16,9 @@ import (
 
 // CreateUser inserts a new non-guest (fully authenticated) user into the database.
 // Guest accounts should normally be created using CreateGuest. If an existing guest user
-// is found for the given email (signaled by ErrUserIsGuest from GetUserFromEmail), this
-// function will handle that case when creating the full user account.
+// is found for the given email, this function will promote them to a full user account.
 // Takes a User model with Name, Email, and PasswordHash populated, and adds UserID and CreatedAt.
-// Returns ErrEmailAlreadyExists if a non-guest user with the email already exists.
+// Returns ErrDuplicateKey if a non-guest user with the email already exists.
 func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) error {
 	// Check if user already exists with this email
 	existingUser, err := GetUserFromEmail(ctx, pool, user.Email)
@@ -30,8 +28,8 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 	// Promote guest user if found
 	if err == nil && !existingUser.Guest {
 		// Non-guest user already exists
-		return apierrors.ErrEmailAlreadyExists
-	} else if err != nil {
+		return ErrDuplicateKey.WithMessage("user with email %s already exists", user.Email)
+	} else if err != nil && !IsNotFound(err) {
 		return err
 	}
 
@@ -66,7 +64,7 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 			if err != nil {
 				// Check for duplicate key violation (race condition)
 				if IsDuplicateKey(err) {
-					return apierrors.ErrEmailAlreadyExists
+					return ErrDuplicateKey.WithMessage("user with email %s already exists", user.Email)
 				}
 				return err
 			}
@@ -89,14 +87,13 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 // Takes a context, a database connection pool, the guest's email address, and the
 // user ID of the user who added the guest.
 // Returns the created User model with UserID and CreatedAt populated.
-// Returns ErrEmailAlreadyExists if a user with the given email already exists.
-// May return a DBError (via NewDBError) if any database operation fails.
+// Returns ErrDuplicateKey if a user with the given email already exists.
 func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy string) (models.User, error) {
 	// Check if user already exists with this email
 	_, err := GetUserFromEmail(ctx, pool, email)
 	if err == nil {
-		return models.User{}, apierrors.ErrEmailAlreadyExists
-	} else if err != apierrors.ErrUserNotFound {
+		return models.User{}, ErrDuplicateKey.WithMessage("user with email %s already exists", email)
+	} else if !IsNotFound(err) {
 		return models.User{}, err
 	}
 
@@ -116,7 +113,7 @@ func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy 
 		if err != nil {
 			// Check for duplicate key violation (race condition)
 			if IsDuplicateKey(err) {
-				return apierrors.ErrEmailAlreadyExists
+				return ErrDuplicateKey.WithMessage("user with email %s already exists", email)
 			}
 			return err
 		}
@@ -141,7 +138,7 @@ func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy 
 
 // GetUserFromEmail retrieves a user by their email address.
 // This is commonly used for login and authentication purposes.
-// Returns ErrEmailNotRegistered if no user with the email exists.
+// Returns ErrNotFound if no user with the email exists.
 func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (models.User, error) {
 	var user models.User
 	query := `SELECT user_id, user_name, email, COALESCE(is_guest, false) AS is_guest, extract(epoch from created_at)::bigint
@@ -153,7 +150,7 @@ func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (mo
 	)
 
 	if err == pgx.ErrNoRows {
-		return models.User{}, apierrors.ErrUserNotFound
+		return models.User{}, ErrNotFound.WithMessage("user with email %s not found", email)
 	}
 	if err != nil {
 		return models.User{}, err
@@ -165,14 +162,14 @@ func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (mo
 // GetUserCredentials retrieves the user ID and password hash for authentication.
 // This function is specifically designed for login verification.
 // Only returns the minimal information needed for authentication.
-// Returns ErrEmailNotRegistered if no user with the email exists.
+// Returns ErrNotFound if no user with the email exists.
 func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (string, string, error) {
 	var userID, passwordHash string
 	query := `SELECT user_id, password_hash FROM users WHERE email = $1`
 
 	err := pool.QueryRow(ctx, query, email).Scan(&userID, &passwordHash)
 	if err == pgx.ErrNoRows {
-		return "", "", apierrors.ErrUserNotFound
+		return "", "", ErrNotFound.WithMessage("user with email %s not found", email)
 	}
 	if err != nil {
 		return "", "", err
@@ -182,7 +179,7 @@ func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (
 }
 
 // GetUser retrieves a user by their unique user ID.
-// Returns ErrUserNotFound if no user with the ID exists.
+// Returns ErrNotFound if no user with the ID exists.
 func GetUser(ctx context.Context, pool *pgxpool.Pool, userID string) (models.User, error) {
 	var user models.User
 	query := `SELECT user_id, user_name, email, is_guest, extract(epoch from created_at)::bigint
@@ -194,7 +191,7 @@ func GetUser(ctx context.Context, pool *pgxpool.Pool, userID string) (models.Use
 	)
 
 	if err == pgx.ErrNoRows {
-		return models.User{}, apierrors.ErrUserNotFound
+		return models.User{}, ErrNotFound.WithMessage("user with id %s not found", userID)
 	}
 	if err != nil {
 		return models.User{}, err
@@ -300,7 +297,7 @@ func MemberOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]m
 
 // UserExists checks if a user with the given ID exists in the database.
 // This is a lightweight check that doesn't retrieve the full user record.
-// Returns nil if user exists, or ErrUserNotFound if not.
+// Returns nil if user exists, or ErrNotFound if not.
 func UserExists(ctx context.Context, pool *pgxpool.Pool, userID string) error {
 	exists, err := RecordExists(ctx, pool, "users", "user_id = $1", userID)
 	if err != nil {
@@ -308,7 +305,7 @@ func UserExists(ctx context.Context, pool *pgxpool.Pool, userID string) error {
 	}
 
 	if !exists {
-		return apierrors.ErrUserNotFound
+		return ErrNotFound.WithMessage("user with id %s not found", userID)
 	}
 
 	return nil
@@ -333,7 +330,7 @@ func MemberOfGroup(ctx context.Context, pool *pgxpool.Pool, userID, groupID stri
 
 // AllMembersOfGroup verifies that all users in the provided list are members of the group.
 // This is useful for validating expense splits where all participants must be group members.
-// Returns nil if all users are members, or ErrNotMember if any user is not a member.
+// Returns nil if all users are members, or ErrNotFound if any user is not a member.
 func AllMembersOfGroup(ctx context.Context, pool *pgxpool.Pool, userIDs []string, groupID string) error {
 	if len(userIDs) == 0 {
 		return nil
@@ -355,7 +352,7 @@ func AllMembersOfGroup(ctx context.Context, pool *pgxpool.Pool, userIDs []string
 
 	// If count doesn't match, some users are not members
 	if count != len(uniqueUserIDs) {
-		return apierrors.ErrUserNotFound.Msg("one or more users are not members of the group")
+		return ErrNotFound.WithMessage("one or more users are not members of the group")
 	}
 
 	return nil

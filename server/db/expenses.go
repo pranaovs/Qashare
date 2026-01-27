@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 
-	apierrors "github.com/pranaovs/qashare/apierrors"
 	"github.com/pranaovs/qashare/models"
 
 	"github.com/jackc/pgx/v5"
@@ -34,10 +33,10 @@ func CreateExpense(
 ) error {
 	// Validate input
 	if expense.Title == "" {
-		return apierrors.ErrBadRequest.Msg("title is required")
+		return ErrInvalidInput.WithMessage("title is required")
 	}
 	if !expense.IsIncompleteAmount && expense.Amount <= 0 {
-		return apierrors.ErrBadRequest.Msg("amount must be greater than zero")
+		return ErrInvalidInput.WithMessage("amount must be greater than zero")
 	}
 
 	// Use WithTransaction helper for consistent transaction management
@@ -110,13 +109,13 @@ func CreateExpense(
 func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.ExpenseDetails) error {
 	// Validate input
 	if expense.ExpenseID == "" {
-		return apierrors.ErrExpenseNotFound
+		return ErrNotFound.WithMessage("expense not found")
 	}
 	if expense.Title == "" {
-		return apierrors.ErrBadRequest.Msg("title is required")
+		return ErrInvalidInput.WithMessage("title is required")
 	}
 	if !expense.IsIncompleteAmount && expense.Amount <= 0 {
-		return apierrors.ErrInvalidSplit
+		return ErrInvalidInput.WithMessage("amount must be greater than zero")
 	}
 
 	// Use WithTransaction helper for consistent transaction management
@@ -150,7 +149,7 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.Expe
 
 		// Check if expense was found
 		if result.RowsAffected() == 0 {
-			return apierrors.ErrExpenseNotFound
+			return ErrNotFound.WithMessage("expense with id %s not found", expense.ExpenseID)
 		}
 
 		// Remove old splits
@@ -229,7 +228,7 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 		&expense.Longitude,
 	)
 	if err == pgx.ErrNoRows {
-		return models.ExpenseDetails{}, apierrors.ErrExpenseNotFound
+		return models.ExpenseDetails{}, ErrNotFound.WithMessage("expense with id %s not found", expenseID)
 	}
 	if err != nil {
 		return models.ExpenseDetails{}, err
@@ -284,7 +283,7 @@ func DeleteExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) er
 
 		// Check if expense was found
 		if result.RowsAffected() == 0 {
-			return apierrors.ErrExpenseNotFound
+			return ErrNotFound.WithMessage("expense with id %s not found", expenseID)
 		}
 
 		return nil
@@ -304,7 +303,7 @@ func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID string) ([]mod
 
 	// Validate input
 	if groupID == "" {
-		return nil, apierrors.ErrBadRequest.Msg("group id missing")
+		return nil, ErrInvalidInput.WithMessage("group id missing")
 	}
 
 	// Query to get all expenses for the group

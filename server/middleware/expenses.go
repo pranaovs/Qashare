@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/pranaovs/qashare/apierrors"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/models"
 	"github.com/pranaovs/qashare/utils"
@@ -30,11 +31,11 @@ func VerifyExpenseAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		// Get the expense to find its group
 		expense, err := db.GetExpense(c.Request.Context(), pool, expenseID)
-		if err == db.ErrExpenseNotFound {
-			utils.AbortWithStatusJSON(c, http.StatusNotFound, "expense not found")
-			return
-		}
 		if err != nil {
+			if db.IsNotFound(err) {
+				utils.AbortWithStatusJSON(c, apierrors.ErrExpenseNotFound.HTTPCode, apierrors.ErrExpenseNotFound.Message)
+				return
+			}
 			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "internal server error")
 			return
 		}
@@ -74,22 +75,21 @@ func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		// Get the expense to find its group
 		expense, err := db.GetExpense(c.Request.Context(), pool, expenseID)
-		if err == db.ErrExpenseNotFound {
-			utils.AbortWithStatusJSON(c, http.StatusNotFound, "expense not found")
-			return
-		}
 		if err != nil {
+			if db.IsNotFound(err) {
+				utils.AbortWithStatusJSON(c, apierrors.ErrExpenseNotFound.HTTPCode, apierrors.ErrExpenseNotFound.Message)
+				return
+			}
 			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "internal server error")
 			return
 		}
 
 		creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, expense.GroupID)
-		if err == db.ErrGroupNotFound {
-			utils.AbortWithStatusJSON(c, http.StatusNotFound, "group not found")
-			return
-		}
-
 		if err != nil {
+			if db.IsNotFound(err) {
+				utils.AbortWithStatusJSON(c, apierrors.ErrGroupNotFound.HTTPCode, apierrors.ErrGroupNotFound.Message)
+				return
+			}
 			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to get group creator")
 			return
 		}
