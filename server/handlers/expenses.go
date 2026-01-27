@@ -31,10 +31,10 @@ func NewExpensesHandler(pool *pgxpool.Pool) *ExpensesHandler {
 // @Security BearerAuth
 // @Param request body models.ExpenseDetails true "Expense details with splits"
 // @Success 201 {object} models.ExpenseDetails
-// @Failure 400 {object} models.ErrorResponse
-// @Failure 401 {object} models.ErrorResponse
-// @Failure 403 {object} models.ErrorResponse
-// @Failure 500 {object} models.ErrorResponse
+// @Failure 400 {object} models.ValidationErrorResponse
+// @Failure 401 {object} models.UnauthorizedErrorResponse
+// @Failure 403 {object} models.ForbiddenErrorResponse
+// @Failure 500 {object} models.InternalErrorResponse
 // @Router /expenses/ [post]
 func (h *ExpensesHandler) Create(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
@@ -134,9 +134,9 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Expense ID"
 // @Success 200 {object} models.ExpenseDetails
-// @Failure 401 {object} models.ErrorResponse
-// @Failure 403 {object} models.ErrorResponse
-// @Failure 404 {object} models.ErrorResponse
+// @Failure 401 {object} models.UnauthorizedErrorResponse
+// @Failure 403 {object} models.ForbiddenErrorResponse
+// @Failure 404 {object} models.NotFoundErrorResponse
 // @Router /expenses/{id} [get]
 func (h *ExpensesHandler) GetExpense(c *gin.Context) {
 	// Expense is already fetched and authorized by middleware
@@ -155,11 +155,11 @@ func (h *ExpensesHandler) GetExpense(c *gin.Context) {
 // @Param id path string true "Expense ID"
 // @Param request body models.ExpenseDetails true "Updated expense details"
 // @Success 200 {object} map[string]string
-// @Failure 400 {object} models.ErrorResponse
-// @Failure 401 {object} models.ErrorResponse
-// @Failure 403 {object} models.ErrorResponse
-// @Failure 404 {object} models.ErrorResponse
-// @Failure 500 {object} models.ErrorResponse
+// @Failure 400 {object} models.ValidationErrorResponse
+// @Failure 401 {object} models.UnauthorizedErrorResponse
+// @Failure 403 {object} models.ForbiddenErrorResponse
+// @Failure 404 {object} models.NotFoundErrorResponse
+// @Failure 500 {object} models.InternalErrorResponse
 // @Router /expenses/{id} [put]
 func (h *ExpensesHandler) Update(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
@@ -248,10 +248,10 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Expense ID"
 // @Success 200 {object} map[string]string
-// @Failure 401 {object} models.ErrorResponse
-// @Failure 403 {object} models.ErrorResponse
-// @Failure 404 {object} models.ErrorResponse
-// @Failure 500 {object} models.ErrorResponse
+// @Failure 401 {object} models.UnauthorizedErrorResponse
+// @Failure 403 {object} models.ForbiddenErrorResponse
+// @Failure 404 {object} models.NotFoundErrorResponse
+// @Failure 500 {object} models.InternalErrorResponse
 // @Router /expenses/{id} [delete]
 func (h *ExpensesHandler) Delete(c *gin.Context) {
 	expense := middleware.MustGetExpense(c)
