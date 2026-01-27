@@ -21,13 +21,12 @@ import (
 // @title Qashare API
 // @version 1.0
 // @description API for managing shared expenses, groups, and user authentication
-// @termsOfService http://swagger.io/terms/
 
-// @contact.name API Support
-// @contact.email support@qashare.com
+// @contact.name Pranaov S
+// @contact.email qashare.contact@pranaovs.me
 
-// @license.name MIT
-// @license.url https://opensource.org/licenses/MIT
+// @license.name AGPL-3.0
+// @license.url https://www.gnu.org/licenses/agpl-3.0.en.html
 
 // @host localhost:8080
 // @BasePath /
