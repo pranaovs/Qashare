@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pranaovs/qashare/models"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -115,6 +117,19 @@ func AbortWithStatusJSON(c *gin.Context, statusCode int, message string) {
 	c.AbortWithStatusJSON(statusCode, gin.H{"error": message})
 }
 
+// AbortWithError aborts the request and sends a structured error response
+func AbortWithError(c *gin.Context, statusCode int, errResp models.ErrorResponse) {
+	LogError(c.Request.Context(), "Request aborted with error",
+		fmt.Errorf("%s", errResp.Error),
+		"code", errResp.Code,
+		"message", errResp.Message,
+		"status", statusCode,
+		"path", c.Request.URL.Path,
+		"method", c.Request.Method,
+	)
+	c.AbortWithStatusJSON(statusCode, errResp)
+}
+
 // SendJSON is a helper function that sends a JSON response with the specified
 // HTTP status code and data.
 func SendJSON(c *gin.Context, statusCode int, data interface{}) {
@@ -125,4 +140,17 @@ func SendJSON(c *gin.Context, statusCode int, data interface{}) {
 // Use AbortWithStatusJSON when you need to abort the request chain.
 func SendError(c *gin.Context, statusCode int, message string) {
 	c.JSON(statusCode, gin.H{"error": message})
+}
+
+// SendErrorWithCode sends a structured error response with error code
+func SendErrorWithCode(c *gin.Context, statusCode int, errResp models.ErrorResponse) {
+	LogError(c.Request.Context(), "Error response sent",
+		fmt.Errorf("%s", errResp.Error),
+		"code", errResp.Code,
+		"message", errResp.Message,
+		"status", statusCode,
+		"path", c.Request.URL.Path,
+		"method", c.Request.Method,
+	)
+	c.JSON(statusCode, errResp)
 }

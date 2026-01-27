@@ -5,6 +5,7 @@ import (
 
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/middleware"
+	"github.com/pranaovs/qashare/models"
 	"github.com/pranaovs/qashare/utils"
 
 	"github.com/gin-gonic/gin"
@@ -27,30 +28,39 @@ func NewUsersHandler(pool *pgxpool.Pool) *UsersHandler {
 // @Security BearerAuth
 // @Param id path string true "User ID"
 // @Success 200 {object} models.User
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 403 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 403 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Router /users/{id} [get]
 func (h *UsersHandler) GetUser(c *gin.Context) {
+	ctx := c.Request.Context()
 	qUserID := c.Param("id")
-
 	userID := middleware.MustGetUserID(c)
 
 	// Do not allow access to user data if users are not related
-	related, err := db.UsersRelated(c.Request.Context(), h.pool, userID, qUserID)
+	related, err := db.UsersRelated(ctx, h.pool, userID, qUserID)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.LogError(ctx, "Failed to check user relation", err, "requester_id", userID, "target_id", qUserID)
+		utils.SendErrorWithCode(c, http.StatusInternalServerError,
+			models.NewSimpleErrorResponse("failed to verify user relation", models.ErrCodeInternal))
 		return
 	}
 	if !related {
-		utils.SendError(c, http.StatusForbidden, "access denied")
+		utils.LogWarn(ctx, "Access denied: users not related", "requester_id", userID, "target_id", qUserID)
+		utils.SendErrorWithCode(c, http.StatusForbidden,
+			models.NewSimpleErrorResponse("access denied", models.ErrCodeForbidden))
 		return
 	}
 
-	result, err := db.GetUser(c.Request.Context(), h.pool, qUserID)
+	result, err := db.GetUser(ctx, h.pool, qUserID)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		errResp := utils.MapDBError(err)
+		status := http.StatusInternalServerError
+		if errResp.Code == models.ErrCodeUserNotFound {
+			status = http.StatusNotFound
+		}
+		utils.SendErrorWithCode(c, status, errResp)
 		return
 	}
 
@@ -65,21 +75,29 @@ func (h *UsersHandler) GetUser(c *gin.Context) {
 // @Security BearerAuth
 // @Param email path string true "User Email"
 // @Success 200 {object} models.User
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Router /users/search/email/{email} [get]
 func (h *UsersHandler) SearchByEmail(c *gin.Context) {
+	ctx := c.Request.Context()
 	_ = middleware.MustGetUserID(c)
 
 	email, err := utils.ValidateEmail(c.Param("email"))
 	if err != nil {
-		utils.SendError(c, http.StatusBadRequest, "invalid email format")
+		utils.SendErrorWithCode(c, http.StatusBadRequest,
+			models.NewErrorResponse("invalid email format", models.ErrCodeValidation, err.Error()))
 		return
 	}
-	user, err := db.GetUserFromEmail(c.Request.Context(), h.pool, email)
+
+	user, err := db.GetUserFromEmail(ctx, h.pool, email)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		errResp := utils.MapDBError(err)
+		status := http.StatusInternalServerError
+		if errResp.Code == models.ErrCodeUserNotFound || errResp.Code == models.ErrCodeEmailNotRegistered {
+			status = http.StatusNotFound
+		}
+		utils.SendErrorWithCode(c, status, errResp)
 		return
 	}
 

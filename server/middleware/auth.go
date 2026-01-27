@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 
+	"github.com/pranaovs/qashare/models"
 	"github.com/pranaovs/qashare/utils"
 
 	"github.com/gin-gonic/gin"
@@ -12,9 +13,18 @@ const UserIDKey = "userID"
 
 func RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		ctx := c.Request.Context()
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
-			utils.AbortWithStatusJSON(c, http.StatusUnauthorized, err.Error())
+			utils.LogWarn(ctx, "Authentication failed", "error", err.Error(), "path", c.Request.URL.Path)
+			errCode := models.ErrCodeInvalidToken
+			if err.Error() == "expired token" {
+				errCode = models.ErrCodeExpiredToken
+			} else if err.Error() == "authorization header missing or malformed" {
+				errCode = models.ErrCodeUnauthorized
+			}
+			utils.AbortWithError(c, http.StatusUnauthorized,
+				models.NewSimpleErrorResponse(err.Error(), errCode))
 			return
 		}
 
