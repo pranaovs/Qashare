@@ -147,16 +147,6 @@ The Swagger UI provides:
 - Interactive testing capability (try out API calls directly from the browser)
 - Authentication using JWT Bearer tokens
 
-### API Endpoints
-
-The API includes the following endpoint groups:
-
-- **Authentication** (`/auth/*`): User registration, login, and guest user management
-- **Users** (`/users/*`): User profile and search operations
-- **Groups** (`/groups/*`): Group creation, membership management, and expense listing
-- **Expenses** (`/expenses/*`): Expense creation, retrieval, updates, and deletion
-- **Health** (`/health`): Server health check endpoint
-
 ## Roadmap
 
 - [x] Set up Flutter client structure
