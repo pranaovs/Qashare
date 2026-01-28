@@ -36,10 +36,10 @@ func SendError(c *gin.Context, err error) {
 	})
 }
 
-// AbortWithStatusJSON is a unified helper function that aborts the request
+// SendAbort is a unified helper function that aborts the request
 // and sends a JSON response with the specified HTTP status code and error message.
 // This replaces the pattern of calling c.JSON() followed by c.Abort() separately.
-func AbortWithStatusJSON(c *gin.Context, statusCode int, message string) {
+func SendAbort(c *gin.Context, statusCode int, message string) {
 	c.AbortWithStatusJSON(statusCode, gin.H{"error": message})
 }
 
