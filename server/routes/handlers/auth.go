@@ -29,10 +29,10 @@ func NewAuthHandler(pool *pgxpool.Pool) *AuthHandler {
 // @Accept json
 // @Produce json
 // @Param request body object{name=string,email=string,password=string} true "User registration details"
-// @Success 201 {object} models.User
-// @Failure 400 {object} apierrors.AppError "Invalid request body or validation error"
-// @Failure 409 {object} apierrors.AppError "Email already exists"
-// @Failure 500 {object} apierrors.AppError "Internal server error"
+// @Success 201 {object} models.User "User successfully registered"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format, missing required fields, or JSON parsing error | BAD_NAME: Name contains invalid characters or is too short/long | BAD_EMAIL: Invalid email format | BAD_PASSWORD: Password does not meet requirements (e.g., too short, too weak)"
+// @Failure 409 {object} apierrors.AppError "EMAIL_EXISTS: An account with this email already exists"
+// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database or system error"
 // @Router /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var request struct {
@@ -93,10 +93,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body object{email=string,password=string} true "User login credentials"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} apierrors.AppError "Invalid request body or email format"
-// @Failure 401 {object} apierrors.AppError "Invalid credentials"
-// @Failure 500 {object} apierrors.AppError "Internal server error"
+// @Success 200 {object} map[string]string "Returns JWT token and success message"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format or missing required fields | BAD_EMAIL: Invalid email format"
+// @Failure 401 {object} apierrors.AppError "BAD_CREDENTIALS: Email or password is incorrect"
+// @Failure 500 {object} apierrors.AppError "Internal server error - JWT generation failed or unexpected database error"
 // @Router /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var request struct {
@@ -150,10 +150,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Tags auth
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {object} models.User
-// @Failure 401 {object} apierrors.AppError "Unauthorized"
-// @Failure 404 {object} apierrors.AppError "User not found"
-// @Failure 500 {object} apierrors.AppError "Internal server error"
+// @Success 200 {object} models.User "Returns the authenticated user's profile information"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists in the database"
+// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /auth/me [get]
 func (h *AuthHandler) Me(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
@@ -179,11 +179,11 @@ func (h *AuthHandler) Me(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param request body object{email=string} true "Guest user email"
-// @Success 201 {object} models.User
-// @Failure 400 {object} apierrors.AppError "Invalid request body or email format"
-// @Failure 401 {object} apierrors.AppError "Unauthorized"
-// @Failure 409 {object} apierrors.AppError "Email already exists"
-// @Failure 500 {object} apierrors.AppError "Internal server error"
+// @Success 201 {object} models.User "Guest user successfully created"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format or missing required fields | BAD_EMAIL: Invalid email format"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 409 {object} apierrors.AppError "EMAIL_EXISTS: An account with this email already exists"
+// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /auth/guest [post]
 func (h *AuthHandler) RegisterGuest(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)

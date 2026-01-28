@@ -32,12 +32,12 @@ func NewExpensesHandler(pool *pgxpool.Pool) *ExpensesHandler {
 // @Produce json
 // @Security BearerAuth
 // @Param request body models.ExpenseDetails true "Expense details with splits"
-// @Success 201 {object} models.ExpenseDetails
-// @Failure 400 {object} apierrors.AppError "Invalid request or split validation failed"
-// @Failure 401 {object} apierrors.AppError "Unauthorized"
-// @Failure 403 {object} apierrors.AppError "User not in group"
-// @Failure 404 {object} apierrors.AppError "Group not found"
-// @Failure 500 {object} apierrors.AppError "Internal server error"
+// @Success 201 {object} models.ExpenseDetails "Expense successfully created with splits"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body, missing required fields, or no splits provided | INVALID_SPLIT: Split totals do not match expense amount or split validation failed"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the specified group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group"
+// @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
+// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /expenses/ [post]
 func (h *ExpensesHandler) Create(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
@@ -121,11 +121,11 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Expense ID"
-// @Success 200 {object} models.ExpenseDetails
-// @Failure 401 {object} apierrors.AppError "Unauthorized"
-// @Failure 403 {object} apierrors.AppError "Not a member of the group"
-// @Failure 404 {object} apierrors.AppError "Expense not found"
-// @Failure 500 {object} apierrors.AppError "Internal server error"
+// @Success 200 {object} models.ExpenseDetails "Returns expense details including all splits"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the group this expense belongs to"
+// @Failure 404 {object} apierrors.AppError "EXPENSE_NOT_FOUND: The specified expense does not exist"
+// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /expenses/{id} [get]
 func (h *ExpensesHandler) GetExpense(c *gin.Context) {
 	// Expense is already fetched and authorized by middleware
@@ -142,12 +142,12 @@ func (h *ExpensesHandler) GetExpense(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Expense ID"
 // @Param request body models.ExpenseDetails true "Updated expense details"
-// @Success 200 {object} map[string]string
-// @Failure 400 {object} apierrors.AppError "Invalid request or split validation failed"
-// @Failure 401 {object} apierrors.AppError "Unauthorized"
-// @Failure 403 {object} apierrors.AppError "Not group admin or expense creator"
-// @Failure 404 {object} apierrors.AppError "Expense not found"
-// @Failure 500 {object} apierrors.AppError "Internal server error"
+// @Success 200 {object} map[string]string "Returns success message"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or missing required fields | INVALID_SPLIT: No splits provided or split totals do not match expense amount"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin or expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group"
+// @Failure 404 {object} apierrors.AppError "EXPENSE_NOT_FOUND: The specified expense does not exist"
+// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /expenses/{id} [put]
 func (h *ExpensesHandler) Update(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
@@ -220,11 +220,11 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Expense ID"
-// @Success 200 {object} map[string]string
-// @Failure 401 {object} apierrors.AppError "Unauthorized"
-// @Failure 403 {object} apierrors.AppError "Not group admin or expense creator"
-// @Failure 404 {object} apierrors.AppError "Expense not found"
-// @Failure 500 {object} apierrors.AppError "Internal server error"
+// @Success 200 {object} map[string]string "Returns success message"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin or expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group"
+// @Failure 404 {object} apierrors.AppError "EXPENSE_NOT_FOUND: The specified expense does not exist"
+// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /expenses/{id} [delete]
 func (h *ExpensesHandler) Delete(c *gin.Context) {
 	expense := middleware.MustGetExpense(c)
