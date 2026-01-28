@@ -38,7 +38,7 @@ func NewExpensesHandler(pool *pgxpool.Pool) *ExpensesHandler {
 // @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the specified group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /expenses/ [post]
+// @Router /v1/expenses/ [post]
 func (h *ExpensesHandler) Create(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 
@@ -126,7 +126,7 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 // @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the group this expense belongs to"
 // @Failure 404 {object} apierrors.AppError "EXPENSE_NOT_FOUND: The specified expense does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /expenses/{id} [get]
+// @Router /v1/expenses/{id} [get]
 func (h *ExpensesHandler) GetExpense(c *gin.Context) {
 	// Expense is already fetched and authorized by middleware
 	expense := middleware.MustGetExpense(c)
@@ -148,7 +148,7 @@ func (h *ExpensesHandler) GetExpense(c *gin.Context) {
 // @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin or expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group"
 // @Failure 404 {object} apierrors.AppError "EXPENSE_NOT_FOUND: The specified expense does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /expenses/{id} [put]
+// @Router /v1/expenses/{id} [put]
 func (h *ExpensesHandler) Update(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 	expense := middleware.MustGetExpense(c)
@@ -225,7 +225,7 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 // @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin or expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group"
 // @Failure 404 {object} apierrors.AppError "EXPENSE_NOT_FOUND: The specified expense does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /expenses/{id} [delete]
+// @Router /v1/expenses/{id} [delete]
 func (h *ExpensesHandler) Delete(c *gin.Context) {
 	expense := middleware.MustGetExpense(c)
 

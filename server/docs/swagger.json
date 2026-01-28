@@ -14,7 +14,7 @@
         "version": "1.0"
     },
     "paths": {
-        "/auth/guest": {
+        "/v1/auth/guest": {
             "post": {
                 "security": [
                     {
@@ -82,7 +82,7 @@
                 }
             }
         },
-        "/auth/login": {
+        "/v1/auth/login": {
             "post": {
                 "description": "Authenticate user and return JWT token",
                 "consumes": [
@@ -145,7 +145,7 @@
                 }
             }
         },
-        "/auth/me": {
+        "/v1/auth/me": {
             "get": {
                 "security": [
                     {
@@ -188,7 +188,7 @@
                 }
             }
         },
-        "/auth/register": {
+        "/v1/auth/register": {
             "post": {
                 "description": "Create a new user account",
                 "consumes": [
@@ -251,7 +251,7 @@
                 }
             }
         },
-        "/expenses/": {
+        "/v1/expenses/": {
             "post": {
                 "security": [
                     {
@@ -320,7 +320,7 @@
                 }
             }
         },
-        "/expenses/{id}": {
+        "/v1/expenses/{id}": {
             "get": {
                 "security": [
                     {
@@ -514,7 +514,7 @@
                 }
             }
         },
-        "/groups/": {
+        "/v1/groups/": {
             "post": {
                 "security": [
                     {
@@ -579,7 +579,7 @@
                 }
             }
         },
-        "/groups/admin": {
+        "/v1/groups/admin": {
             "get": {
                 "security": [
                     {
@@ -619,7 +619,7 @@
                 }
             }
         },
-        "/groups/me": {
+        "/v1/groups/me": {
             "get": {
                 "security": [
                     {
@@ -659,7 +659,7 @@
                 }
             }
         },
-        "/groups/{id}": {
+        "/v1/groups/{id}": {
             "get": {
                 "security": [
                     {
@@ -717,7 +717,7 @@
                 }
             }
         },
-        "/groups/{id}/expenses": {
+        "/v1/groups/{id}/expenses": {
             "get": {
                 "security": [
                     {
@@ -778,7 +778,7 @@
                 }
             }
         },
-        "/groups/{id}/members": {
+        "/v1/groups/{id}/members": {
             "post": {
                 "security": [
                     {
@@ -940,7 +940,7 @@
                 }
             }
         },
-        "/health": {
+        "/v1/health": {
             "get": {
                 "description": "Check if the API is running",
                 "produces": [
@@ -960,7 +960,7 @@
                 }
             }
         },
-        "/users/search/email/{email}": {
+        "/v1/users/search/email/{email}": {
             "get": {
                 "security": [
                     {
@@ -1018,7 +1018,7 @@
                 }
             }
         },
-        "/users/{id}": {
+        "/v1/users/{id}": {
             "get": {
                 "security": [
                     {

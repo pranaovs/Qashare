@@ -35,7 +35,7 @@ func NewGroupsHandler(pool *pgxpool.Pool) *GroupsHandler {
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format or missing required fields | BAD_NAME: Name contains invalid characters or is too short/long"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /groups/ [post]
+// @Router /v1/groups/ [post]
 func (h *GroupsHandler) Create(c *gin.Context) {
 	group := models.Group{}
 	var err error
@@ -81,7 +81,7 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 // @Success 200 {array} models.Group "Returns list of groups the user is a member of"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /groups/me [get]
+// @Router /v1/groups/me [get]
 func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 
@@ -102,7 +102,7 @@ func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
 // @Success 200 {array} models.Group "Returns list of groups the user is admin of"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /groups/admin [get]
+// @Router /v1/groups/admin [get]
 func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	groups, err := db.AdminOfGroups(c.Request.Context(), h.pool, userID)
@@ -127,7 +127,7 @@ func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
 // @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the group"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /groups/{id} [get]
+// @Router /v1/groups/{id} [get]
 func (h *GroupsHandler) GetGroup(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 
@@ -157,7 +157,7 @@ func (h *GroupsHandler) GetGroup(c *gin.Context) {
 // @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED: The authenticated user is not a member of the group"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist | USER_NOT_FOUND: One or more specified users do not exist or no valid user IDs provided"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /groups/{id}/members [post]
+// @Router /v1/groups/{id}/members [post]
 func (h *GroupsHandler) AddMembers(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 
@@ -231,7 +231,7 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more specified users are not members of the group"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /groups/{id}/members [delete]
+// @Router /v1/groups/{id}/members [delete]
 func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 	type request struct {
 		UserIDs []string `json:"user_ids" binding:"required,min=1"`
@@ -277,7 +277,7 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 // @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the group"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /groups/{id}/expenses [get]
+// @Router /v1/groups/{id}/expenses [get]
 func (h *GroupsHandler) ListGroupExpenses(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 	expenses, err := db.GetExpenses(c.Request.Context(), h.pool, groupID)
