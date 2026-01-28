@@ -48,13 +48,13 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		apierrors.SendError(c, apierrors.ErrBadRequest)
+		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
 	group.Name, err = utils.ValidateName(request.Name)
 	if err != nil {
-		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			utils.ErrInvalidName: apierrors.ErrInvalidName,
 		}))
 		return
@@ -63,13 +63,13 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 	group.Description = request.Description
 	err = db.CreateGroup(c.Request.Context(), h.pool, &group)
 	if err != nil {
-		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrUserNotFound,
 		}))
 		return
 	}
 
-	apierrors.SendJSON(c, http.StatusCreated, group)
+	utils.SendJSON(c, http.StatusCreated, group)
 }
 
 // ListUserGroups godoc
@@ -87,12 +87,12 @@ func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
 
 	groups, err := db.MemberOfGroups(c.Request.Context(), h.pool, userID)
 	if err != nil {
-		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrUserNotFound,
 		}))
 		return
 	}
-	apierrors.SendJSON(c, http.StatusOK, groups)
+	utils.SendJSON(c, http.StatusOK, groups)
 }
 
 // ListAdminGroups godoc
@@ -109,12 +109,12 @@ func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	groups, err := db.AdminOfGroups(c.Request.Context(), h.pool, userID)
 	if err != nil {
-		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrUserNotFound,
 		}))
 		return
 	}
-	apierrors.SendJSON(c, http.StatusOK, groups)
+	utils.SendJSON(c, http.StatusOK, groups)
 }
 
 // GetGroup godoc
@@ -135,13 +135,13 @@ func (h *GroupsHandler) GetGroup(c *gin.Context) {
 
 	group, err := db.GetGroup(c.Request.Context(), h.pool, groupID)
 	if err != nil {
-		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrGroupNotFound,
 		}))
 		return
 	}
 
-	apierrors.SendJSON(c, http.StatusOK, group)
+	utils.SendJSON(c, http.StatusOK, group)
 }
 
 // AddMembers godoc
@@ -169,7 +169,7 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 
 	var req request
 	if err := c.ShouldBindJSON(&req); err != nil {
-		apierrors.SendError(c, apierrors.ErrBadRequest)
+		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
@@ -177,13 +177,13 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 
 	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, groupID)
 	if err != nil {
-		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrGroupNotFound,
 		}))
 		return
 	}
 	if groupCreator != userID {
-		apierrors.SendError(c, apierrors.ErrNoPermissions)
+		utils.SendError(c, apierrors.ErrNoPermissions)
 		return
 	}
 
@@ -191,7 +191,7 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 	for _, uid := range req.UserIDs {
 		err := db.UserExists(c.Request.Context(), h.pool, uid)
 		if err != nil {
-			apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 				db.ErrNotFound: apierrors.ErrUserNotFound,
 			}))
 			return
@@ -200,20 +200,20 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 	}
 
 	if len(validUserIDs) == 0 {
-		apierrors.SendError(c, apierrors.ErrUserNotFound.Msg("No valid user IDs provided"))
+		utils.SendError(c, apierrors.ErrUserNotFound.Msg("No valid user IDs provided"))
 		return
 	}
 
 	err = db.AddGroupMembers(c.Request.Context(), h.pool, groupID, validUserIDs)
 	if err != nil {
-		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound:            apierrors.ErrGroupNotFound,
 			db.ErrConstraintViolation: apierrors.ErrBadRequest,
 		}))
 		return
 	}
 
-	apierrors.SendJSON(c, http.StatusOK, gin.H{
+	utils.SendJSON(c, http.StatusOK, gin.H{
 		"message":       "members added successfully",
 		"added_members": validUserIDs,
 	})
@@ -241,7 +241,7 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 
 	var req request
 	if err := c.ShouldBindJSON(&req); err != nil {
-		apierrors.SendError(c, apierrors.ErrBadRequest)
+		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
@@ -249,19 +249,19 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 
 	if slices.Contains(req.UserIDs, userID) {
-		apierrors.SendError(c, apierrors.ErrBadRequest.Msg("cannot remove self from group"))
+		utils.SendError(c, apierrors.ErrBadRequest.Msg("cannot remove self from group"))
 		return
 	}
 
 	err := db.RemoveGroupMembers(c.Request.Context(), h.pool, groupID, req.UserIDs)
 	if err != nil {
-		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrUserNotInGroup,
 		}))
 		return
 	}
 
-	apierrors.SendJSON(c, http.StatusOK, gin.H{
+	utils.SendJSON(c, http.StatusOK, gin.H{
 		"message":         "members removed",
 		"removed_members": req.UserIDs,
 	})
@@ -284,10 +284,10 @@ func (h *GroupsHandler) ListGroupExpenses(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 	expenses, err := db.GetExpenses(c.Request.Context(), h.pool, groupID)
 	if err != nil {
-		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrGroupNotFound,
 		}))
 		return
 	}
-	apierrors.SendData(c, expenses)
+	utils.SendData(c, expenses)
 }
