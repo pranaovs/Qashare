@@ -30,23 +30,13 @@ class UserLookupResult {
   final String? errorMessage;
   final UserLookup? user;
 
-  UserLookupResult._({
-    required this.isSuccess,
-    this.errorMessage,
-    this.user,
-  });
+  UserLookupResult._({required this.isSuccess, this.errorMessage, this.user});
 
   factory UserLookupResult.success(UserLookup user) {
-    return UserLookupResult._(
-      isSuccess: true,
-      user: user,
-    );
+    return UserLookupResult._(isSuccess: true, user: user);
   }
 
   factory UserLookupResult.error(String msg) {
-    return UserLookupResult._(
-      isSuccess: false,
-      errorMessage: msg,
-    );
+    return UserLookupResult._(isSuccess: false, errorMessage: msg);
   }
 }

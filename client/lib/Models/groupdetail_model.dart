@@ -73,16 +73,10 @@ class GroupDetailsResult {
   });
 
   factory GroupDetailsResult.success(GroupDetails group) {
-    return GroupDetailsResult._(
-      isSuccess: true,
-      group: group,
-    );
+    return GroupDetailsResult._(isSuccess: true, group: group);
   }
 
   factory GroupDetailsResult.error(String msg) {
-    return GroupDetailsResult._(
-      isSuccess: false,
-      errorMessage: msg,
-    );
+    return GroupDetailsResult._(isSuccess: false, errorMessage: msg);
   }
 }

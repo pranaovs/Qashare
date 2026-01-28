@@ -10,16 +10,10 @@ class AddMemberResult {
   });
 
   factory AddMemberResult.success(List<String> ids) {
-    return AddMemberResult._(
-      isSuccess: true,
-      addedMembers: ids,
-    );
+    return AddMemberResult._(isSuccess: true, addedMembers: ids);
   }
 
   factory AddMemberResult.error(String msg) {
-    return AddMemberResult._(
-      isSuccess: false,
-      errorMessage: msg,
-    );
+    return AddMemberResult._(isSuccess: false, errorMessage: msg);
   }
 }

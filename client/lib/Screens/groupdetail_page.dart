@@ -75,13 +75,23 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
           : _result == null
           ? const Center(child: Text("Something went wrong"))
           : _result!.isSuccess
-          ? _content()          // ✅ HERE it is used
+          ? _content() // ✅ HERE it is used
           : _errorView(),
-      
+
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: (){
-        //TODO: navigate to expense
-      },
+        onPressed: () async {
+          final group = _result!.group!;
+
+          final created = await Navigator.pushNamed(
+            context,
+            "/create-expense",
+            arguments: {"groupId": widget.groupId, "members": group.members},
+          );
+
+          if (created == true) {
+            _loadDetails(); // refresh expenses after adding
+          }
+        },
         icon: const Icon(Icons.add),
         label: const Text("Add Expense"),
       ),
@@ -90,15 +100,13 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
 
   Widget _content() {
     final group = _result!.group!;
-    final created =
-    DateTime.fromMillisecondsSinceEpoch(group.createdAt * 1000);
+    final created = DateTime.fromMillisecondsSinceEpoch(group.createdAt * 1000);
 
     return RefreshIndicator(
       onRefresh: _loadDetails,
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-
           // -------- TRIP CARD --------
           Card(
             shape: RoundedRectangleBorder(
@@ -111,10 +119,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                 children: [
                   Text(
                     group.name,
-                    style: Theme
-                        .of(context)
-                        .textTheme
-                        .headlineSmall,
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 8),
 
@@ -122,10 +127,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                     group.description.isEmpty
                         ? "No description provided"
                         : group.description,
-                    style: Theme
-                        .of(context)
-                        .textTheme
-                        .bodyMedium,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
 
                   const SizedBox(height: 14),
@@ -136,7 +138,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                       const SizedBox(width: 8),
                       Text(
                         "Trip started on "
-                            "${created.day}/${created.month}/${created.year}",
+                        "${created.day}/${created.month}/${created.year}",
                       ),
                     ],
                   ),
@@ -144,11 +146,11 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      const Icon(Icons.group,size: 18,),
-                      const SizedBox(width: 8,),
+                      const Icon(Icons.group, size: 18),
+                      const SizedBox(width: 8),
                       Text("${group.members.length} members"),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
@@ -172,7 +174,6 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
     );
   }
 
-
   Widget _infoTile(IconData icon, String title, String value) {
     return Card(
       child: ListTile(
@@ -183,7 +184,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
     );
   }
 
-  Widget _errorView(){
+  Widget _errorView() {
     return Center(
       child: Text(
         _result!.errorMessage ?? "Error",
@@ -191,19 +192,4 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
       ),
     );
   }
-
-
-
-
-
-
 }
-
-
-
-
-
-
-
-
-

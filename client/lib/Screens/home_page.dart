@@ -113,13 +113,11 @@ class _HomePageState extends State<HomePage> {
               trailing: const Icon(Icons.chevron_right),
               onTap: () {
                 Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => GroupDetailsPage(
-                        groupId: g.groupId,
-                        groupName: g.name,
-                      ),
-                    ),
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        GroupDetailsPage(groupId: g.groupId, groupName: g.name),
+                  ),
                 );
               },
             ),
