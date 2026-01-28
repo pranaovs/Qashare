@@ -52,7 +52,7 @@ func run() error {
 	defer db.Close(pool)
 
 	// Swagger url setup
-	docs.SwaggerInfo.Host = utils.GetEnv("API_HOST", "localhost:8080")
+	docs.SwaggerInfo.Host = utils.GetEnv("API_HOST", "localhost") + ":" + strconv.Itoa(utils.GetEnvPort("API_PORT", 8080))
 	docs.SwaggerInfo.BasePath = utils.GetEnv("API_BASE_PATH", "/api")
 
 	// Setup HTTP router
@@ -112,7 +112,7 @@ func setupRouter(pool *pgxpool.Pool) *gin.Engine {
 func startServer(router *gin.Engine) error {
 	port := utils.GetEnvPort("API_PORT", 8080)
 	srv := &http.Server{
-		Addr:    ":" + strconv.Itoa(port),
+		Addr:    utils.GetEnv("API_HOST", "localhost") + ":" + strconv.Itoa(port),
 		Handler: router,
 	}
 

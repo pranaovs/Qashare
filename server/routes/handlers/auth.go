@@ -33,7 +33,7 @@ func NewAuthHandler(pool *pgxpool.Pool) *AuthHandler {
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format, missing required fields, or JSON parsing error | BAD_NAME: Name contains invalid characters or is too short/long | BAD_EMAIL: Invalid email format | BAD_PASSWORD: Password does not meet requirements (e.g., too short, too weak)"
 // @Failure 409 {object} apierrors.AppError "EMAIL_EXISTS: An account with this email already exists"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database or system error"
-// @Router /auth/register [post]
+// @Router /v1/auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var request struct {
 		Name     string `json:"name" binding:"required"`
@@ -97,7 +97,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format or missing required fields | BAD_EMAIL: Invalid email format"
 // @Failure 401 {object} apierrors.AppError "BAD_CREDENTIALS: Email or password is incorrect"
 // @Failure 500 {object} apierrors.AppError "Internal server error - JWT generation failed or unexpected database error"
-// @Router /auth/login [post]
+// @Router /v1/auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var request struct {
 		Email    string `json:"email" binding:"required,email"`
@@ -154,7 +154,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists in the database"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /auth/me [get]
+// @Router /v1/auth/me [get]
 func (h *AuthHandler) Me(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 
@@ -184,7 +184,7 @@ func (h *AuthHandler) Me(c *gin.Context) {
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 409 {object} apierrors.AppError "EMAIL_EXISTS: An account with this email already exists"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /auth/guest [post]
+// @Router /v1/auth/guest [post]
 func (h *AuthHandler) RegisterGuest(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 

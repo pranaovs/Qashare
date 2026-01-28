@@ -145,7 +145,7 @@ info:
   title: Qashare API
   version: "1.0"
 paths:
-  /auth/guest:
+  /v1/auth/guest:
     post:
       consumes:
       - application/json
@@ -191,7 +191,7 @@ paths:
       summary: Register a guest user
       tags:
       - auth
-  /auth/login:
+  /v1/auth/login:
     post:
       consumes:
       - application/json
@@ -234,7 +234,7 @@ paths:
       summary: Login user
       tags:
       - auth
-  /auth/me:
+  /v1/auth/me:
     get:
       description: Get the authenticated user's profile information
       produces:
@@ -263,7 +263,7 @@ paths:
       summary: Get current user
       tags:
       - auth
-  /auth/register:
+  /v1/auth/register:
     post:
       consumes:
       - application/json
@@ -307,7 +307,7 @@ paths:
       summary: Register a new user
       tags:
       - auth
-  /expenses/:
+  /v1/expenses/:
     post:
       consumes:
       - application/json
@@ -357,7 +357,7 @@ paths:
       summary: Create a new expense
       tags:
       - expenses
-  /expenses/{id}:
+  /v1/expenses/{id}:
     delete:
       description: Delete an expense (requires being group admin or expense creator)
       parameters:
@@ -493,7 +493,7 @@ paths:
       summary: Update an expense
       tags:
       - expenses
-  /groups/:
+  /v1/groups/:
     post:
       consumes:
       - application/json
@@ -536,7 +536,7 @@ paths:
       summary: Create a new group
       tags:
       - groups
-  /groups/{id}:
+  /v1/groups/{id}:
     get:
       description: Get detailed information about a group
       parameters:
@@ -575,7 +575,7 @@ paths:
       summary: Get group details
       tags:
       - groups
-  /groups/{id}/expenses:
+  /v1/groups/{id}/expenses:
     get:
       description: Get all expenses of a group
       parameters:
@@ -616,7 +616,7 @@ paths:
       summary: List group expenses
       tags:
       - groups
-  /groups/{id}/members:
+  /v1/groups/{id}/members:
     delete:
       consumes:
       - application/json
@@ -729,7 +729,7 @@ paths:
       summary: Add members to group
       tags:
       - groups
-  /groups/admin:
+  /v1/groups/admin:
     get:
       description: Get all groups that the authenticated user created (is admin of)
       produces:
@@ -755,7 +755,7 @@ paths:
       summary: List groups user administers
       tags:
       - groups
-  /groups/me:
+  /v1/groups/me:
     get:
       description: Get all groups the logged in user is a member of
       produces:
@@ -781,7 +781,7 @@ paths:
       summary: List user's groups
       tags:
       - groups
-  /health:
+  /v1/health:
     get:
       description: Check if the API is running
       produces:
@@ -794,7 +794,7 @@ paths:
       summary: Health check endpoint
       tags:
       - health
-  /users/{id}:
+  /v1/users/{id}:
     get:
       description: Get user information by user ID (users must be related through
         a common group)
@@ -838,7 +838,7 @@ paths:
       summary: Get user by ID
       tags:
       - users
-  /users/search/email/{email}:
+  /v1/users/search/email/{email}:
     get:
       description: Find a user by their email address
       parameters:

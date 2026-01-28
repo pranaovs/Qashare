@@ -42,7 +42,7 @@ func RegisterRoutes(router *gin.Engine, pool *pgxpool.Pool) {
 // @Tags health
 // @Produce plain
 // @Success 200 {string} string "ok"
-// @Router /health [get]
+// @Router /v1/health [get]
 func HealthCheck(c *gin.Context) {
 	c.String(http.StatusOK, "ok")
 }
