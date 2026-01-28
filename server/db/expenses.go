@@ -33,10 +33,10 @@ func CreateExpense(
 ) error {
 	// Validate input
 	if expense.Title == "" {
-		return ErrTitleRequired
+		return ErrInvalidInput.Msg("title is required")
 	}
 	if !expense.IsIncompleteAmount && expense.Amount <= 0 {
-		return ErrInvalidAmount
+		return ErrInvalidInput.Msg("amount must be greater than zero")
 	}
 
 	// Use WithTransaction helper for consistent transaction management
@@ -94,7 +94,7 @@ func CreateExpense(
 		return nil
 	})
 	if err != nil {
-		return NewDBError("CreateExpense", err, "failed to create expense")
+		return err
 	}
 
 	return nil
@@ -109,13 +109,13 @@ func CreateExpense(
 func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.ExpenseDetails) error {
 	// Validate input
 	if expense.ExpenseID == "" {
-		return ErrExpenseIDRequired
+		return ErrNotFound.Msg("expense not found")
 	}
 	if expense.Title == "" {
-		return ErrTitleRequired
+		return ErrInvalidInput.Msg("title is required")
 	}
 	if !expense.IsIncompleteAmount && expense.Amount <= 0 {
-		return ErrInvalidAmount
+		return ErrInvalidInput.Msg("amount must be greater than zero")
 	}
 
 	// Use WithTransaction helper for consistent transaction management
@@ -149,7 +149,7 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.Expe
 
 		// Check if expense was found
 		if result.RowsAffected() == 0 {
-			return ErrExpenseNotFound
+			return ErrNotFound.Msgf("expense with id %s not found", expense.ExpenseID)
 		}
 
 		// Remove old splits
@@ -188,7 +188,7 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.Expe
 		return nil
 	})
 	if err != nil {
-		return NewDBError("UpdateExpense", err, "failed to update expense")
+		return err
 	}
 
 	return nil
@@ -228,10 +228,10 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 		&expense.Longitude,
 	)
 	if err == pgx.ErrNoRows {
-		return models.ExpenseDetails{}, ErrExpenseNotFound
+		return models.ExpenseDetails{}, ErrNotFound.Msgf("expense with id %s not found", expenseID)
 	}
 	if err != nil {
-		return models.ExpenseDetails{}, NewDBError("GetExpense", err, "failed to query expense")
+		return models.ExpenseDetails{}, err
 	}
 
 	// Fetch expense splits
@@ -242,7 +242,7 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 
 	rows, err := pool.Query(ctx, splitsQuery, expenseID)
 	if err != nil {
-		return models.ExpenseDetails{}, NewDBError("GetExpense", err, "failed to query splits")
+		return models.ExpenseDetails{}, err
 	}
 	defer rows.Close()
 
@@ -253,14 +253,14 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 		split.ExpenseID = expenseID
 		err = rows.Scan(&split.UserID, &split.Amount, &split.IsPaid)
 		if err != nil {
-			return models.ExpenseDetails{}, NewDBError("GetExpense", err, "failed to scan split row")
+			return models.ExpenseDetails{}, err
 		}
 		expense.Splits = append(expense.Splits, split)
 	}
 
 	// Check for any errors during iteration
 	if err := rows.Err(); err != nil {
-		return models.ExpenseDetails{}, NewDBError("GetExpense", err, "error iterating split rows")
+		return models.ExpenseDetails{}, err
 	}
 
 	return expense, nil
@@ -283,13 +283,13 @@ func DeleteExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) er
 
 		// Check if expense was found
 		if result.RowsAffected() == 0 {
-			return ErrExpenseNotFound
+			return ErrNotFound.Msgf("expense with id %s not found", expenseID)
 		}
 
 		return nil
 	})
 	if err != nil {
-		return NewDBError("DeleteExpense", err, "failed to delete expense")
+		return err
 	}
 
 	return nil
@@ -303,7 +303,7 @@ func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID string) ([]mod
 
 	// Validate input
 	if groupID == "" {
-		return nil, ErrInvalidInput
+		return nil, ErrInvalidInput.Msg("group id missing")
 	}
 
 	// Query to get all expenses for the group
@@ -324,7 +324,7 @@ func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID string) ([]mod
 
 	rows, err := pool.Query(ctx, expensesQuery, groupID)
 	if err != nil {
-		return nil, NewDBError("GetExpenses", err, "failed to query expenses")
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -345,14 +345,14 @@ func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID string) ([]mod
 			&expense.Longitude,
 		)
 		if err != nil {
-			return nil, NewDBError("GetExpenses", err, "failed to scan expense row")
+			return nil, err
 		}
 		expenses = append(expenses, expense)
 	}
 
 	// Check for any errors during iteration
 	if err := rows.Err(); err != nil {
-		return nil, NewDBError("GetExpenses", err, "error iterating expense rows")
+		return nil, err
 	}
 	return expenses, nil
 }

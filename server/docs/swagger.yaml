@@ -1,5 +1,14 @@
 basePath: /
 definitions:
+  apierrors.AppError:
+    properties:
+      code:
+        description: e.g., "BAD_NAME", "INVALID_EMAIL"
+        type: string
+      message:
+        description: Human-readable message
+        type: string
+    type: object
   models.Expense:
     properties:
       added_by:
@@ -162,23 +171,21 @@ paths:
           schema:
             $ref: '#/definitions/models.User'
         "400":
-          description: Bad Request
+          description: Invalid request body or email format
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
+            $ref: '#/definitions/apierrors.AppError'
+        "409":
+          description: Email already exists
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Register a guest user
@@ -211,23 +218,17 @@ paths:
               type: string
             type: object
         "400":
-          description: Bad Request
+          description: Invalid request body or email format
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: Unauthorized
+          description: Invalid credentials
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       summary: Login user
       tags:
       - auth
@@ -244,15 +245,15 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: User not found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Get current user
@@ -285,17 +286,17 @@ paths:
           schema:
             $ref: '#/definitions/models.User'
         "400":
-          description: Bad Request
+          description: Invalid request body or validation error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "409":
+          description: Email already exists
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       summary: Register a new user
       tags:
       - auth
@@ -320,29 +321,25 @@ paths:
           schema:
             $ref: '#/definitions/models.ExpenseDetails'
         "400":
-          description: Bad Request
+          description: Invalid request or split validation failed
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: Forbidden
+          description: User not in group
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: Group not found
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Create a new expense
@@ -369,27 +366,19 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: Forbidden
+          description: Not group admin or expense creator
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "404":
-          description: Not Found
+          description: Expense not found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Delete an expense
@@ -413,21 +402,19 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: Forbidden
+          description: Not a member of the group
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "404":
-          description: Not Found
+          description: Expense not found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Get expense details
@@ -460,35 +447,25 @@ paths:
               type: string
             type: object
         "400":
-          description: Bad Request
+          description: Invalid request or split validation failed
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: Forbidden
+          description: Not group admin or expense creator
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "404":
-          description: Not Found
+          description: Expense not found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Update an expense
@@ -519,23 +496,17 @@ paths:
           schema:
             $ref: '#/definitions/models.Group'
         "400":
-          description: Bad Request
+          description: Invalid request or name
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Create a new group
@@ -560,21 +531,19 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: Forbidden
+          description: Not a member of the group
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "404":
-          description: Not Found
+          description: Group not found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Get group details
@@ -658,29 +627,25 @@ paths:
             additionalProperties: true
             type: object
         "400":
-          description: Bad Request
+          description: Invalid request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: Forbidden
+          description: Not group admin
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: User not in group
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Remove members from group
@@ -716,35 +681,25 @@ paths:
             additionalProperties: true
             type: object
         "400":
-          description: Bad Request
+          description: Invalid request
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: Forbidden
+          description: Not group admin
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "404":
-          description: Not Found
+          description: Group or user not found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Add members to group
@@ -765,15 +720,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: List groups user administers
@@ -794,15 +745,11 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: List user's groups
@@ -839,29 +786,25 @@ paths:
           schema:
             $ref: '#/definitions/models.User'
         "400":
-          description: Bad Request
+          description: Invalid user ID
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: Forbidden
+          description: Users not related through a group
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Get user by ID
@@ -884,23 +827,21 @@ paths:
           schema:
             $ref: '#/definitions/models.User'
         "400":
-          description: Bad Request
+          description: Invalid email format
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
           description: Unauthorized
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: User not found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Search user by email

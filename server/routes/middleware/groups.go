@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/db"
+	"github.com/pranaovs/qashare/routes/apierrors"
 	"github.com/pranaovs/qashare/utils"
 )
 
@@ -49,11 +50,11 @@ func RequireGroupAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 
 		creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, groupID)
-		if err == db.ErrGroupNotFound {
-			utils.AbortWithStatusJSON(c, http.StatusNotFound, "group not found")
-			return
-		}
 		if err != nil {
+			if db.IsNotFound(err) {
+				utils.AbortWithStatusJSON(c, apierrors.ErrGroupNotFound.HTTPCode, apierrors.ErrGroupNotFound.Message)
+				return
+			}
 			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to get group creator")
 			return
 		}
@@ -79,12 +80,11 @@ func RequireGroupOwner(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 
 		creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, groupID)
-		if err == db.ErrGroupNotFound {
-			utils.AbortWithStatusJSON(c, http.StatusNotFound, "group not found")
-			return
-		}
-
 		if err != nil {
+			if db.IsNotFound(err) {
+				utils.AbortWithStatusJSON(c, apierrors.ErrGroupNotFound.HTTPCode, apierrors.ErrGroupNotFound.Message)
+				return
+			}
 			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to get group creator")
 			return
 		}

@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"github.com/pranaovs/qashare/handlers"
-	"github.com/pranaovs/qashare/middleware"
+	"github.com/pranaovs/qashare/routes/handlers"
+	"github.com/pranaovs/qashare/routes/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
