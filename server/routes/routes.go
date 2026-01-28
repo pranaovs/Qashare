@@ -11,6 +11,10 @@ import (
 )
 
 func RegisterRoutes(router *gin.Engine, pool *pgxpool.Pool) {
+	router.RedirectTrailingSlash = true
+	router.RedirectFixedPath = true
+	router.RemoveExtraSlash = true
+
 	// Health check
 	router.GET("/health", HealthCheck)
 
