@@ -5,9 +5,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/pranaovs/qashare/apperrors"
 	"github.com/pranaovs/qashare/db"
-	"github.com/pranaovs/qashare/middleware"
 	"github.com/pranaovs/qashare/models"
+	"github.com/pranaovs/qashare/routes/apierrors"
+	"github.com/pranaovs/qashare/routes/middleware"
 	"github.com/pranaovs/qashare/utils"
 
 	"github.com/gin-gonic/gin"
@@ -31,17 +33,18 @@ func NewExpensesHandler(pool *pgxpool.Pool) *ExpensesHandler {
 // @Security BearerAuth
 // @Param request body models.ExpenseDetails true "Expense details with splits"
 // @Success 201 {object} models.ExpenseDetails
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 403 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} apierrors.AppError "Invalid request or split validation failed"
+// @Failure 401 {object} apierrors.AppError "Unauthorized"
+// @Failure 403 {object} apierrors.AppError "User not in group"
+// @Failure 404 {object} apierrors.AppError "Group not found"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /expenses/ [post]
 func (h *ExpensesHandler) Create(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 
 	var expense models.ExpenseDetails
 	if err := c.ShouldBindJSON(&expense); err != nil {
-		utils.SendError(c, http.StatusBadRequest, "invalid request body")
+		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
@@ -50,16 +53,18 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	// Verify user is a member of the group
 	isMember, err := db.MemberOfGroup(c.Request.Context(), h.pool, userID, expense.GroupID)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, "failed to verify membership")
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrGroupNotFound,
+		}))
 		return
 	}
 	if !isMember {
-		utils.SendError(c, http.StatusForbidden, "user not a member of group")
+		utils.SendError(c, apierrors.ErrUsersNotRelated)
 		return
 	}
 
 	if len(expense.Splits) == 0 {
-		utils.SendError(c, http.StatusBadRequest, "no splits provided")
+		utils.SendError(c, apierrors.ErrBadRequest.Msg("no splits provided"))
 		return
 	}
 
@@ -77,7 +82,9 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	uniqueUserIDs := utils.GetUniqueUserIDs(splitUserIDs)
 
 	if err := db.AllMembersOfGroup(c.Request.Context(), h.pool, uniqueUserIDs, expense.GroupID); err != nil {
-		utils.SendError(c, http.StatusBadRequest, "split user not in group")
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrUserNotInGroup,
+		}))
 		return
 	}
 
@@ -87,18 +94,20 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 			tolerance = 0.01
 		}
 		if math.Abs(paidTotal-expense.Amount) > tolerance {
-			utils.SendError(c, http.StatusBadRequest, "paid split total does not match expense amount")
+			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("paid split total does not match expense amount"))
 			return
 		}
 		if math.Abs(owedTotal-expense.Amount) > tolerance {
-			utils.SendError(c, http.StatusBadRequest, "owed split total does not match expense amount")
+			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("owed split total does not match expense amount"))
 			return
 		}
 	}
 
 	err = db.CreateExpense(c.Request.Context(), h.pool, &expense)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrGroupNotFound,
+		}))
 		return
 	}
 
@@ -113,9 +122,10 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Expense ID"
 // @Success 200 {object} models.ExpenseDetails
-// @Failure 401 {object} map[string]string
-// @Failure 403 {object} map[string]string
-// @Failure 404 {object} map[string]string
+// @Failure 401 {object} apierrors.AppError "Unauthorized"
+// @Failure 403 {object} apierrors.AppError "Not a member of the group"
+// @Failure 404 {object} apierrors.AppError "Expense not found"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /expenses/{id} [get]
 func (h *ExpensesHandler) GetExpense(c *gin.Context) {
 	// Expense is already fetched and authorized by middleware
@@ -133,11 +143,11 @@ func (h *ExpensesHandler) GetExpense(c *gin.Context) {
 // @Param id path string true "Expense ID"
 // @Param request body models.ExpenseDetails true "Updated expense details"
 // @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 403 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} apierrors.AppError "Invalid request or split validation failed"
+// @Failure 401 {object} apierrors.AppError "Unauthorized"
+// @Failure 403 {object} apierrors.AppError "Not group admin or expense creator"
+// @Failure 404 {object} apierrors.AppError "Expense not found"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /expenses/{id} [put]
 func (h *ExpensesHandler) Update(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
@@ -145,7 +155,7 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 
 	var payload models.ExpenseDetails
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		utils.SendError(c, http.StatusBadRequest, "invalid request body")
+		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
@@ -156,7 +166,7 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 	payload.CreatedAt = expense.CreatedAt
 
 	if len(payload.Splits) == 0 {
-		utils.SendError(c, http.StatusBadRequest, "no splits provided")
+		utils.SendError(c, apierrors.ErrInvalidSplit)
 		return
 	}
 
@@ -172,7 +182,9 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 	}
 
 	if err := db.AllMembersOfGroup(c.Request.Context(), h.pool, splitUserIDs, groupID); err != nil {
-		utils.SendError(c, http.StatusBadRequest, "split user not in group")
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrUserNotInGroup,
+		}))
 		return
 	}
 
@@ -182,21 +194,23 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 			tolerance = 0.01
 		}
 		if math.Abs(paidTotal-payload.Amount) > tolerance {
-			utils.SendError(c, http.StatusBadRequest, "paid split total does not match expense amount")
+			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("paid split total does not match expense amount"))
 			return
 		}
 		if math.Abs(owedTotal-payload.Amount) > tolerance {
-			utils.SendError(c, http.StatusBadRequest, "owed split total does not match expense amount")
+			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("owed split total does not match expense amount"))
 			return
 		}
 	}
 
 	if err := db.UpdateExpense(c.Request.Context(), h.pool, &payload); err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrExpenseNotFound,
+		}))
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, gin.H{"message": "expense updated"})
+	utils.SendOK(c, "expense updated")
 }
 
 // Delete godoc
@@ -207,18 +221,20 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Expense ID"
 // @Success 200 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 403 {object} map[string]string
-// @Failure 404 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 401 {object} apierrors.AppError "Unauthorized"
+// @Failure 403 {object} apierrors.AppError "Not group admin or expense creator"
+// @Failure 404 {object} apierrors.AppError "Expense not found"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /expenses/{id} [delete]
 func (h *ExpensesHandler) Delete(c *gin.Context) {
 	expense := middleware.MustGetExpense(c)
 
 	if err := db.DeleteExpense(c.Request.Context(), h.pool, expense.ExpenseID); err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrExpenseNotFound,
+		}))
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, gin.H{"message": "expense deleted"})
+	utils.SendOK(c, "expense deleted")
 }

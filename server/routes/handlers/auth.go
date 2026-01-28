@@ -3,9 +3,11 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/pranaovs/qashare/apperrors"
 	"github.com/pranaovs/qashare/db"
-	"github.com/pranaovs/qashare/middleware"
 	"github.com/pranaovs/qashare/models"
+	"github.com/pranaovs/qashare/routes/apierrors"
+	"github.com/pranaovs/qashare/routes/middleware"
 	"github.com/pranaovs/qashare/utils"
 
 	"github.com/gin-gonic/gin"
@@ -28,8 +30,9 @@ func NewAuthHandler(pool *pgxpool.Pool) *AuthHandler {
 // @Produce json
 // @Param request body object{name=string,email=string,password=string} true "User registration details"
 // @Success 201 {object} models.User
-// @Failure 400 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} apierrors.AppError "Invalid request body or validation error"
+// @Failure 409 {object} apierrors.AppError "Email already exists"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var request struct {
@@ -39,7 +42,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
@@ -48,26 +51,35 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	user.Name, err = utils.ValidateName(request.Name)
 	if err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			utils.ErrInvalidName: apierrors.ErrInvalidName,
+		}))
 		return
 	}
 
 	user.Email, err = utils.ValidateEmail(request.Email)
 	if err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			utils.ErrInvalidEmail: apierrors.ErrInvalidEmail,
+		}))
 		return
 	}
 
 	passwordHash, err := utils.HashPassword(request.Password)
 	if err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			utils.ErrInvalidPassword: apierrors.ErrInvalidPassword,
+			utils.ErrHashingFailed:   apierrors.ErrBadRequest,
+		}))
 		return
 	}
 	user.PasswordHash = &passwordHash
 
 	err = db.CreateUser(c.Request.Context(), h.pool, &user)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrDuplicateKey: apierrors.ErrEmailAlreadyExists,
+		}))
 		return
 	}
 
@@ -82,9 +94,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 // @Produce json
 // @Param request body object{email=string,password=string} true "User login credentials"
 // @Success 200 {object} map[string]string
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} apierrors.AppError "Invalid request body or email format"
+// @Failure 401 {object} apierrors.AppError "Invalid credentials"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var request struct {
@@ -93,13 +105,15 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
 	email, err := utils.ValidateEmail(request.Email)
 	if err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			utils.ErrInvalidEmail: apierrors.ErrInvalidEmail,
+		}))
 		return
 	}
 
@@ -107,18 +121,20 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	userID, savedPassword, err := db.GetUserCredentials(c.Request.Context(), h.pool, email)
 	if err != nil {
-		utils.SendError(c, http.StatusUnauthorized, "invalid email or password")
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrBadCredentials,
+		}))
 		return
 	}
 
 	if ok := utils.CheckPassword(password, savedPassword); !ok {
-		utils.SendError(c, http.StatusUnauthorized, "invalid email or password")
+		utils.SendError(c, apierrors.ErrBadCredentials)
 		return
 	}
 
 	token, err := utils.GenerateJWT(userID)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, "failed to create token")
+		utils.SendError(c, err) // Send this error directly (Sends internal server error and logs the error)
 		return
 	}
 
@@ -135,8 +151,9 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} models.User
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 401 {object} apierrors.AppError "Unauthorized"
+// @Failure 404 {object} apierrors.AppError "User not found"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /auth/me [get]
 func (h *AuthHandler) Me(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
@@ -145,7 +162,9 @@ func (h *AuthHandler) Me(c *gin.Context) {
 
 	user, err := db.GetUser(c.Request.Context(), h.pool, userID)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrUserNotFound,
+		}))
 		return
 	}
 
@@ -161,9 +180,10 @@ func (h *AuthHandler) Me(c *gin.Context) {
 // @Security BearerAuth
 // @Param request body object{email=string} true "Guest user email"
 // @Success 201 {object} models.User
-// @Failure 400 {object} map[string]string
-// @Failure 401 {object} map[string]string
-// @Failure 500 {object} map[string]string
+// @Failure 400 {object} apierrors.AppError "Invalid request body or email format"
+// @Failure 401 {object} apierrors.AppError "Unauthorized"
+// @Failure 409 {object} apierrors.AppError "Email already exists"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /auth/guest [post]
 func (h *AuthHandler) RegisterGuest(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
@@ -173,19 +193,23 @@ func (h *AuthHandler) RegisterGuest(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
 	email, err := utils.ValidateEmail(request.Email)
 	if err != nil {
-		utils.SendError(c, http.StatusBadRequest, err.Error())
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			utils.ErrInvalidEmail: apierrors.ErrInvalidEmail,
+		}))
 		return
 	}
 
 	user, err := db.CreateGuest(c.Request.Context(), h.pool, email, userID)
 	if err != nil {
-		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrDuplicateKey: apierrors.ErrEmailAlreadyExists,
+		}))
 		return
 	}
 
