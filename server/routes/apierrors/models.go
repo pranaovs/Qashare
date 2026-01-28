@@ -10,7 +10,7 @@ var (
 	ErrInvalidDescription = New(http.StatusBadRequest, "BAD_DESCRIPTION", "The description contains invalid characters.", nil)
 
 	// Auth Errors
-	ErrInvalidPassword = New(http.StatusBadRequest, "BAD_PASSWORD", "The password syntax is incorrect", nil)
+	ErrInvalidPassword = New(http.StatusBadRequest, "BAD_PASSWORD", "The password syntax is incorrect.", nil)
 	ErrBadCredentials  = New(http.StatusUnauthorized, "BAD_CREDENTIALS", "The provided credentials are incorrect.", nil)
 	ErrInvalidToken    = New(http.StatusUnauthorized, "INVALID_TOKEN", "The authentication token is invalid or expired.", nil)
 
@@ -19,7 +19,7 @@ var (
 	ErrGroupNotFound   = New(http.StatusNotFound, "GROUP_NOT_FOUND", "The requested group does not exist.", nil)
 	ErrUserNotInGroup  = New(http.StatusForbidden, "USER_NOT_IN_GROUP", "The user is not a member of the specified group.", nil)
 	ErrUsersNotRelated = New(http.StatusForbidden, "USERS_NOT_RELATED", "The users are not related in the specified context.", nil)
-	ErrNoPermissions   = New(http.StatusForbidden, "NO_PERMISSIONS", "You do not have sufficient permissions to perform this action", nil)
+	ErrNoPermissions   = New(http.StatusForbidden, "NO_PERMISSIONS", "You do not have sufficient permissions to perform this action.", nil)
 
 	// Expenses errors
 	ErrExpenseNotFound = New(http.StatusNotFound, "EXPENSE_NOT_FOUND", "The requested expense does not exist.", nil)
