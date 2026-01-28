@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/pranaovs/qashare/db"
+	"github.com/pranaovs/qashare/docs"
 	"github.com/pranaovs/qashare/routes"
 	"github.com/pranaovs/qashare/utils"
 
@@ -27,9 +28,6 @@ import (
 
 // @license.name AGPL-3.0
 // @license.url https://www.gnu.org/licenses/agpl-3.0.en.html
-
-// @host devserver:9999
-// @BasePath /
 
 // @securityDefinitions.apikey BearerAuth
 // @in header
@@ -52,6 +50,10 @@ func run() error {
 		return err
 	}
 	defer db.Close(pool)
+
+	// Swagger url setup
+	docs.SwaggerInfo.Host = utils.GetEnv("API_HOST", "localhost:8080")
+	docs.SwaggerInfo.BasePath = utils.GetEnv("API_BASE_PATH", "/api")
 
 	// Setup HTTP router
 	router := setupRouter(pool)
