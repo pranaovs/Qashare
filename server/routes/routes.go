@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/docs"
+	"github.com/pranaovs/qashare/utils"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -19,7 +20,12 @@ func RegisterRoutes(router *gin.Engine, pool *pgxpool.Pool) {
 	router.GET("/health", HealthCheck)
 
 	// Swagger documentation
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	if !utils.GetEnvBool("DISABLE_SWAGGER", false) {
+		router.GET("/swagger", func(c *gin.Context) {
+			c.Redirect(http.StatusMovedPermanently, "/swagger/index.html")
+		})
+		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
 
 	// Create a base route group
 	baseGroup := router.Group(docs.SwaggerInfo.BasePath + "/v1")
