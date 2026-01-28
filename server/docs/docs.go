@@ -58,31 +58,31 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "Guest user successfully created",
                         "schema": {
                             "$ref": "#/definitions/models.User"
                         }
                     },
                     "400": {
-                        "description": "Invalid request body or email format",
+                        "description": "BAD_REQUEST: Invalid request body format or missing required fields | BAD_EMAIL: Invalid email format",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "409": {
-                        "description": "Email already exists",
+                        "description": "EMAIL_EXISTS: An account with this email already exists",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal server error - unexpected database error",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -124,7 +124,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Returns JWT token and success message",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -133,19 +133,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid request body or email format",
+                        "description": "BAD_REQUEST: Invalid request body format or missing required fields | BAD_EMAIL: Invalid email format",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "401": {
-                        "description": "Invalid credentials",
+                        "description": "BAD_CREDENTIALS: Email or password is incorrect",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal server error - JWT generation failed or unexpected database error",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -170,25 +170,25 @@ const docTemplate = `{
                 "summary": "Get current user",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Returns the authenticated user's profile information",
                         "schema": {
                             "$ref": "#/definitions/models.User"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "404": {
-                        "description": "User not found",
+                        "description": "USER_NOT_FOUND: The authenticated user no longer exists in the database",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal server error - unexpected database error",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -233,25 +233,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "User successfully registered",
                         "schema": {
                             "$ref": "#/definitions/models.User"
                         }
                     },
                     "400": {
-                        "description": "Invalid request body or validation error",
+                        "description": "BAD_REQUEST: Invalid request body format, missing required fields, or JSON parsing error | BAD_NAME: Name contains invalid characters or is too short/long | BAD_EMAIL: Invalid email format | BAD_PASSWORD: Password does not meet requirements (e.g., too short, too weak)",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "409": {
-                        "description": "Email already exists",
+                        "description": "EMAIL_EXISTS: An account with this email already exists",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal server error - unexpected database or system error",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -290,37 +290,37 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "Expense successfully created with splits",
                         "schema": {
                             "$ref": "#/definitions/models.ExpenseDetails"
                         }
                     },
                     "400": {
-                        "description": "Invalid request or split validation failed",
+                        "description": "BAD_REQUEST: Invalid request body, missing required fields, or no splits provided | INVALID_SPLIT: Split totals do not match expense amount or split validation failed",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "User not in group",
+                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the specified group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "404": {
-                        "description": "Group not found",
+                        "description": "GROUP_NOT_FOUND: The specified group does not exist",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal server error - unexpected database error",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -354,31 +354,31 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Returns expense details including all splits",
                         "schema": {
                             "$ref": "#/definitions/models.ExpenseDetails"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "Not a member of the group",
+                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the group this expense belongs to",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "404": {
-                        "description": "Expense not found",
+                        "description": "EXPENSE_NOT_FOUND: The specified expense does not exist",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal server error - unexpected database error",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -422,7 +422,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Returns success message",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -431,31 +431,31 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Invalid request or split validation failed",
+                        "description": "BAD_REQUEST: Invalid request body or missing required fields | INVALID_SPLIT: No splits provided or split totals do not match expense amount",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "Not group admin or expense creator",
+                        "description": "NO_PERMISSIONS: User is not the group admin or expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "404": {
-                        "description": "Expense not found",
+                        "description": "EXPENSE_NOT_FOUND: The specified expense does not exist",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal server error - unexpected database error",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -487,7 +487,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Returns success message",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -496,25 +496,25 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "Not group admin or expense creator",
+                        "description": "NO_PERMISSIONS: User is not the group admin or expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "404": {
-                        "description": "Expense not found",
+                        "description": "EXPENSE_NOT_FOUND: The specified expense does not exist",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal server error - unexpected database error",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -561,25 +561,25 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created",
+                        "description": "Group successfully created",
                         "schema": {
                             "$ref": "#/definitions/models.Group"
                         }
                     },
                     "400": {
-                        "description": "Invalid request or name",
+                        "description": "BAD_REQUEST: Invalid request body format or missing required fields | BAD_NAME: Name contains invalid characters or is too short/long",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal server error - unexpected database error",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -604,7 +604,7 @@ const docTemplate = `{
                 "summary": "List groups user administers",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Returns list of groups the user is admin of",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -613,13 +613,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal server error - unexpected database error",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -644,7 +644,7 @@ const docTemplate = `{
                 "summary": "List user's groups",
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Returns list of groups the user is a member of",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -653,13 +653,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal server error - unexpected database error",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -693,31 +693,31 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Returns group details including members and expenses",
                         "schema": {
                             "$ref": "#/definitions/models.GroupDetails"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "Not a member of the group",
+                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "404": {
-                        "description": "Group not found",
+                        "description": "GROUP_NOT_FOUND: The specified group does not exist",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal server error - unexpected database error",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -751,7 +751,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Returns list of all expenses in the group",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -759,40 +759,28 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
+                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the group",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "GROUP_NOT_FOUND: The specified group does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error - unexpected database error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/apierrors.AppError"
                         }
                     }
                 }
@@ -844,38 +832,38 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Returns success message and list of added member IDs",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid request",
+                        "description": "BAD_REQUEST: Invalid request body, missing required fields, or constraint violation",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "Not group admin",
+                        "description": "NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED: The authenticated user is not a member of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "404": {
-                        "description": "Group or user not found",
+                        "description": "GROUP_NOT_FOUND: The specified group does not exist | USER_NOT_FOUND: One or more specified users do not exist or no valid user IDs provided",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal server error - unexpected database error",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -927,38 +915,32 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Returns success message and list of removed member IDs",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
                         }
                     },
                     "400": {
-                        "description": "Invalid request",
+                        "description": "BAD_REQUEST: Invalid request body, missing required fields, or attempting to remove self from group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "Not group admin",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    },
-                    "404": {
-                        "description": "User not in group",
+                        "description": "NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more specified users are not members of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal server error - unexpected database error",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1012,31 +994,31 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Returns user profile information matching the email",
                         "schema": {
                             "$ref": "#/definitions/models.User"
                         }
                     },
                     "400": {
-                        "description": "Invalid email format",
+                        "description": "BAD_EMAIL: Invalid email format",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "404": {
-                        "description": "User not found",
+                        "description": "USER_NOT_FOUND: No user found with the specified email",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal server error - unexpected database error",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1070,37 +1052,37 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Returns user profile information",
                         "schema": {
                             "$ref": "#/definitions/models.User"
                         }
                     },
                     "400": {
-                        "description": "Invalid user ID",
+                        "description": "BAD_REQUEST: Invalid user ID format",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "Users not related through a group",
+                        "description": "USERS_NOT_RELATED: The users are not related through any common group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "404": {
-                        "description": "User not found",
+                        "description": "USER_NOT_FOUND: The specified user does not exist",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Internal server error - unexpected database error",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
