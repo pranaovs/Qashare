@@ -13,8 +13,6 @@
         },
         "version": "1.0"
     },
-    "host": "devserver:9999",
-    "basePath": "/",
     "paths": {
         "/auth/guest": {
             "post": {
