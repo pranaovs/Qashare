@@ -22,6 +22,8 @@ type DBConfig struct {
 	MaxConnIdleTime   time.Duration
 	HealthCheckPeriod time.Duration
 	ConnectTimeout    time.Duration
+	RetryAttempts     int
+	RetryInterval     time.Duration
 }
 
 // Connect establishes a connection to the PostgreSQL database using the provided URL.
@@ -36,6 +38,8 @@ func Connect(dbURL string) (*pgxpool.Pool, error) {
 		MaxConnIdleTime:   utils.GetEnvDuration("DB_MAX_CONN_IDLE_TIME", 30*60), // 30 minutes
 		HealthCheckPeriod: utils.GetEnvDuration("DB_HEALTH_CHECK_PERIOD", 60),   // 1 minute
 		ConnectTimeout:    utils.GetEnvDuration("DB_CONNECT_TIMEOUT", 10),       // 10 seconds
+		RetryAttempts:     utils.GetEnvInt("DB_RETRY_ATTEMPTS", 5),              // 5 attempts
+		RetryInterval:     utils.GetEnvDuration("DB_RETRY_INTERVAL", 5),         // 5 seconds
 	}
 	return ConnectWithConfig(config)
 }
@@ -44,9 +48,6 @@ func Connect(dbURL string) (*pgxpool.Pool, error) {
 // It will attempt to create the database if it doesn't exist.
 // Returns a connection pool or an error if connection fails.
 func ConnectWithConfig(config DBConfig) (*pgxpool.Pool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), config.ConnectTimeout)
-	defer cancel()
-
 	// Parse the database URL to extract database name
 	parsedURL, err := url.Parse(config.URL)
 	if err != nil {
@@ -56,19 +57,48 @@ func ConnectWithConfig(config DBConfig) (*pgxpool.Pool, error) {
 	dbName := strings.TrimPrefix(parsedURL.Path, "/")
 	log.Printf("[DB] Attempting to connect to database: %s", dbName)
 
-	pool, err := createPool(ctx, config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create connection pool: %w", err)
+	var pool *pgxpool.Pool
+	var lastErr error
+
+	// Retry connection attempts
+	for attempt := 1; attempt <= config.RetryAttempts; attempt++ {
+		ctx, cancel := context.WithTimeout(context.Background(), config.ConnectTimeout)
+
+		log.Printf("[DB] Connection attempt %d/%d", attempt, config.RetryAttempts)
+
+		pool, err = createPool(ctx, config)
+		if err != nil {
+			lastErr = fmt.Errorf("failed to create connection pool: %w", err)
+			cancel()
+
+			if attempt < config.RetryAttempts {
+				log.Printf("[DB] Connection attempt %d failed: %v, retrying in %v", attempt, err, config.RetryInterval)
+				time.Sleep(config.RetryInterval)
+				continue
+			}
+			break
+		}
+
+		// Verify database connectivity and existence
+		if err := VerifyDatabase(ctx, pool, dbName); err != nil {
+			pool.Close()
+			lastErr = err
+			cancel()
+
+			if attempt < config.RetryAttempts {
+				log.Printf("[DB] Database verification failed on attempt %d: %v, retrying in %v", attempt, err, config.RetryInterval)
+				time.Sleep(config.RetryInterval)
+				continue
+			}
+			break
+		}
+
+		cancel()
+		log.Printf("[DB] Successfully connected to database: %s on attempt %d", dbName, attempt)
+		return pool, nil
 	}
 
-	// Verify database connectivity and existence
-	if err := VerifyDatabase(ctx, pool, dbName); err != nil {
-		pool.Close()
-		return nil, err
-	}
-
-	log.Printf("[DB] Successfully connected to database: %s", dbName)
-	return pool, nil
+	return nil, fmt.Errorf("failed to connect after %d attempts, last error: %w", config.RetryAttempts, lastErr)
 }
 
 func VerifyDatabase(ctx context.Context, pool *pgxpool.Pool, dbName string) error {
