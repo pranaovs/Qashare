@@ -14,7 +14,7 @@ func RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
-			apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 				utils.ErrInvalidToken: apierrors.ErrInvalidToken,
 			}))
 			c.Abort()

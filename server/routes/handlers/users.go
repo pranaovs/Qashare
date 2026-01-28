@@ -43,25 +43,25 @@ func (h *UsersHandler) GetUser(c *gin.Context) {
 	// Do not allow access to user data if users are not related
 	related, err := db.UsersRelated(c.Request.Context(), h.pool, userID, qUserID)
 	if err != nil {
-		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrUserNotFound,
 		}))
 		return
 	}
 	if !related {
-		apierrors.SendError(c, apierrors.ErrUsersNotRelated)
+		utils.SendError(c, apierrors.ErrUsersNotRelated)
 		return
 	}
 
 	result, err := db.GetUser(c.Request.Context(), h.pool, qUserID)
 	if err != nil {
-		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrUserNotFound,
 		}))
 		return
 	}
 
-	apierrors.SendJSON(c, http.StatusOK, result)
+	utils.SendJSON(c, http.StatusOK, result)
 }
 
 // SearchByEmail godoc
@@ -82,18 +82,18 @@ func (h *UsersHandler) SearchByEmail(c *gin.Context) {
 
 	email, err := utils.ValidateEmail(c.Param("email"))
 	if err != nil {
-		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			utils.ErrInvalidEmail: apierrors.ErrInvalidEmail,
 		}))
 		return
 	}
 	user, err := db.GetUserFromEmail(c.Request.Context(), h.pool, email)
 	if err != nil {
-		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrUserNotFound,
 		}))
 		return
 	}
 
-	apierrors.SendJSON(c, http.StatusOK, user)
+	utils.SendJSON(c, http.StatusOK, user)
 }
