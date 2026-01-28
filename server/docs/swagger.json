@@ -13,7 +13,7 @@
         },
         "version": "1.0"
     },
-    "host": "localhost:8080",
+    "host": "devserver:9999",
     "basePath": "/",
     "paths": {
         "/auth/guest": {

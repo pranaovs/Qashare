@@ -135,7 +135,7 @@ definitions:
       user_id:
         type: string
     type: object
-host: localhost:8080
+host: devserver:9999
 info:
   contact:
     email: qashare.contact@pranaovs.me
