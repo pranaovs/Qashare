@@ -42,7 +42,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.SendError(c, apierrors.ErrBadRequest)
+		apierrors.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
@@ -51,7 +51,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	user.Name, err = utils.ValidateName(request.Name)
 	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			utils.ErrInvalidName: apierrors.ErrInvalidName,
 		}))
 		return
@@ -59,7 +59,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	user.Email, err = utils.ValidateEmail(request.Email)
 	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			utils.ErrInvalidEmail: apierrors.ErrInvalidEmail,
 		}))
 		return
@@ -67,7 +67,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	passwordHash, err := utils.HashPassword(request.Password)
 	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			utils.ErrInvalidPassword: apierrors.ErrInvalidPassword,
 			utils.ErrHashingFailed:   apierrors.ErrBadRequest,
 		}))
@@ -77,13 +77,13 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	err = db.CreateUser(c.Request.Context(), h.pool, &user)
 	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrDuplicateKey: apierrors.ErrEmailAlreadyExists,
 		}))
 		return
 	}
 
-	utils.SendJSON(c, http.StatusCreated, user)
+	apierrors.SendJSON(c, http.StatusCreated, user)
 }
 
 // Login godoc
@@ -105,13 +105,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.SendError(c, apierrors.ErrBadRequest)
+		apierrors.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
 	email, err := utils.ValidateEmail(request.Email)
 	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			utils.ErrInvalidEmail: apierrors.ErrInvalidEmail,
 		}))
 		return
@@ -121,24 +121,24 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	userID, savedPassword, err := db.GetUserCredentials(c.Request.Context(), h.pool, email)
 	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrBadCredentials,
 		}))
 		return
 	}
 
 	if ok := utils.CheckPassword(password, savedPassword); !ok {
-		utils.SendError(c, apierrors.ErrBadCredentials)
+		apierrors.SendError(c, apierrors.ErrBadCredentials)
 		return
 	}
 
 	token, err := utils.GenerateJWT(userID)
 	if err != nil {
-		utils.SendError(c, err) // Send this error directly (Sends internal server error and logs the error)
+		apierrors.SendError(c, err) // Send this error directly (Sends internal server error and logs the error)
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, gin.H{
+	apierrors.SendJSON(c, http.StatusOK, gin.H{
 		"message": "login successful",
 		"token":   token,
 	})
@@ -162,13 +162,13 @@ func (h *AuthHandler) Me(c *gin.Context) {
 
 	user, err := db.GetUser(c.Request.Context(), h.pool, userID)
 	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrUserNotFound,
 		}))
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, user)
+	apierrors.SendJSON(c, http.StatusOK, user)
 }
 
 // RegisterGuest godoc
@@ -193,13 +193,13 @@ func (h *AuthHandler) RegisterGuest(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		utils.SendError(c, apierrors.ErrBadRequest)
+		apierrors.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
 	email, err := utils.ValidateEmail(request.Email)
 	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			utils.ErrInvalidEmail: apierrors.ErrInvalidEmail,
 		}))
 		return
@@ -207,11 +207,11 @@ func (h *AuthHandler) RegisterGuest(c *gin.Context) {
 
 	user, err := db.CreateGuest(c.Request.Context(), h.pool, email, userID)
 	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+		apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrDuplicateKey: apierrors.ErrEmailAlreadyExists,
 		}))
 		return
 	}
 
-	utils.SendJSON(c, http.StatusCreated, user)
+	apierrors.SendJSON(c, http.StatusCreated, user)
 }

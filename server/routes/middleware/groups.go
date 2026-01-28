@@ -7,7 +7,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/routes/apierrors"
-	"github.com/pranaovs/qashare/utils"
 )
 
 const GroupIDKey = "groupID"
@@ -19,18 +18,18 @@ func RequireGroupMember(pool *pgxpool.Pool) gin.HandlerFunc {
 		groupID, ok := c.Params.Get("id")
 
 		if !ok {
-			utils.AbortWithStatusJSON(c, http.StatusBadRequest, "Group ID not provided")
+			apierrors.AbortWithStatusJSON(c, http.StatusBadRequest, "Group ID not provided")
 			return
 		}
 
 		ok, err := db.MemberOfGroup(c.Request.Context(), pool, userID, groupID)
 		if err != nil {
-			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to verify membership")
+			apierrors.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to verify membership")
 			return
 		}
 
 		if !ok {
-			utils.AbortWithStatusJSON(c, http.StatusForbidden, "user is not a member of the group")
+			apierrors.AbortWithStatusJSON(c, http.StatusForbidden, "user is not a member of the group")
 			return
 		}
 
@@ -45,22 +44,22 @@ func RequireGroupAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		groupID, ok := c.Params.Get("id")
 		if !ok {
-			utils.AbortWithStatusJSON(c, http.StatusBadRequest, "Group ID not provided")
+			apierrors.AbortWithStatusJSON(c, http.StatusBadRequest, "Group ID not provided")
 			return
 		}
 
 		creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, groupID)
 		if err != nil {
 			if db.IsNotFound(err) {
-				utils.AbortWithStatusJSON(c, apierrors.ErrGroupNotFound.HTTPCode, apierrors.ErrGroupNotFound.Message)
+				apierrors.AbortWithStatusJSON(c, apierrors.ErrGroupNotFound.HTTPCode, apierrors.ErrGroupNotFound.Message)
 				return
 			}
-			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to get group creator")
+			apierrors.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to get group creator")
 			return
 		}
 
 		if creatorID != userID {
-			utils.AbortWithStatusJSON(c, http.StatusForbidden, "not the group admin")
+			apierrors.AbortWithStatusJSON(c, http.StatusForbidden, "not the group admin")
 			return
 		}
 
@@ -75,22 +74,22 @@ func RequireGroupOwner(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		groupID, ok := c.Params.Get("id")
 		if !ok {
-			utils.AbortWithStatusJSON(c, http.StatusBadRequest, "Group ID not provided")
+			apierrors.AbortWithStatusJSON(c, http.StatusBadRequest, "Group ID not provided")
 			return
 		}
 
 		creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, groupID)
 		if err != nil {
 			if db.IsNotFound(err) {
-				utils.AbortWithStatusJSON(c, apierrors.ErrGroupNotFound.HTTPCode, apierrors.ErrGroupNotFound.Message)
+				apierrors.AbortWithStatusJSON(c, apierrors.ErrGroupNotFound.HTTPCode, apierrors.ErrGroupNotFound.Message)
 				return
 			}
-			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to get group creator")
+			apierrors.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to get group creator")
 			return
 		}
 
 		if creatorID != userID {
-			utils.AbortWithStatusJSON(c, http.StatusForbidden, "not the group owner")
+			apierrors.AbortWithStatusJSON(c, http.StatusForbidden, "not the group owner")
 			return
 		}
 
