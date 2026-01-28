@@ -1,5 +1,14 @@
 basePath: /
 definitions:
+  apierrors.AppError:
+    properties:
+      code:
+        description: e.g., "BAD_NAME", "INVALID_EMAIL"
+        type: string
+      message:
+        description: Human-readable message
+        type: string
+    type: object
   models.Expense:
     properties:
       added_by:
@@ -158,27 +167,27 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created
+          description: Guest user successfully created
           schema:
             $ref: '#/definitions/models.User'
         "400":
-          description: Bad Request
+          description: 'BAD_REQUEST: Invalid request body format or missing required
+            fields | BAD_EMAIL: Invalid email format'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: Unauthorized
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "409":
+          description: 'EMAIL_EXISTS: An account with this email already exists'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error - unexpected database error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Register a guest user
@@ -205,29 +214,25 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Returns JWT token and success message
           schema:
             additionalProperties:
               type: string
             type: object
         "400":
-          description: Bad Request
+          description: 'BAD_REQUEST: Invalid request body format or missing required
+            fields | BAD_EMAIL: Invalid email format'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: Unauthorized
+          description: 'BAD_CREDENTIALS: Email or password is incorrect'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error - JWT generation failed or unexpected
+            database error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       summary: Login user
       tags:
       - auth
@@ -238,21 +243,23 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Returns the authenticated user's profile information
           schema:
             $ref: '#/definitions/models.User'
         "401":
-          description: Unauthorized
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'USER_NOT_FOUND: The authenticated user no longer exists in
+            the database'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error - unexpected database error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Get current user
@@ -281,21 +288,24 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created
+          description: User successfully registered
           schema:
             $ref: '#/definitions/models.User'
         "400":
-          description: Bad Request
+          description: 'BAD_REQUEST: Invalid request body format, missing required
+            fields, or JSON parsing error | BAD_NAME: Name contains invalid characters
+            or is too short/long | BAD_EMAIL: Invalid email format | BAD_PASSWORD:
+            Password does not meet requirements (e.g., too short, too weak)'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "409":
+          description: 'EMAIL_EXISTS: An account with this email already exists'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error - unexpected database or system error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       summary: Register a new user
       tags:
       - auth
@@ -316,33 +326,34 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created
+          description: Expense successfully created with splits
           schema:
             $ref: '#/definitions/models.ExpenseDetails'
         "400":
-          description: Bad Request
+          description: 'BAD_REQUEST: Invalid request body, missing required fields,
+            or no splits provided | INVALID_SPLIT: Split totals do not match expense
+            amount or split validation failed'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: Unauthorized
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: Forbidden
+          description: 'USERS_NOT_RELATED: The authenticated user is not a member
+            of the specified group | USER_NOT_IN_GROUP: One or more users in the splits
+            are not members of the group'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'GROUP_NOT_FOUND: The specified group does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error - unexpected database error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Create a new expense
@@ -361,35 +372,29 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Returns success message
           schema:
             additionalProperties:
               type: string
             type: object
         "401":
-          description: Unauthorized
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: Forbidden
+          description: 'NO_PERMISSIONS: User is not the group admin or expense creator
+            | USERS_NOT_RELATED: The authenticated user is not a member of the group'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "404":
-          description: Not Found
+          description: 'EXPENSE_NOT_FOUND: The specified expense does not exist'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error - unexpected database error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Delete an expense
@@ -407,27 +412,27 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Returns expense details including all splits
           schema:
             $ref: '#/definitions/models.ExpenseDetails'
         "401":
-          description: Unauthorized
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: Forbidden
+          description: 'USERS_NOT_RELATED: The authenticated user is not a member
+            of the group this expense belongs to'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "404":
-          description: Not Found
+          description: 'EXPENSE_NOT_FOUND: The specified expense does not exist'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Get expense details
@@ -454,41 +459,37 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Returns success message
           schema:
             additionalProperties:
               type: string
             type: object
         "400":
-          description: Bad Request
+          description: 'BAD_REQUEST: Invalid request body or missing required fields
+            | INVALID_SPLIT: No splits provided or split totals do not match expense
+            amount'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: Unauthorized
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: Forbidden
+          description: 'NO_PERMISSIONS: User is not the group admin or expense creator
+            | USERS_NOT_RELATED: The authenticated user is not a member of the group
+            | USER_NOT_IN_GROUP: One or more users in the splits are not members of
+            the group'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "404":
-          description: Not Found
+          description: 'EXPENSE_NOT_FOUND: The specified expense does not exist'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error - unexpected database error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Update an expense
@@ -515,27 +516,23 @@ paths:
       - application/json
       responses:
         "201":
-          description: Created
+          description: Group successfully created
           schema:
             $ref: '#/definitions/models.Group'
         "400":
-          description: Bad Request
+          description: 'BAD_REQUEST: Invalid request body format or missing required
+            fields | BAD_NAME: Name contains invalid characters or is too short/long'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: Unauthorized
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error - unexpected database error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Create a new group
@@ -554,27 +551,27 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Returns group details including members and expenses
           schema:
             $ref: '#/definitions/models.GroupDetails'
         "401":
-          description: Unauthorized
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: Forbidden
+          description: 'USERS_NOT_RELATED: The authenticated user is not a member
+            of the group'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "404":
-          description: Not Found
+          description: 'GROUP_NOT_FOUND: The specified group does not exist'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Get group details
@@ -593,35 +590,29 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Returns list of all expenses in the group
           schema:
             items:
               $ref: '#/definitions/models.Expense'
             type: array
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
         "401":
-          description: Unauthorized
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: Forbidden
+          description: 'USERS_NOT_RELATED: The authenticated user is not a member
+            of the group'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'GROUP_NOT_FOUND: The specified group does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error - unexpected database error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: List group expenses
@@ -653,34 +644,30 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Returns success message and list of removed member IDs
           schema:
             additionalProperties: true
             type: object
         "400":
-          description: Bad Request
+          description: 'BAD_REQUEST: Invalid request body, missing required fields,
+            or attempting to remove self from group'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: Unauthorized
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: Forbidden
+          description: 'NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED:
+            The authenticated user is not a member of the group | USER_NOT_IN_GROUP:
+            One or more specified users are not members of the group'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error - unexpected database error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Remove members from group
@@ -711,40 +698,34 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Returns success message and list of added member IDs
           schema:
             additionalProperties: true
             type: object
         "400":
-          description: Bad Request
+          description: 'BAD_REQUEST: Invalid request body, missing required fields,
+            or constraint violation'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: Unauthorized
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: Forbidden
+          description: 'NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED:
+            The authenticated user is not a member of the group'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "404":
-          description: Not Found
+          description: 'GROUP_NOT_FOUND: The specified group does not exist | USER_NOT_FOUND:
+            One or more specified users do not exist or no valid user IDs provided'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error - unexpected database error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Add members to group
@@ -757,23 +738,20 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Returns list of groups the user is admin of
           schema:
             items:
               $ref: '#/definitions/models.Group'
             type: array
         "401":
-          description: Unauthorized
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error - unexpected database error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: List groups user administers
@@ -786,23 +764,20 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Returns list of groups the user is a member of
           schema:
             items:
               $ref: '#/definitions/models.Group'
             type: array
         "401":
-          description: Unauthorized
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error - unexpected database error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: List user's groups
@@ -835,33 +810,31 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Returns user profile information
           schema:
             $ref: '#/definitions/models.User'
         "400":
-          description: Bad Request
+          description: 'BAD_REQUEST: Invalid user ID format'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: Unauthorized
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: Forbidden
+          description: 'USERS_NOT_RELATED: The users are not related through any common
+            group'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'USER_NOT_FOUND: The specified user does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error - unexpected database error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Get user by ID
@@ -880,27 +853,26 @@ paths:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Returns user profile information matching the email
           schema:
             $ref: '#/definitions/models.User'
         "400":
-          description: Bad Request
+          description: 'BAD_EMAIL: Invalid email format'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: Unauthorized
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'USER_NOT_FOUND: No user found with the specified email'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal Server Error
+          description: Internal server error - unexpected database error
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Search user by email

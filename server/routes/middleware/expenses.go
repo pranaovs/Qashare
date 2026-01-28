@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/models"
-	"github.com/pranaovs/qashare/utils"
+	"github.com/pranaovs/qashare/routes/apierrors"
 )
 
 const (
@@ -24,30 +24,30 @@ func VerifyExpenseAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		expenseID := c.Param("id")
 		if expenseID == "" {
-			utils.AbortWithStatusJSON(c, http.StatusBadRequest, "Expense ID not provided")
+			apierrors.AbortWithStatusJSON(c, http.StatusBadRequest, "Expense ID not provided")
 			return
 		}
 
 		// Get the expense to find its group
 		expense, err := db.GetExpense(c.Request.Context(), pool, expenseID)
-		if err == db.ErrExpenseNotFound {
-			utils.AbortWithStatusJSON(c, http.StatusNotFound, "expense not found")
-			return
-		}
 		if err != nil {
-			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "internal server error")
+			if db.IsNotFound(err) {
+				apierrors.AbortWithStatusJSON(c, apierrors.ErrExpenseNotFound.HTTPCode, apierrors.ErrExpenseNotFound.Message)
+				return
+			}
+			apierrors.AbortWithStatusJSON(c, http.StatusInternalServerError, "internal server error")
 			return
 		}
 
 		// Check if user is a member of the expense's group
 		isMember, err := db.MemberOfGroup(c.Request.Context(), pool, userID, expense.GroupID)
 		if err != nil {
-			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to verify membership")
+			apierrors.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to verify membership")
 			return
 		}
 
 		if !isMember {
-			utils.AbortWithStatusJSON(c, http.StatusForbidden, "access denied")
+			apierrors.AbortWithStatusJSON(c, http.StatusForbidden, "access denied")
 			return
 		}
 
@@ -68,35 +68,34 @@ func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		expenseID := c.Param("id")
 		if expenseID == "" {
-			utils.AbortWithStatusJSON(c, http.StatusBadRequest, "Expense ID not provided")
+			apierrors.AbortWithStatusJSON(c, http.StatusBadRequest, "Expense ID not provided")
 			return
 		}
 
 		// Get the expense to find its group
 		expense, err := db.GetExpense(c.Request.Context(), pool, expenseID)
-		if err == db.ErrExpenseNotFound {
-			utils.AbortWithStatusJSON(c, http.StatusNotFound, "expense not found")
-			return
-		}
 		if err != nil {
-			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "internal server error")
+			if db.IsNotFound(err) {
+				apierrors.AbortWithStatusJSON(c, apierrors.ErrExpenseNotFound.HTTPCode, apierrors.ErrExpenseNotFound.Message)
+				return
+			}
+			apierrors.AbortWithStatusJSON(c, http.StatusInternalServerError, "internal server error")
 			return
 		}
 
 		creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, expense.GroupID)
-		if err == db.ErrGroupNotFound {
-			utils.AbortWithStatusJSON(c, http.StatusNotFound, "group not found")
-			return
-		}
-
 		if err != nil {
-			utils.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to get group creator")
+			if db.IsNotFound(err) {
+				apierrors.AbortWithStatusJSON(c, apierrors.ErrGroupNotFound.HTTPCode, apierrors.ErrGroupNotFound.Message)
+				return
+			}
+			apierrors.AbortWithStatusJSON(c, http.StatusInternalServerError, "failed to get group creator")
 			return
 		}
 
 		// If the user is not the group creator or the expense creator, deny access
 		if creatorID != userID && (expense.AddedBy == nil || *expense.AddedBy != userID) {
-			utils.AbortWithStatusJSON(c, http.StatusForbidden, "access denied")
+			apierrors.AbortWithStatusJSON(c, http.StatusForbidden, "access denied")
 			return
 		}
 

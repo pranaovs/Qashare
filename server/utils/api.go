@@ -6,11 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -24,12 +22,12 @@ func init() {
 // HashPassword hashes a plaintext password using bcrypt.
 func HashPassword(password string) (string, error) {
 	if password == "" {
-		return "", errors.New("empty password provided")
+		return "", ErrInvalidPassword
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return "", err
+		return "", ErrHashingFailed.WithError(err)
 	}
 	return string(hash), nil
 }
@@ -53,14 +51,10 @@ func randB64() string {
 var jwtSecret = []byte(GetEnv("JWT_SECRET", randB64()))
 
 func GenerateJWT(userID string) (string, error) {
-	expiryStr := GetEnv("JWT_EXPIRY", "24")
-	expiryHours, err := strconv.Atoi(expiryStr)
-	if err != nil || expiryHours <= 0 {
-		return "", fmt.Errorf("invalid JWT_EXPIRY value: %q, must be a positive integer", expiryStr)
-	}
+	expiryHours := GetEnvDuration("JWT_EXPIRY", 60*60*24) // Default to 24 hours
 	claims := jwt.MapClaims{
 		"user_id": userID,
-		"exp":     time.Now().Add(time.Duration(expiryHours) * time.Hour).Unix(),
+		"exp":     time.Now().Add(expiryHours).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -74,7 +68,7 @@ func ExtractClaims(authHeader string) (jwt.MapClaims, error) {
 
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method")
 		}
@@ -106,23 +100,4 @@ func ExtractUserID(authHeader string) (string, error) {
 	}
 
 	return userID, nil
-}
-
-// AbortWithStatusJSON is a unified helper function that aborts the request
-// and sends a JSON response with the specified HTTP status code and error message.
-// This replaces the pattern of calling c.JSON() followed by c.Abort() separately.
-func AbortWithStatusJSON(c *gin.Context, statusCode int, message string) {
-	c.AbortWithStatusJSON(statusCode, gin.H{"error": message})
-}
-
-// SendJSON is a helper function that sends a JSON response with the specified
-// HTTP status code and data.
-func SendJSON(c *gin.Context, statusCode int, data interface{}) {
-	c.JSON(statusCode, data)
-}
-
-// SendError is a helper function that sends a JSON error response without aborting.
-// Use AbortWithStatusJSON when you need to abort the request chain.
-func SendError(c *gin.Context, statusCode int, message string) {
-	c.JSON(statusCode, gin.H{"error": message})
 }

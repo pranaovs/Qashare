@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"net/http"
-
+	"github.com/pranaovs/qashare/apperrors"
+	"github.com/pranaovs/qashare/routes/apierrors"
 	"github.com/pranaovs/qashare/utils"
 
 	"github.com/gin-gonic/gin"
@@ -14,7 +14,10 @@ func RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
 		if err != nil {
-			utils.AbortWithStatusJSON(c, http.StatusUnauthorized, err.Error())
+			apierrors.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+				utils.ErrInvalidToken: apierrors.ErrInvalidToken,
+			}))
+			c.Abort()
 			return
 		}
 
