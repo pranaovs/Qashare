@@ -47,7 +47,10 @@ func randB64() string {
 	return base64.StdEncoding.EncodeToString(b)
 }
 
-var jwtSecret = []byte(GetEnv("JWT_SECRET", randB64()))
+var jwtSecret = []byte(GetEnv("JWT_SECRET", func() string {
+	log.Printf("[WARNING] JWT_SECRET not provided, using random value. Tokens will not be remembered across restarts.")
+	return randB64()
+}()))
 
 func GenerateJWT(userID string) (string, error) {
 	expiryHours := GetEnvDuration("JWT_EXPIRY", 60*60*24) // Default to 24 hours
@@ -71,7 +74,7 @@ func ExtractClaims(authHeader string) (jwt.MapClaims, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method")
 		}
-		return []byte(jwtSecret), nil
+		return jwtSecret, nil
 	})
 	if err != nil {
 		return nil, ErrInvalidToken.Msg("failed to parse token")
