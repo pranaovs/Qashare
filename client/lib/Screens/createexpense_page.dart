@@ -81,13 +81,21 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
     final splits = <ExpenseSplit>[];
 
     _paid.forEach((id, c) {
+      // Only include splits for members that are currently selected.
+      if (_selected[id] != true) return;
       final v = double.tryParse(c.text) ?? 0;
-      if (v > 0) splits.add(ExpenseSplit(userId: id, amount: v, isPaid: true));
+      if (v > 0) {
+        splits.add(ExpenseSplit(userId: id, amount: v, isPaid: true));
+      }
     });
 
     _owed.forEach((id, c) {
+      // Only include splits for members that are currently selected.
+      if (_selected[id] != true) return;
       final v = double.tryParse(c.text) ?? 0;
-      if (v > 0) splits.add(ExpenseSplit(userId: id, amount: v, isPaid: false));
+      if (v > 0) {
+        splits.add(ExpenseSplit(userId: id, amount: v, isPaid: false));
+      }
     });
 
     if (splits.isEmpty) {
@@ -95,9 +103,32 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
       return;
     }
 
+    final amount = double.tryParse(_amountController.text) ?? 0;
+
+    double totalPaid = 0;
+    double totalOwed = 0;
+
+    for (var s in splits) {
+      if (s.isPaid) totalPaid += s.amount;
+      if (!s.isPaid) totalOwed += s.amount;
+    }
+
+    if (!_incompleteAmount && !_incompleteSplit) {
+      if ((totalPaid - amount).abs() > 0.01 ||
+          (totalOwed - amount).abs() > 0.01) {
+        _snack("Paid and owed must both equal total amount", true);
+        return;
+      }
+    }
+
     setState(() => _loading = true);
 
     final token = await TokenStorage.getToken();
+    if (token == null) {
+      _snack("Session expired. Please login again.", true);
+      setState(() => _loading = false);
+      return;
+    }
 
     final req = ExpenseRequest(
       groupId: widget.groupId,
@@ -112,7 +143,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
     );
 
     final res = await ApiService.createExpenseAdvanced(
-      token: token!,
+      token: token,
       request: req,
     );
 
@@ -121,7 +152,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
     if (res.isSuccess && mounted) {
       Navigator.pop(context, true);
     } else {
-      _snack(res.errorMessage ?? "Failed", true);
+      _snack(res.errorMessage ?? "Failed to create expense", true);
     }
   }
 
@@ -182,7 +213,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                 decimal: true,
               ),
               inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'\d+\.?\d{0,2}')),
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
               ],
               validator: (v) {
                 if (_incompleteAmount) return null;
@@ -191,6 +222,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                 return null;
               },
             ),
+
             CheckboxListTile(
               title: const Text("Amount incomplete"),
               value: _incompleteAmount,
@@ -243,6 +275,11 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                                     const TextInputType.numberWithOptions(
                                       decimal: true,
                                     ),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r'^\d+\.?\d{0,2}'),
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -256,6 +293,11 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                                     const TextInputType.numberWithOptions(
                                       decimal: true,
                                     ),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r'^\d+\.?\d{0,2}'),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -270,7 +312,11 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
             ElevatedButton(
               onPressed: _loading ? null : _submit,
               child: _loading
-                  ? const CircularProgressIndicator(strokeWidth: 2)
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Text("Create Expense"),
             ),
           ],

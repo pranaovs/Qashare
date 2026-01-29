@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qashare/Models/expense_list_model.dart';
 import 'package:qashare/Screens/members_page.dart';
 import '../Config/token_storage.dart';
 import '../Service/api_service.dart';
@@ -21,6 +22,8 @@ class GroupDetailsPage extends StatefulWidget {
 class _GroupDetailsPageState extends State<GroupDetailsPage> {
   bool _loading = true;
   GroupDetailsResult? _result;
+  ExpenseListResult? _expenseResult;
+  bool _expenseLoading = true;
 
   @override
   void initState() {
@@ -44,7 +47,14 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
       groupId: widget.groupId,
     );
 
+    final expenseRes = await ApiService.getGroupExpenses(
+      token: token,
+      groupId: widget.groupId,
+    );
+
     setState(() {
+      _expenseResult = expenseRes;
+      _expenseLoading = false;
       _result = res;
       _loading = false;
     });
@@ -169,6 +179,65 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
           _infoTile(Icons.account_balance_wallet, "Balance", "Coming soon"),
 
           const SizedBox(height: 40),
+
+          const Text(
+            "Expenses",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+
+          const SizedBox(height: 12),
+
+          _expenseLoading
+              ? const Center(child: CircularProgressIndicator())
+              : !_expenseResult!.isSuccess
+              ? Text(
+                  _expenseResult!.errorMessage ?? "Failed to load expenses",
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                )
+              : _expenseResult!.expenses!.isEmpty
+              ? const Text("No expenses yet")
+              : ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _expenseResult!.expenses!.length,
+                  itemBuilder: (context, index) {
+                    final e = _expenseResult!.expenses![index];
+                    final date = DateTime.fromMillisecondsSinceEpoch(
+                      e.createdAt * 1000,
+                    );
+
+                    return Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.receipt_long),
+                        title: Text(e.title),
+                        subtitle: Text(
+                          "${date.day}/${date.month}/${date.year}"
+                          "${e.description != null ? " • ${e.description}" : ""}",
+                        ),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "₹${e.amount.toStringAsFixed(2)}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            if (e.isIncompleteAmount || e.isIncompleteSplit)
+                              const Text(
+                                "Incomplete",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
         ],
       ),
     );
