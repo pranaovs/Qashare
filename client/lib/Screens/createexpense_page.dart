@@ -104,7 +104,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
       title: _titleController.text.trim(),
       description: _descController.text.trim().isEmpty
           ? null
-          : _descController.text,
+          : _descController.text.trim(),
       amount: double.tryParse(_amountController.text) ?? 0,
       isIncompleteAmount: _incompleteAmount,
       isIncompleteSplit: _incompleteSplit,
