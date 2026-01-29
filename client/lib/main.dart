@@ -1,5 +1,6 @@
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
+import 'package:qashare/Screens/authcheck_page.dart';
 import 'package:qashare/Screens/creategroup_page.dart';
 import 'package:qashare/Screens/home_page.dart';
 import 'package:qashare/Screens/profile_page.dart';
@@ -37,8 +38,9 @@ class MyApp extends StatelessWidget {
                   brightness: Brightness.dark,
                 ),
           ),
-          initialRoute: "/login",
+          initialRoute: "/",
           routes: {
+            '/' : (context) => const AuthcheckPage(),
             '/login': (context) => const LoginPage(),
             '/signup': (context) => const SignupPage(),
             '/home': (context) => const HomePage(),
