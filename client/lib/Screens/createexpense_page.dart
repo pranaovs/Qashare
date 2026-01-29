@@ -182,7 +182,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                 decimal: true,
               ),
               inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                FilteringTextInputFormatter.allow(RegExp(r'\d+\.?\d{0,2}')),
               ],
               validator: (v) {
                 if (_incompleteAmount) return null;
