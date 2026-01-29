@@ -81,13 +81,21 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
     final splits = <ExpenseSplit>[];
 
     _paid.forEach((id, c) {
+      // Only include splits for members that are currently selected.
+      if (_selected[id] != true) return;
       final v = double.tryParse(c.text) ?? 0;
-      if (v > 0) splits.add(ExpenseSplit(userId: id, amount: v, isPaid: true));
+      if (v > 0) {
+        splits.add(ExpenseSplit(userId: id, amount: v, isPaid: true));
+      }
     });
 
     _owed.forEach((id, c) {
+      // Only include splits for members that are currently selected.
+      if (_selected[id] != true) return;
       final v = double.tryParse(c.text) ?? 0;
-      if (v > 0) splits.add(ExpenseSplit(userId: id, amount: v, isPaid: false));
+      if (v > 0) {
+        splits.add(ExpenseSplit(userId: id, amount: v, isPaid: false));
+      }
     });
 
     if (splits.isEmpty) {
