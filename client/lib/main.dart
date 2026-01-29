@@ -4,6 +4,7 @@ import 'package:qashare/Screens/creategroup_page.dart';
 import 'package:qashare/Screens/home_page.dart';
 import 'package:qashare/Screens/profile_page.dart';
 
+import 'Screens/createexpense_page.dart';
 import 'Screens/login_page.dart';
 import 'Screens/signup_page.dart';
 
@@ -43,7 +44,16 @@ class MyApp extends StatelessWidget {
             '/home': (context) => const HomePage(),
             '/profile': (context) => const ProfilePage(),
             '/creategroup': (context) => const CreategroupPage(),
-            // Add more routes as needed
+            "/create-expense": (context) {
+              final args =
+                  ModalRoute.of(context)!.settings.arguments
+                      as Map<String, dynamic>;
+
+              return CreateExpensePage(
+                groupId: args["groupId"],
+                members: args["members"],
+              );
+            }, // Add more routes as needed
           },
         );
       },
