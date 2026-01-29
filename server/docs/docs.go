@@ -145,12 +145,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Returns JWT token and success message",
+                        "description": "Returns JWT token(s)",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/models.Jwtoken"
                         }
                     },
                     "400": {
@@ -2512,6 +2509,23 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Jwtoken": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_in": {
+                    "type": "integer"
+                },
+                "refresh_token": {
+                    "type": "string"
+                },
+                "token_type": {
                     "type": "string"
                 }
             }

@@ -95,7 +95,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body object{email=string,password=string} true "User login credentials"
-// @Success 200 {object} map[string]string "Returns JWT token and success message"
+// @Success 200 {object} models.Jwtoken "Returns JWT token(s)"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format or missing required fields | BAD_EMAIL: Invalid email format"
 // @Failure 401 {object} apierrors.AppError "BAD_CREDENTIALS: Email or password is incorrect"
 // @Failure 500 {object} apierrors.AppError "Internal server error - JWT generation failed or unexpected database error"
@@ -140,10 +140,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, gin.H{
-		"message": "login successful",
-		"token":   token,
-	})
+	utils.SendData(c, models.Jwtoken{RToken: token})
 }
 
 // Me godoc

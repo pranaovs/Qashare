@@ -159,6 +159,17 @@ definitions:
       user_id:
         type: string
     type: object
+  models.Jwtoken:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+    type: object
   models.Settlement:
     properties:
       amount:
@@ -327,11 +338,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Returns JWT token and success message
+          description: Returns JWT token(s)
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.Jwtoken'
         "400":
           description: 'BAD_REQUEST: Invalid request body format or missing required
             fields | BAD_EMAIL: Invalid email format'
