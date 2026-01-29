@@ -3,7 +3,6 @@ package utils
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -63,7 +62,7 @@ func GenerateJWT(userID string) (string, error) {
 
 func ExtractClaims(authHeader string) (jwt.MapClaims, error) {
 	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-		return nil, errors.New("authorization header missing or malformed")
+		return nil, ErrInvalidToken.Msg("authorization header missing or malformed")
 	}
 
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
@@ -75,14 +74,14 @@ func ExtractClaims(authHeader string) (jwt.MapClaims, error) {
 		return []byte(jwtSecret), nil
 	})
 	if err != nil {
-		return nil, errors.New("invalid token")
+		return nil, ErrInvalidToken.Msg("failed to parse token")
 	}
 	if !token.Valid {
-		return nil, errors.New("expired token")
+		return nil, ErrInvalidToken.Msg("expired token")
 	}
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return nil, errors.New("invalid token claims")
+		return nil, ErrInvalidToken.Msg("invalid token claims")
 	}
 
 	return claims, nil
@@ -96,7 +95,7 @@ func ExtractUserID(authHeader string) (string, error) {
 
 	userID, ok := claims["user_id"].(string)
 	if !ok {
-		return "", errors.New("invalid token claims")
+		return "", ErrInvalidToken.Msg("invalid token claims")
 	}
 
 	return userID, nil
