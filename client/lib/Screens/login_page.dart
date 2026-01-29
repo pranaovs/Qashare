@@ -14,7 +14,7 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  String _serverUrl = "qashare.devserver.ts.net:80";
+  String _serverUrl = "https://qashare.pranaovs.me";
 
   bool _obscure = true;
 

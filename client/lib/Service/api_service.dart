@@ -213,7 +213,9 @@ class ApiService {
       if (response.statusCode == 404) return GroupDetailsResult.error("Group not found");
       if (response.statusCode == 500) return GroupDetailsResult.error("Server error");
 
-      return GroupDetailsResult.error("Unexpected error (${response.statusCode})");
+      return GroupDetailsResult.error(
+        "Unexpected error (${response.statusCode})",
+      );
     } catch (e) {
       return GroupDetailsResult.error(e.toString());
     }

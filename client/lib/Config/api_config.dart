@@ -1,7 +1,7 @@
 class ApiConfig {
-  static String _server = "qashare.devserver.ts.net:80";
+  static String _server = "https://qashare.pranaovs.me";
 
-  static String get baseUrl => "http://$_server";
+  static String get baseUrl => "$_server";
 
   static void setServer(String server) {
     _server = server;
