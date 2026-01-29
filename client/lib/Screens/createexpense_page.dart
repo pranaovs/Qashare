@@ -209,7 +209,9 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                   borderRadius: BorderRadius.all(Radius.circular(10)),
                 ),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
               ],
@@ -248,7 +250,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
             ),
 
             ...widget.members.map(
-                  (m) => Card(
+              (m) => Card(
                 child: Column(
                   children: [
                     CheckboxListTile(
@@ -270,12 +272,13 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                                   labelText: "Paid",
                                 ),
                                 keyboardType:
-                                const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                ),
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
                                 inputFormatters: [
                                   FilteringTextInputFormatter.allow(
-                                      RegExp(r'^\d+\.?\d{0,2}')),
+                                    RegExp(r'^\d+\.?\d{0,2}'),
+                                  ),
                                 ],
                               ),
                             ),
@@ -287,12 +290,13 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                                   labelText: "Owes",
                                 ),
                                 keyboardType:
-                                const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                ),
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
                                 inputFormatters: [
                                   FilteringTextInputFormatter.allow(
-                                      RegExp(r'^\d+\.?\d{0,2}')),
+                                    RegExp(r'^\d+\.?\d{0,2}'),
+                                  ),
                                 ],
                               ),
                             ),
@@ -309,10 +313,10 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
               onPressed: _loading ? null : _submit,
               child: _loading
                   ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Text("Create Expense"),
             ),
           ],

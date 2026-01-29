@@ -12,7 +12,6 @@ import 'package:qashare/Models/user_models.dart';
 import 'package:qashare/Models/userlookup_model.dart';
 
 class ApiService {
-
   // ================= REGISTER =================
   static Future<RegisterResult> registerUser({
     required String username,
@@ -79,11 +78,16 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return LoginResult.success(token: data["token"], message: data["message"]);
+        return LoginResult.success(
+          token: data["token"],
+          message: data["message"],
+        );
       }
 
-      if (response.statusCode == 400) return LoginResult.error("Invalid request");
-      if (response.statusCode == 401) return LoginResult.error("Wrong credentials");
+      if (response.statusCode == 400)
+        return LoginResult.error("Invalid request");
+      if (response.statusCode == 401)
+        return LoginResult.error("Wrong credentials");
       if (response.statusCode == 500) return LoginResult.error("Server error");
 
       return LoginResult.error("Unexpected error (${response.statusCode})");
@@ -116,7 +120,8 @@ class ApiService {
         );
       }
 
-      if (response.statusCode == 401) return UserResult.error("Session expired");
+      if (response.statusCode == 401)
+        return UserResult.error("Session expired");
       if (response.statusCode == 500) return UserResult.error("Server error");
 
       return UserResult.error("Unexpected error (${response.statusCode})");
@@ -144,8 +149,10 @@ class ApiService {
         return GroupListResult.success(groups);
       }
 
-      if (response.statusCode == 401) return GroupListResult.error("Session expired");
-      if (response.statusCode == 500) return GroupListResult.error("Server error");
+      if (response.statusCode == 401)
+        return GroupListResult.error("Session expired");
+      if (response.statusCode == 500)
+        return GroupListResult.error("Server error");
 
       return GroupListResult.error("Unexpected error (${response.statusCode})");
     } catch (_) {
@@ -176,11 +183,16 @@ class ApiService {
         return GroupCreateResult.success(Group.fromJson(data));
       }
 
-      if (response.statusCode == 400) return GroupCreateResult.error("Invalid data");
-      if (response.statusCode == 401) return GroupCreateResult.error("Session expired");
-      if (response.statusCode == 500) return GroupCreateResult.error("Server error");
+      if (response.statusCode == 400)
+        return GroupCreateResult.error("Invalid data");
+      if (response.statusCode == 401)
+        return GroupCreateResult.error("Session expired");
+      if (response.statusCode == 500)
+        return GroupCreateResult.error("Server error");
 
-      return GroupCreateResult.error("Unexpected error (${response.statusCode})");
+      return GroupCreateResult.error(
+        "Unexpected error (${response.statusCode})",
+      );
     } catch (_) {
       return GroupCreateResult.error("Unable to connect to server");
     }
@@ -208,12 +220,18 @@ class ApiService {
         );
       }
 
-      if (response.statusCode == 401) return GroupDetailsResult.error("Session expired");
-      if (response.statusCode == 403) return GroupDetailsResult.error("Not group member");
-      if (response.statusCode == 404) return GroupDetailsResult.error("Group not found");
-      if (response.statusCode == 500) return GroupDetailsResult.error("Server error");
+      if (response.statusCode == 401)
+        return GroupDetailsResult.error("Session expired");
+      if (response.statusCode == 403)
+        return GroupDetailsResult.error("Not group member");
+      if (response.statusCode == 404)
+        return GroupDetailsResult.error("Group not found");
+      if (response.statusCode == 500)
+        return GroupDetailsResult.error("Server error");
 
-      return GroupDetailsResult.error("Unexpected error (${response.statusCode})");
+      return GroupDetailsResult.error(
+        "Unexpected error (${response.statusCode})",
+      );
     } catch (e) {
       return GroupDetailsResult.error(e.toString());
     }
@@ -243,11 +261,16 @@ class ApiService {
         return AddMemberResult.success(List<String>.from(added));
       }
 
-      if (response.statusCode == 401) return AddMemberResult.error("Session expired");
-      if (response.statusCode == 403) return AddMemberResult.error("Only admin allowed");
-      if (response.statusCode == 404) return AddMemberResult.error("Group not found");
-      if (response.statusCode == 400) return AddMemberResult.error("Invalid user IDs");
-      if (response.statusCode == 500) return AddMemberResult.error("Server error");
+      if (response.statusCode == 401)
+        return AddMemberResult.error("Session expired");
+      if (response.statusCode == 403)
+        return AddMemberResult.error("Only admin allowed");
+      if (response.statusCode == 404)
+        return AddMemberResult.error("Group not found");
+      if (response.statusCode == 400)
+        return AddMemberResult.error("Invalid user IDs");
+      if (response.statusCode == 500)
+        return AddMemberResult.error("Server error");
 
       return AddMemberResult.error("Unexpected error (${response.statusCode})");
     } catch (e) {
@@ -279,11 +302,16 @@ class ApiService {
         return AddMemberResult.success(List<String>.from(removed));
       }
 
-      if (response.statusCode == 401) return AddMemberResult.error("Session expired");
-      if (response.statusCode == 403) return AddMemberResult.error("Only admin allowed");
-      if (response.statusCode == 404) return AddMemberResult.error("Group not found");
-      if (response.statusCode == 400) return AddMemberResult.error("Cannot remove admin");
-      if (response.statusCode == 500) return AddMemberResult.error("Server error");
+      if (response.statusCode == 401)
+        return AddMemberResult.error("Session expired");
+      if (response.statusCode == 403)
+        return AddMemberResult.error("Only admin allowed");
+      if (response.statusCode == 404)
+        return AddMemberResult.error("Group not found");
+      if (response.statusCode == 400)
+        return AddMemberResult.error("Cannot remove admin");
+      if (response.statusCode == 500)
+        return AddMemberResult.error("Server error");
 
       return AddMemberResult.error("Unexpected error");
     } catch (e) {
@@ -313,9 +341,12 @@ class ApiService {
         );
       }
 
-      if (response.statusCode == 400) return UserLookupResult.error("Invalid email");
-      if (response.statusCode == 401) return UserLookupResult.error("Session expired");
-      if (response.statusCode == 500) return UserLookupResult.error("User not found");
+      if (response.statusCode == 400)
+        return UserLookupResult.error("Invalid email");
+      if (response.statusCode == 401)
+        return UserLookupResult.error("Session expired");
+      if (response.statusCode == 500)
+        return UserLookupResult.error("User not found");
 
       return UserLookupResult.error("Unexpected error");
     } catch (e) {
@@ -345,10 +376,14 @@ class ApiService {
         return ExpenseListResult.success(expenses);
       }
 
-      if (response.statusCode == 401) return ExpenseListResult.error("Session expired");
-      if (response.statusCode == 403) return ExpenseListResult.error("Not group member");
-      if (response.statusCode == 404) return ExpenseListResult.error("Group not found");
-      if (response.statusCode == 500) return ExpenseListResult.error("Server error");
+      if (response.statusCode == 401)
+        return ExpenseListResult.error("Session expired");
+      if (response.statusCode == 403)
+        return ExpenseListResult.error("Not group member");
+      if (response.statusCode == 404)
+        return ExpenseListResult.error("Group not found");
+      if (response.statusCode == 500)
+        return ExpenseListResult.error("Server error");
 
       return ExpenseListResult.error("Unexpected error");
     } catch (e) {
@@ -374,9 +409,12 @@ class ApiService {
       );
 
       if (response.statusCode == 200) return BasicResult.success();
-      if (response.statusCode == 400) return BasicResult.error("Split mismatch");
-      if (response.statusCode == 401) return BasicResult.error("Session expired");
-      if (response.statusCode == 403) return BasicResult.error("Not group member");
+      if (response.statusCode == 400)
+        return BasicResult.error("Split mismatch");
+      if (response.statusCode == 401)
+        return BasicResult.error("Session expired");
+      if (response.statusCode == 403)
+        return BasicResult.error("Not group member");
       if (response.statusCode == 500) return BasicResult.error("Server error");
 
       return BasicResult.error("Unexpected error");
