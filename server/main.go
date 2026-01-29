@@ -51,12 +51,15 @@ func run() error {
 	}
 	defer db.Close(pool)
 
+	apiBase := utils.GetEnv("API_BASE_PATH", "/api")
+
 	// Swagger url setup
 	docs.SwaggerInfo.Host = utils.GetEnv("API_HOST", "localhost") + ":" + strconv.Itoa(utils.GetEnvPort("API_PORT", 8080))
-	docs.SwaggerInfo.BasePath = utils.GetEnv("API_BASE_PATH", "/api")
+	docs.SwaggerInfo.BasePath = apiBase
 
 	// Setup HTTP router
-	router := setupRouter(pool)
+	router := gin.Default()
+	routes.RegisterRoutes(apiBase, router, pool)
 
 	// Start server with graceful shutdown
 	return startServer(router)
@@ -101,12 +104,6 @@ func initDatabase() (*pgxpool.Pool, error) {
 
 	log.Println("[INIT] Database initialized successfully")
 	return pool, nil
-}
-
-func setupRouter(pool *pgxpool.Pool) *gin.Engine {
-	router := gin.Default()
-	routes.RegisterRoutes(router, pool)
-	return router
 }
 
 func startServer(router *gin.Engine) error {
