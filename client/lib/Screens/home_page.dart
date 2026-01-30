@@ -90,7 +90,11 @@ class _HomePageState extends State<HomePage> {
               size: 100,
               color: Theme.of(context).colorScheme.outline,
             ),
-            Text("You are not part of any group yet"),
+            Text("You are not part of any group yet",
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.outline,
+              ),
+            ),
           ],
         ),
       );
