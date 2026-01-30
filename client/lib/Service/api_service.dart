@@ -197,7 +197,7 @@ class ApiService {
         body: jsonEncode({"name": name, "description": description}),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         final data = jsonDecode(response.body);
         return GroupCreateResult.success(Group.fromJson(data));
       }
@@ -364,8 +364,10 @@ class ApiService {
         return UserLookupResult.error("Invalid email");
       if (response.statusCode == 401)
         return UserLookupResult.error("Session expired");
-      if (response.statusCode == 500)
+      if (response.statusCode == 404)
         return UserLookupResult.error("User not found");
+      if (response.statusCode == 500)
+        return UserLookupResult.error("Server error");
 
       return UserLookupResult.error("Unexpected error");
     } catch (e) {
@@ -427,7 +429,7 @@ class ApiService {
         body: jsonEncode(request.toJson()),
       );
 
-      if (response.statusCode == 200) return BasicResult.success();
+      if (response.statusCode == 201) return BasicResult.success();
       if (response.statusCode == 400)
         return BasicResult.error("Split mismatch");
       if (response.statusCode == 401)
