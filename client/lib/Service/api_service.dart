@@ -422,4 +422,44 @@ class ApiService {
       return BasicResult.error(e.toString());
     }
   }
+
+  static Future<UserLookupResult> createGuestUser({required String token, required String email}) async {
+    final url = Uri.parse("${ApiConfig.baseUrl}/auth/guest");
+    try {
+      final response = await http.post(url,
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer $token",
+          },
+          body: jsonEncode({"email":email}),
+      );
+
+      if (response.statusCode == 201) {
+        return UserLookupResult.success(
+          UserLookup.fromJson(jsonDecode(response.body)),
+        );
+      }
+
+      if (response.statusCode == 400) {
+        return UserLookupResult.error("Invalid email");
+      }
+
+      if (response.statusCode == 401) {
+        return UserLookupResult.error("SESSION_EXPIRED");
+      }
+
+      if (response.statusCode == 409) {
+        return UserLookupResult.error("EMAIL_EXISTS");
+      }
+
+      if (response.statusCode == 500) {
+        return UserLookupResult.error("SERVER_ERROR");
+      }
+
+      return UserLookupResult.error("UNEXPECTED_ERROR");
+    } catch (_) {
+      return UserLookupResult.error("NETWORK_ERROR");
+    }
+  }
+  
 }
