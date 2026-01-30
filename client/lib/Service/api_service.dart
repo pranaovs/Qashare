@@ -144,18 +144,37 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        final List data = jsonDecode(response.body);
-        final groups = data.map((e) => Group.fromJson(e)).toList();
-        return GroupListResult.success(groups);
+        final decoded = jsonDecode(response.body);
+
+        // ✅ backend returned empty list
+        if (decoded == null) {
+          return GroupListResult.success([]);
+        }
+
+        // ✅ backend returned []
+        if (decoded is List) {
+          final groups = decoded
+              .map((e) => Group.fromJson(e))
+              .toList();
+          return GroupListResult.success(groups);
+        }
+
+        // ❌ backend returned unexpected structure
+        return GroupListResult.error("Invalid response format");
       }
 
-      if (response.statusCode == 401)
+      if (response.statusCode == 401) {
         return GroupListResult.error("Session expired");
-      if (response.statusCode == 500)
-        return GroupListResult.error("Server error");
+      }
 
-      return GroupListResult.error("Unexpected error (${response.statusCode})");
-    } catch (_) {
+      if (response.statusCode == 500) {
+        return GroupListResult.error("Server error");
+      }
+
+      return GroupListResult.error(
+        "Unexpected error (${response.statusCode})",
+      );
+    } catch (e) {
       return GroupListResult.error("Unable to connect to server");
     }
   }
