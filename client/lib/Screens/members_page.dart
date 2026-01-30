@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qashare/Models/userlookup_model.dart';
 import '../Config/token_storage.dart';
 import 'package:qashare/Models/groupdetail_model.dart';
 import '../Service/api_service.dart';
@@ -177,40 +178,62 @@ class _MembersPageState extends State<MembersPage> {
               onPressed: loading
                   ? null
                   : () async {
-                      final email = controller.text.trim();
-                      if (email.isEmpty) return;
+                final email = controller.text.trim();
+                if (email.isEmpty) return;
 
-                      setLocal(() => loading = true);
+                setLocal(() => loading = true);
 
-                      final token = await TokenStorage.getToken();
-                      if (token == null) return;
+                final token = await TokenStorage.getToken();
+                if (token == null) return;
 
-                      final lookup = await ApiService.searchUserByEmail(
-                        token: token,
-                        email: email,
-                      );
+                // STEP 1: Try to find existing user
+                final lookup = await ApiService.searchUserByEmail(
+                  token: token,
+                  email: email,
+                );
 
-                      if (!lookup.isSuccess) {
-                        Navigator.pop(ctx);
-                        _showSnack(lookup.errorMessage!, true);
-                        return;
-                      }
+                // This will hold either existing user OR guest user
+                UserLookup user;
 
-                      final addResult = await ApiService.addMembersToGroup(
-                        token: token,
-                        groupId: widget.groupId,
-                        userIds: [lookup.user!.userId],
-                      );
+                if (lookup.isSuccess) {
+                  // User already exists
+                  user = lookup.user!;
+                } else {
+                  // STEP 2: User not found → create guest
+                  final guest = await ApiService.createGuestUser(
+                    token: token,
+                    email: email,
+                  );
 
-                      Navigator.pop(ctx);
+                  if (!guest.isSuccess) {
+                    Navigator.pop(ctx);
+                    _showSnack(guest.errorMessage ?? "Failed to add user", true);
+                    return;
+                  }
 
-                      if (addResult.isSuccess) {
-                        _showSnack("Member added", false);
-                        _loadMembers();
-                      } else {
-                        _showSnack(addResult.errorMessage!, true);
-                      }
-                    },
+                  user = guest.user!;
+                }
+
+                // STEP 3: Add user (normal or guest) to group
+                final addResult = await ApiService.addMembersToGroup(
+                  token: token,
+                  groupId: widget.groupId,
+                  userIds: [user.userId],
+                );
+
+                Navigator.pop(ctx);
+
+                if (addResult.isSuccess) {
+                  _showSnack(
+                    user.guest ? "Guest added to group" : "Member added",
+                    false,
+                  );
+                  _loadMembers();
+                } else {
+                  _showSnack(addResult.errorMessage ?? "Failed to add member", true);
+                }
+              },
+
               child: const Text("Add"),
             ),
           ],
