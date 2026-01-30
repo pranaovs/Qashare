@@ -87,9 +87,7 @@ func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
 
 	groups, err := db.MemberOfGroups(c.Request.Context(), h.pool, userID)
 	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrNotFound: apierrors.ErrUserNotFound,
-		}))
+		utils.SendError(c, err)
 		return
 	}
 	utils.SendJSON(c, http.StatusOK, groups)
