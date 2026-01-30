@@ -33,7 +33,7 @@ class ApiService {
         }),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 201) {
         final data = jsonDecode(response.body);
         return RegisterResult.success(
           userId: data["user_id"],
