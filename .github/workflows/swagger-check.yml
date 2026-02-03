@@ -1,0 +1,31 @@
+name: Swagger Check
+on: [push, pull_request]
+
+jobs:
+  check-swagger:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: Install Swag
+        run: go install github.com/swaggo/swag/cmd/swag@latest
+
+      - name: Generate Swagger Docs
+        run: swag init --quiet
+
+      - name: Check for changes
+        # git status --porcelain outputs nothing if directory is clean
+        run: |
+          if [ -n "$(git status --porcelain docs/)" ]; then
+            echo "::error::Swagger documentation is out of sync with code."
+            echo "Please run 'swag init' locally and push the changes."
+            git diff
+            exit 1
+          else
+            echo "Swagger docs are up to date."
+          fi
