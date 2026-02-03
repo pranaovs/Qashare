@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+
+current_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+
+# Check main branch
+if [ "$current_branch" = "main" ]; then
+
+  # git commit -m sends just text. git commit (editor) includes comments starting with #.
+  commit_msg=$(grep -v '^#' "$1" | head -n 1)
+
+  # Conventional Commits Regex
+  # Pattern: type(scope)!: description
+  # Supports: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
+  # Supports optional scope: (scope)
+  # Supports breaking change: !
+  regex='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9\/-]+\))?!?:\ .+$'
+
+  # Allow standard automatic Merge commits
+  if echo "$commit_msg" | grep -qE "^Merge (branch|pull request|remote-tracking branch)"; then
+    exit 0
+  fi
+
+  if ! echo "$commit_msg" | grep -qE "$regex"; then
+    echo "Error: Commit message on 'main' must follow Conventional Commits."
+    echo "   Pattern: <type>(<scope>): <subject>"
+    echo "   Example: feat(auth): add google login support"
+    echo "   Your message: $commit_msg"
+    exit 1
+  fi
+fi
+
+exit 0
