@@ -139,11 +139,8 @@ To set up the project locally, follow these instructions for both the client and
 
 ## API Documentation
 
-The Qashare API is documented using Swagger/OpenAPI. Once the server is running, you can access the interactive API documentation at:
-
-```
-http://localhost:8080/swagger/index.html
-```
+The Qashare API is documented using Swagger/OpenAPI. You can access the Swagger UI by navigating to:
+<https://qashare.pranaovs.me/swagger/index.html>
 
 The Swagger UI provides:
 - Complete API endpoint documentation
