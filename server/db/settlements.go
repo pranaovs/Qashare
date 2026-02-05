@@ -30,18 +30,33 @@ func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID str
 		return nil, ErrInvalidInput.Msg("user id missing")
 	}
 
-	// Query to get all payer-debtor pairs in the group
+	// Query to calculate proportional debt distribution when multiple payers exist
+	// For each expense, distribute each debtor's amount proportionally to all payers
+	// based on what percentage each payer contributed
 	query := `
+	WITH expense_totals AS (
+	  -- Calculate total paid for each expense
+	  SELECT
+	    expense_id,
+	    SUM(amount) as total_paid
+	  FROM expense_splits
+	  WHERE is_paid = true
+	  GROUP BY expense_id
+	)
 	SELECT
 	  es_payer.user_id as payer_id,
 	  es_debtor.user_id as debtor_id,
-	  es_debtor.amount
+	  -- Distribute debtor's amount proportionally based on payer's contribution
+	  es_debtor.amount * (es_payer.amount / et.total_paid) as proportional_amount
 	FROM expense_splits es_payer
 	JOIN expense_splits es_debtor ON es_payer.expense_id = es_debtor.expense_id
 	JOIN expenses e ON e.expense_id = es_payer.expense_id
+	JOIN expense_totals et ON et.expense_id = es_payer.expense_id
 	WHERE e.group_id = $1
 	  AND es_payer.is_paid = true
 	  AND es_debtor.is_paid = false
+	  AND es_payer.user_id != es_debtor.user_id  -- Don't calculate debt to self
+	  AND et.total_paid > 0  -- Avoid division by zero
 	ORDER BY es_payer.user_id, es_debtor.user_id
 	`
 
@@ -63,7 +78,7 @@ func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID str
 			return nil, err
 		}
 
-		balances[payer] += amount  // Payer gets money
+		balances[payer] += amount  // Payer receives money
 		balances[debtor] -= amount // Debtor owes money
 	}
 
