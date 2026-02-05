@@ -1,12 +1,7 @@
-name: Build and Push Docker Image
-
+name: Backend Release Build
 on:
   push:
-    branches:
-      - "**" # Run on main and all other branches
-    tags:
-      - "v*" # Run on tags like v1.0.0
-
+    tags: ["v*"]
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
