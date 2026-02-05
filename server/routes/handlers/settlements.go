@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"net/http"
-
 	"github.com/pranaovs/qashare/apperrors"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/routes/apierrors"
@@ -39,5 +37,5 @@ func (h *GroupsHandler) GetSettlements(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, settlements)
+	utils.SendData(c, settlements)
 }
