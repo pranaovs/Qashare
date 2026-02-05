@@ -70,3 +70,9 @@ type ExpenseSplit struct {
 	Amount    float64 `json:"amount" db:"amount"`
 	IsPaid    bool    `json:"is_paid" db:"is_paid"` // "paid" or "owes"
 }
+
+// Settlement represents the balance between two users (positive = owed, negative = owes)
+type Settlement struct {
+	UserID string  `json:"user_id"`
+	Amount float64 `json:"amount"` // positive: user owes you, negative: you owe user
+}
