@@ -48,9 +48,6 @@ func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID str
 
 	rows, err := pool.Query(ctx, query, groupID)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return []models.Settlement{}, nil
-		}
 		return nil, err
 	}
 	defer rows.Close()
