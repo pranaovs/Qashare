@@ -1,0 +1,36 @@
+name: Go Test
+
+on:
+  pull_request:
+    paths:
+      - "server/**"
+      - ".github/workflows/go-test.yml"
+  push:
+    branches-ignore:
+      - main
+    paths:
+      - "server/**"
+      - ".github/workflows/go-test.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: true
+          cache-dependency-path: server/go.sum
+
+      - name: Install dependencies
+        working-directory: server
+        run: go mod download
+
+      - name: Run tests
+        working-directory: server
+        run: go test -v ./...
