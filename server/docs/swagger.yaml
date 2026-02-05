@@ -145,6 +145,19 @@ info:
   title: Qashare API
   version: "1.0"
 paths:
+  /health:
+    get:
+      description: Check if the API is running
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: ok
+          schema:
+            type: string
+      summary: Health check endpoint
+      tags:
+      - health
   /v1/auth/guest:
     post:
       consumes:
@@ -781,19 +794,6 @@ paths:
       summary: List user's groups
       tags:
       - groups
-  /v1/health:
-    get:
-      description: Check if the API is running
-      produces:
-      - text/plain
-      responses:
-        "200":
-          description: ok
-          schema:
-            type: string
-      summary: Health check endpoint
-      tags:
-      - health
   /v1/users/{id}:
     get:
       description: Get user information by user ID (users must be related through

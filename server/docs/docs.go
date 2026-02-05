@@ -22,6 +22,26 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/health": {
+            "get": {
+                "description": "Check if the API is running",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Health check endpoint",
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/auth/guest": {
             "post": {
                 "security": [
@@ -943,26 +963,6 @@ const docTemplate = `{
                         "description": "Internal server error - unexpected database error",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/health": {
-            "get": {
-                "description": "Check if the API is running",
-                "produces": [
-                    "text/plain"
-                ],
-                "tags": [
-                    "health"
-                ],
-                "summary": "Health check endpoint",
-                "responses": {
-                    "200": {
-                        "description": "ok",
-                        "schema": {
-                            "type": "string"
                         }
                     }
                 }
