@@ -109,7 +109,7 @@ func initDatabase() (*pgxpool.Pool, error) {
 func startServer(router *gin.Engine) error {
 	port := utils.GetEnvPort("API_PORT", 8080)
 	srv := &http.Server{
-		Addr:    utils.GetEnv("API_HOST", "localhost") + ":" + strconv.Itoa(port),
+		Addr:    utils.GetEnv("API_HOST", "0.0.0.0") + ":" + strconv.Itoa(port),
 		Handler: router,
 	}
 
