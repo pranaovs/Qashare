@@ -13,7 +13,7 @@ if [ "$current_branch" = "main" ]; then
   # Supports: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert
   # Supports optional scope: (scope)
   # Supports breaking change: !
-  regex='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9\/-]+\))?!?:\ .+$'
+  regex='^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\([a-z0-9/-]+\))?!?: .+$'
 
   # Allow standard automatic Merge commits
   if echo "$commit_msg" | grep -qE "^Merge (branch|pull request|remote-tracking branch)"; then
