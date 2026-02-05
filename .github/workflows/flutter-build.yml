@@ -1,0 +1,50 @@
+name: Flutter Build
+
+on:
+  pull_request:
+    paths:
+      - "client/**"
+      - ".github/workflows/flutter-*.yml"
+  push:
+    branches-ignore:
+      - main
+    paths:
+      - "client/**"
+      - ".github/workflows/flutter-*.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('client/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Install dependencies
+        working-directory: client
+        run: flutter pub get
+
+      - name: Build APK
+        working-directory: client
+        run: flutter build apk --debug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: qashare-debug-${{ github.sha }}
+          path: client/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 30
