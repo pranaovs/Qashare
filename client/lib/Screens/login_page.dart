@@ -14,7 +14,7 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  String _serverUrl = "https://qashare.pranaovs.me";
+  String _serverUrl = ApiConfig.server;
 
   bool _obscure = true;
 
