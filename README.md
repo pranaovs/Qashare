@@ -139,6 +139,8 @@ To set up the project locally, follow these instructions for both the client and
 
 ## API Documentation
 
+[![Swagger Check](https://github.com/pranaovs/Qashare/actions/workflows/swagger-check.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/swagger-check.yml)
+
 The Qashare API is documented using Swagger/OpenAPI. You can access the Swagger UI by navigating to:
 <https://qashare.pranaovs.me/swagger/index.html>
 
