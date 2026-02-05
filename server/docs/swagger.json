@@ -679,70 +679,6 @@
                 }
             }
         },
-        "/v1/groups/{groupID}/settlements": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get the payment balances between the authenticated user and all other members in a group. Positive amount means other user owes you, negative means you owe them.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "settlements"
-                ],
-                "summary": "Get payment settlements for a group",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Group ID",
-                        "name": "groupID",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "List of non-zero settlement balances",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Settlement"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    },
-                    "403": {
-                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the specified group",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    },
-                    "404": {
-                        "description": "GROUP_NOT_FOUND: The specified group does not exist",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error - unexpected database error",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    }
-                }
-            }
-        },
         "/v1/groups/{id}": {
             "get": {
                 "security": [
@@ -1011,6 +947,70 @@
                     },
                     "403": {
                         "description": "NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more specified users are not members of the group",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error - unexpected database error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/groups/{id}/settlements": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the payment balances between the authenticated user and all other members in a group. Positive amount means other user owes you, negative means you owe them.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "settlements"
+                ],
+                "summary": "Get payment settlements for a group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of non-zero settlement balances",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Settlement"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the specified group",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "GROUP_NOT_FOUND: The specified group does not exist",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }

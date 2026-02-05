@@ -557,51 +557,6 @@ paths:
       summary: Create a new group
       tags:
       - groups
-  /v1/groups/{groupID}/settlements:
-    get:
-      consumes:
-      - application/json
-      description: Get the payment balances between the authenticated user and all
-        other members in a group. Positive amount means other user owes you, negative
-        means you owe them.
-      parameters:
-      - description: Group ID
-        in: path
-        name: groupID
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: List of non-zero settlement balances
-          schema:
-            items:
-              $ref: '#/definitions/models.Settlement'
-            type: array
-        "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
-          schema:
-            $ref: '#/definitions/apierrors.AppError'
-        "403":
-          description: 'USERS_NOT_RELATED: The authenticated user is not a member
-            of the specified group'
-          schema:
-            $ref: '#/definitions/apierrors.AppError'
-        "404":
-          description: 'GROUP_NOT_FOUND: The specified group does not exist'
-          schema:
-            $ref: '#/definitions/apierrors.AppError'
-        "500":
-          description: Internal server error - unexpected database error
-          schema:
-            $ref: '#/definitions/apierrors.AppError'
-      security:
-      - BearerAuth: []
-      summary: Get payment settlements for a group
-      tags:
-      - settlements
   /v1/groups/{id}:
     get:
       description: Get detailed information about a group
@@ -795,6 +750,51 @@ paths:
       summary: Add members to group
       tags:
       - groups
+  /v1/groups/{id}/settlements:
+    get:
+      consumes:
+      - application/json
+      description: Get the payment balances between the authenticated user and all
+        other members in a group. Positive amount means other user owes you, negative
+        means you owe them.
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of non-zero settlement balances
+          schema:
+            items:
+              $ref: '#/definitions/models.Settlement'
+            type: array
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'USERS_NOT_RELATED: The authenticated user is not a member
+            of the specified group'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'GROUP_NOT_FOUND: The specified group does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Get payment settlements for a group
+      tags:
+      - settlements
   /v1/groups/admin:
     get:
       description: Get all groups that the authenticated user created (is admin of)
