@@ -54,7 +54,7 @@ func run() error {
 	apiBase := utils.GetEnv("API_BASE_PATH", "/api")
 
 	// Swagger url setup
-	docs.SwaggerInfo.Host = utils.GetEnv("API_HOST", "localhost") + ":" + strconv.Itoa(utils.GetEnvPort("API_PORT", 8080))
+	docs.SwaggerInfo.Host = utils.GetEnv("API_HOST", "0.0.0.0") + ":" + strconv.Itoa(utils.GetEnvPort("API_PORT", 8080))
 	docs.SwaggerInfo.BasePath = apiBase
 
 	// Setup HTTP router
