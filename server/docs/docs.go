@@ -968,6 +968,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/groups/{id}/settlements": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the payment balances between the authenticated user and all other members in a group. Positive amount means other user owes you, negative means you owe them.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "settlements"
+                ],
+                "summary": "Get payment settlements for a group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of non-zero settlement balances",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Settlement"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the specified group",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "GROUP_NOT_FOUND: The specified group does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error - unexpected database error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/users/search/email/{email}": {
             "get": {
                 "security": [
@@ -1268,6 +1332,18 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Settlement": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "description": "positive: user owes you, negative: you owe user",
+                    "type": "number"
                 },
                 "user_id": {
                     "type": "string"
