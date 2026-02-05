@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+
+BACKEND_DIR="server/"
+
+if git diff --cached --quiet -- "$BACKEND_DIR"; then
+  exit 0
+fi
+
+# Check dependency
+if ! command -v swag >/dev/null 2>&1; then
+  echo "::error::'swag' is not installed."
+  exit 1
+fi
+
+echo "Checking if Swagger docs are up to date..."
+
+# We run swag init but don't care about the output files yet,
+# we just want to see if the RESULT differs from what is staged.
+
+# Run swag init (unfortunately swag writes to disk, so we must let it write)
+if ! swag i --dir "$BACKEND_DIR" --output "$BACKEND_DIR/docs" --quiet; then
+  echo "::error::Failed to generate swagger docs."
+  exit 1
+fi
+
+if ! git diff --quiet "$BACKEND_DIR/docs"; then
+  echo "::error::Swagger docs are out of sync!"
+  echo "----------------------------------------------------"
+  echo "The generated docs differ from what you are committing."
+  echo "We have updated the files for you."
+  echo "Please run:  git add $BACKEND_DIR/docs  and commit again."
+  echo "----------------------------------------------------"
+
+  # Fail the commit
+  exit 1
+fi
+
+exit 0
