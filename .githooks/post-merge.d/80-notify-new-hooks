@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+
+TARGET_DIR=".githooks"
+
+# Check differences between the state before the merge (ORIG_HEAD) and now (HEAD)
+# grep -q exits with 0 if a match is found
+if git diff --name-only ORIG_HEAD HEAD | grep -q "^$TARGET_DIR/"; then
+    echo "----------------------------------------------------------------"
+    echo " WARNING: Changes detected in the '$TARGET_DIR/' directory."
+    echo ""
+    echo "   Since you do not auto-execute these hooks for security,"
+    echo "   please review the changes and verify if you need to"
+    echo "   manually update your local hooks."
+    echo ""
+    echo "   Review: git diff ORIG_HEAD HEAD -- $TARGET_DIR"
+    echo "----------------------------------------------------------------"
+fi
+
+exit 0
