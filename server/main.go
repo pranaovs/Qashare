@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
@@ -54,8 +55,16 @@ func run() error {
 	apiBase := utils.GetEnv("API_BASE_PATH", "/api")
 
 	// Swagger url setup
-	docs.SwaggerInfo.Host = utils.GetEnv("API_HOST", "localhost") + ":" + strconv.Itoa(utils.GetEnvPort("API_PORT", 8080))
+	rawURL := utils.GetEnv("API_PUBLIC_URL", "http://localhost:8080")
+
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		log.Fatalf("Invalid API_PUBLIC_URL: %v", err)
+	}
+
+	docs.SwaggerInfo.Host = u.Host
 	docs.SwaggerInfo.BasePath = apiBase
+	docs.SwaggerInfo.Schemes = []string{u.Scheme}
 
 	// Setup HTTP router
 	router := gin.Default()
@@ -107,9 +116,9 @@ func initDatabase() (*pgxpool.Pool, error) {
 }
 
 func startServer(router *gin.Engine) error {
-	port := utils.GetEnvPort("API_PORT", 8080)
+	port := utils.GetEnvPort("API_BIND_PORT", 8080)
 	srv := &http.Server{
-		Addr:    utils.GetEnv("API_HOST", "0.0.0.0") + ":" + strconv.Itoa(port),
+		Addr:    utils.GetEnv("API_BIND_ADDR", "0.0.0.0") + ":" + strconv.Itoa(port),
 		Handler: router,
 	}
 
