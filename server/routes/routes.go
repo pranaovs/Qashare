@@ -16,7 +16,7 @@ func RegisterRoutes(basepath string, router *gin.Engine, pool *pgxpool.Pool) {
 	router.RemoveExtraSlash = true
 
 	// Health check
-	router.GET("/health", HealthCheck)
+	router.GET(basepath+"/health", HealthCheck)
 
 	// Swagger documentation
 	if !utils.GetEnvBool("DISABLE_SWAGGER", false) {
@@ -41,7 +41,7 @@ func RegisterRoutes(basepath string, router *gin.Engine, pool *pgxpool.Pool) {
 // @Tags health
 // @Produce plain
 // @Success 200 {string} string "ok"
-// @Router /v1/health [get]
+// @Router /health [get]
 func HealthCheck(c *gin.Context) {
 	c.String(http.StatusOK, "ok")
 }
