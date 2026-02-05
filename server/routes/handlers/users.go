@@ -34,7 +34,7 @@ func NewUsersHandler(pool *pgxpool.Pool) *UsersHandler {
 // @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The users are not related through any common group"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The specified user does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /users/{id} [get]
+// @Router /v1/users/{id} [get]
 func (h *UsersHandler) GetUser(c *gin.Context) {
 	qUserID := c.Param("id")
 
@@ -76,7 +76,7 @@ func (h *UsersHandler) GetUser(c *gin.Context) {
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: No user found with the specified email"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /users/search/email/{email} [get]
+// @Router /v1/users/search/email/{email} [get]
 func (h *UsersHandler) SearchByEmail(c *gin.Context) {
 	_ = middleware.MustGetUserID(c)
 

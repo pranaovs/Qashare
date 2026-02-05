@@ -5,22 +5,34 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
-	_ "github.com/pranaovs/qashare/docs" // Import swagger docs
+	"github.com/pranaovs/qashare/utils"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func RegisterRoutes(router *gin.Engine, pool *pgxpool.Pool) {
+func RegisterRoutes(basepath string, router *gin.Engine, pool *pgxpool.Pool) {
+	router.RedirectTrailingSlash = true
+	router.RedirectFixedPath = true
+	router.RemoveExtraSlash = true
+
 	// Health check
-	router.GET("/health", HealthCheck)
+	router.GET(basepath+"/health", HealthCheck)
 
 	// Swagger documentation
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	if !utils.GetEnvBool("DISABLE_SWAGGER", false) {
+		router.GET("/swagger", func(c *gin.Context) {
+			c.Redirect(http.StatusMovedPermanently, "/swagger/index.html")
+		})
+		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
 
-	RegisterAuthRoutes(router.Group("/auth"), pool)
-	RegisterUsersRoutes(router.Group("/users"), pool)
-	RegisterGroupsRoutes(router.Group("/groups"), pool)
-	RegisterExpensesRoutes(router.Group("/expenses"), pool)
+	// Create a base route group
+	baseGroup := router.Group(basepath + "/v1")
+
+	RegisterAuthRoutes(baseGroup.Group("/auth"), pool)
+	RegisterUsersRoutes(baseGroup.Group("/users"), pool)
+	RegisterGroupsRoutes(baseGroup.Group("/groups"), pool)
+	RegisterExpensesRoutes(baseGroup.Group("/expenses"), pool)
 }
 
 // HealthCheck godoc

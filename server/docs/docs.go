@@ -22,7 +22,27 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth/guest": {
+        "/health": {
+            "get": {
+                "description": "Check if the API is running",
+                "produces": [
+                    "text/plain"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Health check endpoint",
+                "responses": {
+                    "200": {
+                        "description": "ok",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/auth/guest": {
             "post": {
                 "security": [
                     {
@@ -90,7 +110,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/login": {
+        "/v1/auth/login": {
             "post": {
                 "description": "Authenticate user and return JWT token",
                 "consumes": [
@@ -153,7 +173,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/me": {
+        "/v1/auth/me": {
             "get": {
                 "security": [
                     {
@@ -196,7 +216,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/register": {
+        "/v1/auth/register": {
             "post": {
                 "description": "Create a new user account",
                 "consumes": [
@@ -259,7 +279,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/expenses/": {
+        "/v1/expenses/": {
             "post": {
                 "security": [
                     {
@@ -328,7 +348,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/expenses/{id}": {
+        "/v1/expenses/{id}": {
             "get": {
                 "security": [
                     {
@@ -522,7 +542,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/groups/": {
+        "/v1/groups/": {
             "post": {
                 "security": [
                     {
@@ -587,7 +607,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/groups/admin": {
+        "/v1/groups/admin": {
             "get": {
                 "security": [
                     {
@@ -627,7 +647,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/groups/me": {
+        "/v1/groups/me": {
             "get": {
                 "security": [
                     {
@@ -667,7 +687,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/groups/{id}": {
+        "/v1/groups/{id}": {
             "get": {
                 "security": [
                     {
@@ -725,7 +745,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/groups/{id}/expenses": {
+        "/v1/groups/{id}/expenses": {
             "get": {
                 "security": [
                     {
@@ -786,7 +806,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/groups/{id}/members": {
+        "/v1/groups/{id}/members": {
             "post": {
                 "security": [
                     {
@@ -948,27 +968,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/health": {
-            "get": {
-                "description": "Check if the API is running",
-                "produces": [
-                    "text/plain"
-                ],
-                "tags": [
-                    "health"
-                ],
-                "summary": "Health check endpoint",
-                "responses": {
-                    "200": {
-                        "description": "ok",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/users/search/email/{email}": {
+        "/v1/users/search/email/{email}": {
             "get": {
                 "security": [
                     {
@@ -1026,7 +1026,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/{id}": {
+        "/v1/users/{id}": {
             "get": {
                 "security": [
                     {
@@ -1308,8 +1308,8 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "devserver:9999",
-	BasePath:         "/",
+	Host:             "",
+	BasePath:         "",
 	Schemes:          []string{},
 	Title:            "Qashare API",
 	Description:      "API for managing shared expenses, groups, and user authentication",

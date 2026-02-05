@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/pranaovs/qashare/db"
+	"github.com/pranaovs/qashare/docs"
 	"github.com/pranaovs/qashare/routes"
 	"github.com/pranaovs/qashare/utils"
 
@@ -27,9 +28,6 @@ import (
 
 // @license.name AGPL-3.0
 // @license.url https://www.gnu.org/licenses/agpl-3.0.en.html
-
-// @host devserver:9999
-// @BasePath /
 
 // @securityDefinitions.apikey BearerAuth
 // @in header
@@ -53,8 +51,15 @@ func run() error {
 	}
 	defer db.Close(pool)
 
+	apiBase := utils.GetEnv("API_BASE_PATH", "/api")
+
+	// Swagger url setup
+	docs.SwaggerInfo.Host = utils.GetEnv("API_HOST", "0.0.0.0") + ":" + strconv.Itoa(utils.GetEnvPort("API_PORT", 8080))
+	docs.SwaggerInfo.BasePath = apiBase
+
 	// Setup HTTP router
-	router := setupRouter(pool)
+	router := gin.Default()
+	routes.RegisterRoutes(apiBase, router, pool)
 
 	// Start server with graceful shutdown
 	return startServer(router)
@@ -101,16 +106,10 @@ func initDatabase() (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-func setupRouter(pool *pgxpool.Pool) *gin.Engine {
-	router := gin.Default()
-	routes.RegisterRoutes(router, pool)
-	return router
-}
-
 func startServer(router *gin.Engine) error {
 	port := utils.GetEnvPort("API_PORT", 8080)
 	srv := &http.Server{
-		Addr:    ":" + strconv.Itoa(port),
+		Addr:    utils.GetEnv("API_HOST", "localhost") + ":" + strconv.Itoa(port),
 		Handler: router,
 	}
 
