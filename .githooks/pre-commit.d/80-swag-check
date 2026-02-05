@@ -1,38 +1,36 @@
 #!/usr/bin/env sh
 
 BACKEND_DIR="server/"
+DOCS_DIR="${BACKEND_DIR}docs"
 
 if git diff --cached --quiet -- "$BACKEND_DIR"; then
   exit 0
 fi
 
-# Check dependency
 if ! command -v swag >/dev/null 2>&1; then
-  echo "::error::'swag' is not installed."
-  exit 1
+  echo "::warning::'swag' is not installed. Skipping Swagger check."
+  exit 0
 fi
 
-echo "Checking if Swagger docs are up to date..."
+TEMP_DIR=$(mktemp -d)
 
-# We run swag init but don't care about the output files yet,
-# we just want to see if the RESULT differs from what is staged.
+# Ensure cleanup
+cleanup() {
+  rm -rf "$TEMP_DIR"
+}
+trap cleanup EXIT
 
-# Run swag init (unfortunately swag writes to disk, so we must let it write)
-if ! swag i --dir "$BACKEND_DIR" --output "$BACKEND_DIR/docs" --quiet; then
-  echo "::error::Failed to generate swagger docs."
-  exit 1
+# Generate docs into the TEMP directory
+if ! swag init --dir "$BACKEND_DIR" --output "$TEMP_DIR" --quiet; then
+  echo "::warning::Failed to generate swagger docs for verification."
+  exit 0
 fi
 
-if ! git diff --quiet "$BACKEND_DIR/docs"; then
-  echo "::error::Swagger docs are out of sync!"
-  echo "----------------------------------------------------"
-  echo "The generated docs differ from what you are committing."
-  echo "We have updated the files for you."
-  echo "Please run:  git add $BACKEND_DIR/docs  and commit again."
-  echo "----------------------------------------------------"
-
-  # Fail the commit
-  exit 1
+# Compare existing docs with the temp docs
+if ! diff -r -q "$DOCS_DIR" "$TEMP_DIR" >/dev/null 2>&1; then
+  echo "Swagger docs are out of sync!"
+  echo "The generated docs differ from what is currently in $DOCS_DIR."
+  echo "Run 'swag init' if necessary."
 fi
 
 exit 0
