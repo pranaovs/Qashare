@@ -1,4 +1,4 @@
-name: Backend Build and Push
+name: Container Build
 on:
   push:
     branches:
