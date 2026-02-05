@@ -153,9 +153,7 @@ class ApiService {
 
         // ✅ backend returned []
         if (decoded is List) {
-          final groups = decoded
-              .map((e) => Group.fromJson(e))
-              .toList();
+          final groups = decoded.map((e) => Group.fromJson(e)).toList();
           return GroupListResult.success(groups);
         }
 
@@ -171,9 +169,7 @@ class ApiService {
         return GroupListResult.error("Server error");
       }
 
-      return GroupListResult.error(
-        "Unexpected error (${response.statusCode})",
-      );
+      return GroupListResult.error("Unexpected error (${response.statusCode})");
     } catch (e) {
       return GroupListResult.error("Unable to connect to server");
     }
@@ -444,15 +440,19 @@ class ApiService {
     }
   }
 
-  static Future<UserLookupResult> createGuestUser({required String token, required String email}) async {
+  static Future<UserLookupResult> createGuestUser({
+    required String token,
+    required String email,
+  }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/auth/guest");
     try {
-      final response = await http.post(url,
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer $token",
-          },
-          body: jsonEncode({"email":email}),
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({"email": email}),
       );
 
       if (response.statusCode == 201) {
@@ -482,5 +482,4 @@ class ApiService {
       return UserLookupResult.error("NETWORK_ERROR");
     }
   }
-  
 }
