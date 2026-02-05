@@ -5,7 +5,6 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/models"
 	"github.com/pranaovs/qashare/utils"
