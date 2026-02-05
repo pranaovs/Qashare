@@ -155,9 +155,12 @@ The Swagger UI provides:
 - [x] User authentication and authorization
 - [x] Expense tracking and management
 - [ ] Proper logout flow
-- [ ] Create frontend (not the vibe-coded slop)
-- [ ] Payment settlement
-- [ ] Bill splitting algorithms
+- [x] Create frontend (not the vibe-coded slop)
+- [x] Payment settlement
+    - [ ] Frontend integration
+    - [ ] Settlements in db
+    - [ ] Settlement verification
+- [x] Bill splitting algorithms
 - [ ] Group management features
 - [ ] User spending reports
 - [x] Guest Users
