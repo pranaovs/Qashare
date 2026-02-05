@@ -23,20 +23,20 @@
 
 <!--toc:start-->
 - [About The Project](#about-the-project)
-  - [Inspiration](#inspiration)
   - [Built Using](#built-using)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
     - [Server (Backend)](#server-backend)
     - [Client (Flutter App)](#client-flutter-app)
   - [Installation](#installation)
-    - [Installing the client](#installing-the-client)
     - [Running the Server](#running-the-server)
+    - [Running the Server with Docker](#running-the-server-with-docker)
+    - [Installing the client](#installing-the-client)
 - [API Documentation](#api-documentation)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
-- [Contributors](#contributors)
+- [Maintainers](#maintainers)
 - [Contact](#contact)
 - [Acknowledgments](#acknowledgments)
 <!--toc:end-->
@@ -61,10 +61,14 @@ To set up the project locally, follow these instructions for both the client and
 
 #### Server (Backend)
 
+[![Container Build](https://github.com/pranaovs/Qashare/actions/workflows/container-release.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/container-release.yml)
+
 - Go >= 1.25.3 (test for lower)
 - PostgreSQL database
 
 #### Client (Flutter App)
+
+[![Flutter Build](https://github.com/pranaovs/Qashare/actions/workflows/flutter-build.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/flutter-build.yml)
 
 - Flutter SDK >= 3.9.2 (test for lower)
 - Dart SDK (included with Flutter)
