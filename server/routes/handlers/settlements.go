@@ -19,13 +19,13 @@ import (
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param groupID path string true "Group ID"
+// @Param id path string true "Group ID"
 // @Success 200 {array} models.Settlement "List of non-zero settlement balances"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the specified group"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /v1/groups/{groupID}/settlements [get]
+// @Router /v1/groups/{id}/settlements [get]
 func (h *GroupsHandler) GetSettlements(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	groupID := middleware.MustGetGroupID(c)
