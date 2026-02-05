@@ -6,14 +6,12 @@ on:
       - "client/**"
       - ".github/workflows/flutter-*.yml"
   push:
-    branches-ignore:
-      - main
     paths:
       - "client/**"
       - ".github/workflows/flutter-*.yml"
 
 jobs:
-  test:
+  flutter-test:
     runs-on: ubuntu-latest
 
     steps:
