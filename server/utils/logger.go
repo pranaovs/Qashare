@@ -4,18 +4,19 @@ import (
 	"context"
 	"log/slog"
 	"os"
+
+	"github.com/pranaovs/qashare/config"
 )
 
 var logger *slog.Logger
 
-func init() {
-	// Initialize structured logger with JSON output
+// InitLogger initializes the structured logger with the provided config
+func InitLogger(cfg *config.Config) {
 	opts := &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}
 
-	// Check environment for debug mode
-	if GetEnvBool("DEBUG", false) {
+	if cfg.App.Debug {
 		opts.Level = slog.LevelDebug
 	}
 

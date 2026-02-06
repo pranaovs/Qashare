@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/pranaovs/qashare/apperrors"
+	"github.com/pranaovs/qashare/config"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/models"
 	"github.com/pranaovs/qashare/routes/apierrors"
@@ -15,11 +16,12 @@ import (
 )
 
 type AuthHandler struct {
-	pool *pgxpool.Pool
+	pool      *pgxpool.Pool
+	jwtConfig config.JWTConfig
 }
 
-func NewAuthHandler(pool *pgxpool.Pool) *AuthHandler {
-	return &AuthHandler{pool: pool}
+func NewAuthHandler(pool *pgxpool.Pool, jwtConfig config.JWTConfig) *AuthHandler {
+	return &AuthHandler{pool: pool, jwtConfig: jwtConfig}
 }
 
 // Register godoc
@@ -132,7 +134,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := utils.GenerateJWT(userID)
+	token, err := utils.GenerateJWT(userID, h.jwtConfig)
 	if err != nil {
 		utils.SendError(c, err) // Send this error directly (Sends internal server error and logs the error)
 		return

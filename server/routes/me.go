@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"github.com/pranaovs/qashare/config"
 	"github.com/pranaovs/qashare/routes/handlers"
 	"github.com/pranaovs/qashare/routes/middleware"
 
@@ -8,10 +9,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func RegisterMeRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
+func RegisterMeRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, jwtConfig config.JWTConfig) {
 	handler := handlers.NewMeHandler(pool)
 
-	router.GET("/", middleware.RequireAuth(), handler.Me)
-	router.GET("/groups", middleware.RequireAuth(), handler.ListGroups)
-	router.GET("/admin", middleware.RequireAuth(), handler.ListAdmin)
+	router.GET("/", middleware.RequireAuth(jwtConfig), handler.Me)
+	router.GET("/groups", middleware.RequireAuth(jwtConfig), handler.ListGroups)
+	router.GET("/admin", middleware.RequireAuth(jwtConfig), handler.ListAdmin)
 }

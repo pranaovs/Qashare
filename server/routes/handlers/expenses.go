@@ -3,9 +3,9 @@ package handlers
 import (
 	"math"
 	"net/http"
-	"strconv"
 
 	"github.com/pranaovs/qashare/apperrors"
+	"github.com/pranaovs/qashare/config"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/models"
 	"github.com/pranaovs/qashare/routes/apierrors"
@@ -17,11 +17,12 @@ import (
 )
 
 type ExpensesHandler struct {
-	pool *pgxpool.Pool
+	pool      *pgxpool.Pool
+	appConfig config.AppConfig
 }
 
-func NewExpensesHandler(pool *pgxpool.Pool) *ExpensesHandler {
-	return &ExpensesHandler{pool: pool}
+func NewExpensesHandler(pool *pgxpool.Pool, appConfig config.AppConfig) *ExpensesHandler {
+	return &ExpensesHandler{pool: pool, appConfig: appConfig}
 }
 
 // Create godoc
@@ -89,15 +90,11 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	}
 
 	if !expense.IsIncompleteAmount && !expense.IsIncompleteSplit {
-		tolerance, err := strconv.ParseFloat(utils.GetEnv("SPLIT_TOLERANCE", "0.01"), 64)
-		if err != nil {
-			tolerance = 0.01
-		}
-		if math.Abs(paidTotal-expense.Amount) > tolerance {
+		if math.Abs(paidTotal-expense.Amount) > h.appConfig.SplitTolerance {
 			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("paid split total does not match expense amount"))
 			return
 		}
-		if math.Abs(owedTotal-expense.Amount) > tolerance {
+		if math.Abs(owedTotal-expense.Amount) > h.appConfig.SplitTolerance {
 			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("owed split total does not match expense amount"))
 			return
 		}
@@ -189,15 +186,11 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 	}
 
 	if !payload.IsIncompleteAmount && !payload.IsIncompleteSplit {
-		tolerance, err := strconv.ParseFloat(utils.GetEnv("SPLIT_TOLERANCE", "0.01"), 64)
-		if err != nil {
-			tolerance = 0.01
-		}
-		if math.Abs(paidTotal-payload.Amount) > tolerance {
+		if math.Abs(paidTotal-payload.Amount) > h.appConfig.SplitTolerance {
 			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("paid split total does not match expense amount"))
 			return
 		}
-		if math.Abs(owedTotal-payload.Amount) > tolerance {
+		if math.Abs(owedTotal-payload.Amount) > h.appConfig.SplitTolerance {
 			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("owed split total does not match expense amount"))
 			return
 		}

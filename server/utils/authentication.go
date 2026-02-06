@@ -9,12 +9,9 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/pranaovs/qashare/config"
 	"golang.org/x/crypto/bcrypt"
 )
-
-func init() {
-	Loadenv()
-}
 
 // Passwords
 
@@ -47,23 +44,17 @@ func randB64() string {
 	return base64.StdEncoding.EncodeToString(b)
 }
 
-var jwtSecret = []byte(GetEnv("JWT_SECRET", func() string {
-	log.Printf("[WARNING] JWT_SECRET not provided, using random value. Tokens will not be remembered across restarts.")
-	return randB64()
-}()))
-
-func GenerateJWT(userID string) (string, error) {
-	expiryHours := GetEnvDuration("JWT_EXPIRY", 60*60*24) // Default to 24 hours
+func GenerateJWT(userID string, jwtConfig config.JWTConfig) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": userID,
-		"exp":     time.Now().Add(expiryHours).Unix(),
+		"exp":     time.Now().Add(jwtConfig.Expiry).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
+	return token.SignedString([]byte(jwtConfig.Secret))
 }
 
-func ExtractClaims(authHeader string) (jwt.MapClaims, error) {
+func ExtractClaims(authHeader string, jwtConfig config.JWTConfig) (jwt.MapClaims, error) {
 	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
 		return nil, ErrInvalidToken.Msg("authorization header missing or malformed")
 	}
@@ -74,7 +65,7 @@ func ExtractClaims(authHeader string) (jwt.MapClaims, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method")
 		}
-		return jwtSecret, nil
+		return []byte(jwtConfig.Secret), nil
 	})
 	if err != nil {
 		return nil, ErrInvalidToken.Msg("failed to parse token")
@@ -90,8 +81,8 @@ func ExtractClaims(authHeader string) (jwt.MapClaims, error) {
 	return claims, nil
 }
 
-func ExtractUserID(authHeader string) (string, error) {
-	claims, err := ExtractClaims(authHeader)
+func ExtractUserID(authHeader string, jwtConfig config.JWTConfig) (string, error) {
+	claims, err := ExtractClaims(authHeader, jwtConfig)
 	if err != nil {
 		return "", err
 	}

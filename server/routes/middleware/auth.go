@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"github.com/pranaovs/qashare/apperrors"
+	"github.com/pranaovs/qashare/config"
 	"github.com/pranaovs/qashare/routes/apierrors"
 	"github.com/pranaovs/qashare/utils"
 
@@ -10,9 +11,9 @@ import (
 
 const UserIDKey = "userID"
 
-func RequireAuth() gin.HandlerFunc {
+func RequireAuth(jwtConfig config.JWTConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"))
+		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"), jwtConfig)
 		if err != nil {
 			utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 				utils.ErrInvalidToken: apierrors.ErrInvalidToken,
