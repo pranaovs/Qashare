@@ -356,3 +356,102 @@ func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID string) ([]mod
 	}
 	return expenses, nil
 }
+
+// GetUserSpending calculates a user's spending summary in a specific group.
+// It returns the total amount paid by the user, total amount owed, net spending,
+// and a list of all expenses where the user either paid or owes money.
+//
+// Returns UserSpending struct or an error if validation fails or operation fails.
+func GetUserSpending(ctx context.Context, pool *pgxpool.Pool, userID, groupID string) (*models.UserSpendings, error) {
+	// Validate input
+	if userID == "" {
+		return nil, ErrInvalidInput.Msg("user id missing")
+	}
+	if groupID == "" {
+		return nil, ErrInvalidInput.Msg("group id missing")
+	}
+
+	var spending models.UserSpendings
+
+	// Calculate spending metrics:
+	// - TotalPaid: Amount user paid from pocket (is_paid=true)
+	// - TotalOwed: Net balance (positive = others owe user, negative = user owes others)
+	//   Formula: What user paid for others - What user owes to others
+	// - NetSpending: Total value consumed by user (sum of all splits)
+	sumQuery := `
+		SELECT
+			COALESCE(SUM(CASE WHEN es.is_paid = true THEN es.amount ELSE 0 END), 0) as total_paid,
+			COALESCE(SUM(es.amount), 0) as net_spending
+		FROM expense_splits es
+		JOIN expenses e ON e.expense_id = es.expense_id
+		WHERE e.group_id = $1 AND es.user_id = $2`
+
+	err := pool.QueryRow(ctx, sumQuery, groupID, userID).Scan(&spending.TotalPaid, &spending.NetSpending)
+	if err != nil {
+		return nil, err
+	}
+
+	// Calculate TotalOwed as: TotalPaid - NetSpending
+	// If user paid $100 but only consumed $80, TotalOwed = +$20 (others owe user)
+	// If user paid $100 but consumed $120, TotalOwed = -$20 (user owes others)
+	spending.TotalOwed = spending.TotalPaid - spending.NetSpending
+
+	// Get all expenses where user is involved (either paid or owes)
+	// Return both total expense amount and user's portion
+	expensesQuery := `
+		SELECT DISTINCT ON (e.expense_id)
+			e.expense_id,
+			e.group_id,
+			e.added_by,
+			e.title,
+			e.description,
+			extract(epoch from e.created_at)::bigint as created_at,
+			e.amount,
+			SUM(es.amount) as user_amount,
+			e.is_incomplete_amount,
+			e.is_incomplete_split,
+			e.latitude,
+			e.longitude
+		FROM expenses e
+		JOIN expense_splits es ON e.expense_id = es.expense_id
+		WHERE e.group_id = $1 AND es.user_id = $2
+		GROUP BY e.expense_id, e.group_id, e.added_by, e.title, e.description, 
+		         e.created_at, e.amount, e.is_incomplete_amount, e.is_incomplete_split, 
+		         e.latitude, e.longitude
+		ORDER BY e.expense_id, e.created_at DESC`
+
+	rows, err := pool.Query(ctx, expensesQuery, groupID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	spending.Expenses = []models.UserSpendingsExpense{}
+	for rows.Next() {
+		var expense models.UserSpendingsExpense
+		err = rows.Scan(
+			&expense.ExpenseID,
+			&expense.GroupID,
+			&expense.AddedBy,
+			&expense.Title,
+			&expense.Description,
+			&expense.CreatedAt,
+			&expense.Amount,
+			&expense.UserAmount,
+			&expense.IsIncompleteAmount,
+			&expense.IsIncompleteSplit,
+			&expense.Latitude,
+			&expense.Longitude,
+		)
+		if err != nil {
+			return nil, err
+		}
+		spending.Expenses = append(spending.Expenses, expense)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return &spending, nil
+}

@@ -142,6 +142,50 @@ definitions:
       user_id:
         type: string
     type: object
+  models.UserSpendings:
+    properties:
+      expenses:
+        items:
+          $ref: '#/definitions/models.UserSpendingsExpense'
+        type: array
+      net_spending:
+        type: number
+      total_owed:
+        type: number
+      total_paid:
+        type: number
+    type: object
+  models.UserSpendingsExpense:
+    properties:
+      added_by:
+        type: string
+      amount:
+        type: number
+      created_at:
+        type: integer
+      description:
+        description: pointer because nullable in db
+        type: string
+      expense_id:
+        type: string
+      group_id:
+        type: string
+      is_incomplete_amount:
+        type: boolean
+      is_incomplete_split:
+        type: boolean
+      latitude:
+        description: pointer because nullable in db
+        type: number
+      longitude:
+        description: pointer because nullable in db
+        type: number
+      title:
+        type: string
+      user_amount:
+        description: Amount user paid/owes for this expense
+        type: number
+    type: object
 info:
   contact:
     email: qashare.contact@pranaovs.me
@@ -797,6 +841,46 @@ paths:
       summary: Get payment settlements for a group
       tags:
       - settlements
+  /v1/groups/{id}/spendings:
+    get:
+      description: Get spending summary for the authenticated user in a specific group,
+        including total paid, total owed, net spending, and list of expenses
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns user spending summary with expenses list
+          schema:
+            $ref: '#/definitions/models.UserSpendings'
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'USERS_NOT_RELATED: The authenticated user is not a member
+            of the group'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'GROUP_NOT_FOUND: The specified group does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Get user spending in group
+      tags:
+      - groups
   /v1/groups/admin:
     get:
       deprecated: true
