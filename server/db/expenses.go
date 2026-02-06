@@ -358,8 +358,9 @@ func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID string) ([]mod
 }
 
 // GetUserSpending calculates a user's spending summary in a specific group.
-// It returns the total amount paid by the user, total amount owed, net spending,
-// and a list of all expenses where the user either paid or owes money.
+// It returns the total gross amount paid out by the user, total amount owed to (or by) the user, net spending (consumption) by the user,
+// and a list of all expenses where the user either paid or owes money (consumption).
+// This provides a comprehensive view of the user's financial interactions within the group.
 //
 // Returns a *models.UserSpendings or an error if validation fails or the operation fails.
 func GetUserSpending(ctx context.Context, pool *pgxpool.Pool, userID, groupID string) (*models.UserSpendings, error) {
@@ -376,10 +377,10 @@ func GetUserSpending(ctx context.Context, pool *pgxpool.Pool, userID, groupID st
 	// Calculate spending metrics:
 	//
 	//  TotalPaid:
-	//    Sum of all expense splits for the user that are marked as paid (is_paid = true)
+	//    Sum of all expense splits for the user that are marked as paid (is_paid = true) (gross amount user paid out)
 	//
 	//  NetSpending:
-	//    Sum of all expense splits for the user that are marked as owed (is_paid = false)
+	//    Sum of all expense splits for the user that are marked as owed (is_paid = false) (net consumption)
 	//
 	// NOTE: This represents settlement status and assigned consumption,
 	// NOT who originally paid for the expense.
