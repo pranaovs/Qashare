@@ -18,7 +18,10 @@ const (
 func Load() (*Config, error) {
 	// Load .env file
 	envPath := getEnv("ENV_PATH", ".env")
-	_ = godotenv.Load(envPath)
+	err := godotenv.Load(envPath)
+	if err != nil {
+		log.Printf("[WARNING] Could not load .env file at %s: %v", envPath, err)
+	}
 
 	cfg := &Config{}
 
