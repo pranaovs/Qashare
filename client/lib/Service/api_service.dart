@@ -444,7 +444,7 @@ class ApiService {
     required String token,
     required String email,
   }) async {
-    final url = Uri.parse("${ApiConfig.baseUrl}/auth/guest");
+    final url = Uri.parse("${ApiConfig.baseUrl}/users/guest");
     try {
       final response = await http.post(
         url,

@@ -60,6 +60,7 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "Register a guest user",
+                "deprecated": true,
                 "parameters": [
                     {
                         "description": "Guest user email",
@@ -1145,6 +1146,74 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error - unexpected database error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/users/guest": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new guest user by email (requires authentication). Used to add non-registered users to groups. Name will be set to [name]@domain.tld",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Register a guest user",
+                "parameters": [
+                    {
+                        "description": "Guest user email",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "email": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Guest user successfully created",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    },
+                    "400": {
+                        "description": "BAD_REQUEST: Invalid request body format or missing required fields | BAD_EMAIL: Invalid email format",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "409": {
+                        "description": "EMAIL_EXISTS: An account with this email already exists",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }

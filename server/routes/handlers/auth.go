@@ -179,6 +179,7 @@ func (h *AuthHandler) Me(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
+// @Deprecated
 // @Param request body object{email=string} true "Guest user email"
 // @Success 201 {object} models.User "Guest user successfully created"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format or missing required fields | BAD_EMAIL: Invalid email format"

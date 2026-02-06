@@ -170,6 +170,7 @@ paths:
     post:
       consumes:
       - application/json
+      deprecated: true
       description: Create a new guest user by email (requires authentication). Used
         to add non-registered users to groups. Name will be set to [name]@domain.tld
       parameters:
@@ -973,6 +974,52 @@ paths:
       security:
       - BearerAuth: []
       summary: Get user by ID
+      tags:
+      - users
+  /v1/users/guest:
+    post:
+      consumes:
+      - application/json
+      description: Create a new guest user by email (requires authentication). Used
+        to add non-registered users to groups. Name will be set to [name]@domain.tld
+      parameters:
+      - description: Guest user email
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            email:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Guest user successfully created
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: 'BAD_REQUEST: Invalid request body format or missing required
+            fields | BAD_EMAIL: Invalid email format'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "409":
+          description: 'EMAIL_EXISTS: An account with this email already exists'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Register a guest user
       tags:
       - users
   /v1/users/search/email/{email}:

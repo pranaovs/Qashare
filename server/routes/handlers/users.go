@@ -97,3 +97,48 @@ func (h *UsersHandler) SearchByEmail(c *gin.Context) {
 
 	utils.SendJSON(c, http.StatusOK, user)
 }
+
+// RegisterGuest godoc
+// @Summary Register a guest user
+// @Description Create a new guest user by email (requires authentication). Used to add non-registered users to groups. Name will be set to [name]@domain.tld
+// @Tags users
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body object{email=string} true "Guest user email"
+// @Success 201 {object} models.User "Guest user successfully created"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format or missing required fields | BAD_EMAIL: Invalid email format"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 409 {object} apierrors.AppError "EMAIL_EXISTS: An account with this email already exists"
+// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
+// @Router /v1/users/guest [post]
+func (h *UsersHandler) RegisterGuest(c *gin.Context) {
+	userID := middleware.MustGetUserID(c)
+
+	var request struct {
+		Email string `json:"email" binding:"required,email"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
+
+	email, err := utils.ValidateEmail(request.Email)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			utils.ErrInvalidEmail: apierrors.ErrInvalidEmail,
+		}))
+		return
+	}
+
+	user, err := db.CreateGuest(c.Request.Context(), h.pool, email, userID)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrDuplicateKey: apierrors.ErrEmailAlreadyExists,
+		}))
+		return
+	}
+
+	utils.SendJSON(c, http.StatusCreated, user)
+}
