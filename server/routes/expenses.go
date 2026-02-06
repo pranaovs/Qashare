@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"github.com/pranaovs/qashare/config"
 	"github.com/pranaovs/qashare/routes/handlers"
 	"github.com/pranaovs/qashare/routes/middleware"
 
@@ -8,11 +9,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool) {
-	handler := handlers.NewExpensesHandler(pool)
+func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, jwtConfig config.JWTConfig, appConfig config.AppConfig) {
+	handler := handlers.NewExpensesHandler(pool, appConfig)
 
-	router.POST("/", middleware.RequireAuth(), handler.Create)
-	router.GET("/:id", middleware.RequireAuth(), middleware.VerifyExpenseAccess(pool), handler.GetExpense)
-	router.PUT("/:id", middleware.RequireAuth(), middleware.VerifyExpenseAdmin(pool), handler.Update)
-	router.DELETE("/:id", middleware.RequireAuth(), middleware.VerifyExpenseAdmin(pool), handler.Delete)
+	router.POST("/", middleware.RequireAuth(jwtConfig), handler.Create)
+	router.GET("/:id", middleware.RequireAuth(jwtConfig), middleware.VerifyExpenseAccess(pool), handler.GetExpense)
+	router.PUT("/:id", middleware.RequireAuth(jwtConfig), middleware.VerifyExpenseAdmin(pool), handler.Update)
+	router.DELETE("/:id", middleware.RequireAuth(jwtConfig), middleware.VerifyExpenseAdmin(pool), handler.Delete)
 }

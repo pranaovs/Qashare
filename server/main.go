@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/pranaovs/qashare/config"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/docs"
 	"github.com/pranaovs/qashare/routes"
@@ -42,46 +43,45 @@ func main() {
 }
 
 func run() error {
-	// Load environment variables
-	utils.Loadenv()
+	// Load configuration
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
+
+	// Initialize logger
+	utils.InitLogger(cfg)
 
 	// Initialize database with enhanced configuration
-	pool, err := initDatabase()
+	pool, err := initDatabase(cfg.Database)
 	if err != nil {
 		return err
 	}
 	defer db.Close(pool)
 
-	apiBase := utils.GetEnv("API_BASE_PATH", "/api")
-
 	// Swagger url setup
-	rawURL := utils.GetEnv("API_PUBLIC_URL", "http://localhost:8080")
-
-	u, err := url.Parse(rawURL)
+	u, err := url.Parse(cfg.API.PublicURL)
 	if err != nil {
 		log.Fatalf("Invalid API_PUBLIC_URL: %v", err)
 	}
 
 	docs.SwaggerInfo.Host = u.Host
-	docs.SwaggerInfo.BasePath = apiBase
+	docs.SwaggerInfo.BasePath = cfg.API.BasePath
 	docs.SwaggerInfo.Schemes = []string{u.Scheme}
 
 	// Setup HTTP router
 	router := gin.Default()
-	routes.RegisterRoutes(apiBase, router, pool)
+	routes.RegisterRoutes(cfg.API.BasePath, router, pool, cfg.JWT, cfg.App)
 
 	// Start server with graceful shutdown
-	return startServer(router)
+	return startServer(router, cfg.API)
 }
 
-func initDatabase() (*pgxpool.Pool, error) {
+func initDatabase(dbConfig config.DatabaseConfig) (*pgxpool.Pool, error) {
 	log.Println("[INIT] Initializing database connection...")
 
-	// Get database configuration from environment
-	dbURL := utils.GetEnv("DB_URL", "postgres://postgres:postgres@localhost:5432/qashare")
-
 	// Connects to the PostgreSQL database using the provided URL. The database must already exist.
-	pool, err := db.Connect(dbURL)
+	pool, err := db.Connect(dbConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -97,15 +97,14 @@ func initDatabase() (*pgxpool.Pool, error) {
 	log.Println("[INIT] Database health check passed")
 
 	// Run migrations
-	migrationsDir := utils.GetEnv("DB_MIGRATIONS_DIR", "migrations")
-	if err := db.Migrate(pool, migrationsDir); err != nil {
+	if err := db.Migrate(pool, dbConfig.MigrationsDir); err != nil {
 		db.Close(pool)
 		return nil, err
 	}
 
 	// Verify migration integrity (optional, can be disabled via env var)
-	if utils.GetEnvBool("DB_VERIFY_MIGRATIONS", true) {
-		if err := db.VerifyMigrationIntegrity(ctx, pool, migrationsDir); err != nil {
+	if dbConfig.VerifyMigrations {
+		if err := db.VerifyMigrationIntegrity(ctx, pool, dbConfig.MigrationsDir); err != nil {
 			log.Printf("[INIT] Migration integrity check failed: %v", err)
 			// Non-fatal warning - allow startup but log the issue
 		}
@@ -115,10 +114,9 @@ func initDatabase() (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-func startServer(router *gin.Engine) error {
-	port := utils.GetEnvPort("API_BIND_PORT", 8080)
+func startServer(router *gin.Engine, apiConfig config.APIConfig) error {
 	srv := &http.Server{
-		Addr:    utils.GetEnv("API_BIND_ADDR", "0.0.0.0") + ":" + strconv.Itoa(port),
+		Addr:    apiConfig.BindAddr + ":" + strconv.Itoa(apiConfig.BindPort),
 		Handler: router,
 	}
 
@@ -126,7 +124,7 @@ func startServer(router *gin.Engine) error {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		log.Printf("Server starting on port %d", port)
+		log.Printf("Server starting on port %d", apiConfig.BindPort)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed to start: %v", err)
 		}

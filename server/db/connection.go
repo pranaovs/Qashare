@@ -10,46 +10,15 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/pranaovs/qashare/utils"
+	"github.com/pranaovs/qashare/config"
 )
 
-// DBConfig holds database configuration parameters
-type DBConfig struct {
-	URL               string
-	MaxConnections    int32
-	MinConnections    int32
-	MaxConnLifetime   time.Duration
-	MaxConnIdleTime   time.Duration
-	HealthCheckPeriod time.Duration
-	ConnectTimeout    time.Duration
-	RetryAttempts     int
-	RetryInterval     time.Duration
-}
-
-// Connect establishes a connection to the PostgreSQL database using the provided URL.
+// Connect establishes a connection to the PostgreSQL database using the provided configuration.
 // It will attempt to create the database if it doesn't exist.
 // Returns a connection pool or an error if connection fails.
-func Connect(dbURL string) (*pgxpool.Pool, error) {
-	config := DBConfig{
-		URL:               dbURL,
-		MaxConnections:    int32(utils.GetEnvInt("DB_MAX_CONNECTIONS", 10)),
-		MinConnections:    int32(utils.GetEnvInt("DB_MIN_CONNECTIONS", 2)),
-		MaxConnLifetime:   utils.GetEnvDuration("DB_MAX_CONN_LIFETIME", 60*60),  // 1 hour
-		MaxConnIdleTime:   utils.GetEnvDuration("DB_MAX_CONN_IDLE_TIME", 30*60), // 30 minutes
-		HealthCheckPeriod: utils.GetEnvDuration("DB_HEALTH_CHECK_PERIOD", 60),   // 1 minute
-		ConnectTimeout:    utils.GetEnvDuration("DB_CONNECT_TIMEOUT", 10),       // 10 seconds
-		RetryAttempts:     utils.GetEnvInt("DB_RETRY_ATTEMPTS", 5),              // 5 attempts
-		RetryInterval:     utils.GetEnvDuration("DB_RETRY_INTERVAL", 5),         // 5 seconds
-	}
-	return ConnectWithConfig(config)
-}
-
-// ConnectWithConfig establishes a connection to the PostgreSQL database using the provided configuration.
-// It will attempt to create the database if it doesn't exist.
-// Returns a connection pool or an error if connection fails.
-func ConnectWithConfig(config DBConfig) (*pgxpool.Pool, error) {
+func Connect(dbConfig config.DatabaseConfig) (*pgxpool.Pool, error) {
 	// Parse the database URL to extract database name
-	parsedURL, err := url.Parse(config.URL)
+	parsedURL, err := url.Parse(dbConfig.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse database URL: %w", err)
 	}
@@ -61,19 +30,19 @@ func ConnectWithConfig(config DBConfig) (*pgxpool.Pool, error) {
 	var lastErr error
 
 	// Retry connection attempts
-	for attempt := 1; attempt <= config.RetryAttempts; attempt++ {
-		ctx, cancel := context.WithTimeout(context.Background(), config.ConnectTimeout)
+	for attempt := 1; attempt <= dbConfig.RetryAttempts; attempt++ {
+		ctx, cancel := context.WithTimeout(context.Background(), dbConfig.ConnectTimeout)
 
-		log.Printf("[DB] Connection attempt %d/%d", attempt, config.RetryAttempts)
+		log.Printf("[DB] Connection attempt %d/%d", attempt, dbConfig.RetryAttempts)
 
-		pool, err = createPool(ctx, config)
+		pool, err = createPool(ctx, dbConfig)
 		if err != nil {
 			lastErr = fmt.Errorf("failed to create connection pool: %w", err)
 			cancel()
 
-			if attempt < config.RetryAttempts {
-				log.Printf("[DB] Connection attempt %d failed: %v, retrying in %v", attempt, err, config.RetryInterval)
-				time.Sleep(config.RetryInterval)
+			if attempt < dbConfig.RetryAttempts {
+				log.Printf("[DB] Connection attempt %d failed: %v, retrying in %v", attempt, err, dbConfig.RetryInterval)
+				time.Sleep(dbConfig.RetryInterval)
 				continue
 			}
 			break
@@ -85,9 +54,9 @@ func ConnectWithConfig(config DBConfig) (*pgxpool.Pool, error) {
 			lastErr = err
 			cancel()
 
-			if attempt < config.RetryAttempts {
-				log.Printf("[DB] Database verification failed on attempt %d: %v, retrying in %v", attempt, err, config.RetryInterval)
-				time.Sleep(config.RetryInterval)
+			if attempt < dbConfig.RetryAttempts {
+				log.Printf("[DB] Database verification failed on attempt %d: %v, retrying in %v", attempt, err, dbConfig.RetryInterval)
+				time.Sleep(dbConfig.RetryInterval)
 				continue
 			}
 			break
@@ -98,7 +67,7 @@ func ConnectWithConfig(config DBConfig) (*pgxpool.Pool, error) {
 		return pool, nil
 	}
 
-	return nil, fmt.Errorf("failed to connect after %d attempts, last error: %w", config.RetryAttempts, lastErr)
+	return nil, fmt.Errorf("failed to connect after %d attempts, last error: %w", dbConfig.RetryAttempts, lastErr)
 }
 
 func VerifyDatabase(ctx context.Context, pool *pgxpool.Pool, dbName string) error {
@@ -119,18 +88,18 @@ func VerifyDatabase(ctx context.Context, pool *pgxpool.Pool, dbName string) erro
 }
 
 // createPool creates a new connection pool with the provided configuration
-func createPool(ctx context.Context, config DBConfig) (*pgxpool.Pool, error) {
-	poolConfig, err := pgxpool.ParseConfig(config.URL)
+func createPool(ctx context.Context, dbConfig config.DatabaseConfig) (*pgxpool.Pool, error) {
+	poolConfig, err := pgxpool.ParseConfig(dbConfig.URL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse pool config: %w", err)
 	}
 
 	// Apply configuration
-	poolConfig.MaxConns = config.MaxConnections
-	poolConfig.MinConns = config.MinConnections
-	poolConfig.MaxConnLifetime = config.MaxConnLifetime
-	poolConfig.MaxConnIdleTime = config.MaxConnIdleTime
-	poolConfig.HealthCheckPeriod = config.HealthCheckPeriod
+	poolConfig.MaxConns = int32(dbConfig.MaxConnections)
+	poolConfig.MinConns = int32(dbConfig.MinConnections)
+	poolConfig.MaxConnLifetime = dbConfig.MaxConnLifetime
+	poolConfig.MaxConnIdleTime = dbConfig.MaxConnIdleTime
+	poolConfig.HealthCheckPeriod = dbConfig.HealthCheckPeriod
 
 	return pgxpool.NewWithConfig(ctx, poolConfig)
 }

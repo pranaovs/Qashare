@@ -3,11 +3,9 @@ package db
 import (
 	"context"
 	"sort"
-	"strconv"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/models"
-	"github.com/pranaovs/qashare/utils"
 )
 
 // GetSettlements calculates the net balance between the current user and all other group members.
@@ -21,7 +19,7 @@ import (
 //   - Negative: Current user pays to UserID
 //
 // Uses greedy algorithm to minimize number of transactions while settling all debts.
-func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID string) ([]models.Settlement, error) {
+func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID string, splitTolerance float64) ([]models.Settlement, error) {
 	// Validate input
 	if groupID == "" {
 		return nil, ErrInvalidInput.Msg("group id missing")
@@ -86,15 +84,15 @@ func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID str
 		return nil, err
 	}
 
-	// Optimize settlements using greedy algorithm
-	optimized := optimizeSettlements(balances, userID)
+	// Step 3: Optimize settlements to minimize transactions
+	optimized := optimizeSettlements(balances, userID, splitTolerance)
 
 	return optimized, nil
 }
 
 // optimizeSettlements uses greedy algorithm to minimize transactions
 // Returns settlements for the given user
-func optimizeSettlements(balances map[string]float64, userID string) []models.Settlement {
+func optimizeSettlements(balances map[string]float64, userID string, tolerance float64) []models.Settlement {
 	if len(balances) == 0 {
 		return []models.Settlement{}
 	}
@@ -107,11 +105,6 @@ func optimizeSettlements(balances map[string]float64, userID string) []models.Se
 	var debtors []struct {
 		userID string
 		amount float64
-	}
-
-	tolerance, err := strconv.ParseFloat(utils.GetEnv("SPLIT_TOLERANCE", "0.01"), 64)
-	if err != nil {
-		tolerance = 0.01
 	}
 
 	for uid, balance := range balances {

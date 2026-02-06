@@ -29,7 +29,7 @@ func (h *GroupsHandler) GetSettlements(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 
 	// Get settlements
-	settlements, err := db.GetSettlements(c.Request.Context(), h.pool, userID, groupID)
+	settlements, err := db.GetSettlements(c.Request.Context(), h.pool, userID, groupID, h.appConfig.SplitTolerance)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrInvalidInput: apierrors.ErrBadRequest,

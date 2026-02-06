@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	"github.com/pranaovs/qashare/apperrors"
+	"github.com/pranaovs/qashare/config"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/models"
 	"github.com/pranaovs/qashare/routes/apierrors"
@@ -16,11 +17,12 @@ import (
 )
 
 type GroupsHandler struct {
-	pool *pgxpool.Pool
+	pool      *pgxpool.Pool
+	appConfig config.AppConfig
 }
 
-func NewGroupsHandler(pool *pgxpool.Pool) *GroupsHandler {
-	return &GroupsHandler{pool: pool}
+func NewGroupsHandler(pool *pgxpool.Pool, appConfig config.AppConfig) *GroupsHandler {
+	return &GroupsHandler{pool: pool, appConfig: appConfig}
 }
 
 // Create godoc
