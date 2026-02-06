@@ -8,7 +8,7 @@ import (
 	"github.com/pranaovs/qashare/config"
 )
 
-var logger *slog.Logger
+var logger = slog.Default()
 
 // InitLogger initializes the structured logger with the provided config
 func InitLogger(cfg *config.Config) {
