@@ -14,4 +14,5 @@ func RegisterUsersRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, jwtConfig 
 
 	router.GET("/:id", middleware.RequireAuth(jwtConfig), handler.GetUser)
 	router.GET("/search/email/:email", middleware.RequireAuth(jwtConfig), handler.SearchByEmail)
+	router.POST("/guest", middleware.RequireAuth(jwtConfig), handler.RegisterGuest)
 }
