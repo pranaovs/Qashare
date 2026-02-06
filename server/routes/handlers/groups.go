@@ -286,9 +286,7 @@ func (h *GroupsHandler) ListGroupExpenses(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 	expenses, err := db.GetExpenses(c.Request.Context(), h.pool, groupID)
 	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrNotFound: apierrors.ErrGroupNotFound,
-		}))
+		utils.SendError(c, err) // Shouln't send any error as everything is validated in the middleware
 		return
 	}
 	utils.SendData(c, expenses)
@@ -313,9 +311,7 @@ func (h *GroupsHandler) GetSpendings(c *gin.Context) {
 
 	spending, err := db.GetUserSpending(c.Request.Context(), h.pool, userID, groupID)
 	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrNotFound: apierrors.ErrGroupNotFound,
-		}))
+		utils.SendError(c, err) // Shouln't send any error as everything is validated in the middleware
 		return
 	}
 
