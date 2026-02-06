@@ -374,19 +374,26 @@ func GetUserSpending(ctx context.Context, pool *pgxpool.Pool, userID, groupID st
 	var spending models.UserSpendings
 
 	// Calculate spending metrics:
-	// - TotalPaid: Amount user paid from pocket (is_paid=true)
-	// - TotalOwed: Net balance (positive = others owe user, negative = user owes others)
-	//   Formula: What user paid for others - What user owes to others
-	// - NetSpending: Total value consumed by user (sum of all splits)
+	//
+	//  TotalPaid:
+	//    Sum of all expense splits for the user that are marked as paid (is_paid = true)
+	//
+	//  NetSpending:
+	//    Sum of all expense splits for the user that are marked as owed (is_paid = false)
+	//
+	// NOTE: This represents settlement status and assigned consumption,
+	// NOT who originally paid for the expense.
 	sumQuery := `
 		SELECT
-			COALESCE(SUM(CASE WHEN es.is_paid = true THEN es.amount ELSE 0 END), 0) as total_paid,
-			COALESCE(SUM(es.amount), 0) as net_spending
+			COALESCE(SUM(es.amount) FILTER (WHERE es.is_paid = true), 0)  AS net_paid,
+			COALESCE(SUM(es.amount) FILTER (WHERE es.is_paid = false), 0) AS net_spending
 		FROM expense_splits es
 		JOIN expenses e ON e.expense_id = es.expense_id
-		WHERE e.group_id = $1 AND es.user_id = $2`
-
-	err := pool.QueryRow(ctx, sumQuery, groupID, userID).Scan(&spending.TotalPaid, &spending.NetSpending)
+		WHERE e.group_id = $1
+			AND es.user_id = $2
+	`
+	err := pool.QueryRow(ctx, sumQuery, groupID, userID).
+		Scan(&spending.TotalPaid, &spending.NetSpending)
 	if err != nil {
 		return nil, err
 	}
@@ -396,29 +403,40 @@ func GetUserSpending(ctx context.Context, pool *pgxpool.Pool, userID, groupID st
 	// If user paid $100 but consumed $120, TotalOwed = -$20 (user owes others)
 	spending.TotalOwed = spending.TotalPaid - spending.NetSpending
 
-	// Get all expenses where user is involved (either paid or owes)
-	// Return both total expense amount and user's portion
 	expensesQuery := `
-		SELECT DISTINCT ON (e.expense_id)
+		SELECT
 			e.expense_id,
 			e.group_id,
 			e.added_by,
 			e.title,
 			e.description,
-			extract(epoch from e.created_at)::bigint as created_at,
+			extract(epoch from e.created_at)::bigint AS created_at,
 			e.amount,
-			SUM(es.amount) as user_amount,
+			SUM(es.amount) AS user_amount,
 			e.is_incomplete_amount,
 			e.is_incomplete_split,
 			e.latitude,
 			e.longitude
 		FROM expenses e
-		JOIN expense_splits es ON e.expense_id = es.expense_id
-		WHERE e.group_id = $1 AND es.user_id = $2
-		GROUP BY e.expense_id, e.group_id, e.added_by, e.title, e.description, 
-		         e.created_at, e.amount, e.is_incomplete_amount, e.is_incomplete_split, 
-		         e.latitude, e.longitude
-		ORDER BY e.expense_id, e.created_at DESC`
+		JOIN expense_splits es
+			ON e.expense_id = es.expense_id
+		WHERE e.group_id = $1
+			AND es.user_id = $2
+			AND es.is_paid = false
+		GROUP BY
+			e.expense_id,
+			e.group_id,
+			e.added_by,
+			e.title,
+			e.description,
+			e.created_at,
+			e.amount,
+			e.is_incomplete_amount,
+			e.is_incomplete_split,
+			e.latitude,
+			e.longitude
+		ORDER BY e.created_at DESC
+`
 
 	rows, err := pool.Query(ctx, expensesQuery, groupID, userID)
 	if err != nil {
