@@ -188,6 +188,7 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "Get current user",
+                "deprecated": true,
                 "responses": {
                     "200": {
                         "description": "Returns the authenticated user's profile information",
@@ -622,6 +623,7 @@ const docTemplate = `{
                     "groups"
                 ],
                 "summary": "List groups user administers",
+                "deprecated": true,
                 "responses": {
                     "200": {
                         "description": "Returns list of groups the user is admin of",
@@ -662,6 +664,7 @@ const docTemplate = `{
                     "groups"
                 ],
                 "summary": "List user's groups",
+                "deprecated": true,
                 "responses": {
                     "200": {
                         "description": "Returns list of groups the user is a member of",
@@ -1019,6 +1022,129 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "GROUP_NOT_FOUND: The specified group does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error - unexpected database error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get the authenticated user's profile information",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "Get current user",
+                "responses": {
+                    "200": {
+                        "description": "Returns the authenticated user's profile information",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "USER_NOT_FOUND: The authenticated user no longer exists in the database",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error - unexpected database error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/me/admin": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all groups that the authenticated user created (is admin of)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "List groups user administers",
+                "responses": {
+                    "200": {
+                        "description": "Returns list of groups the user is admin of",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Group"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error - unexpected database error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/me/groups": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all groups the logged in user is a member of",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "List user's groups",
+                "responses": {
+                    "200": {
+                        "description": "Returns list of groups the user is a member of",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Group"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }

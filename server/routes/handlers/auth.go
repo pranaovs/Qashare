@@ -150,6 +150,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Tags auth
 // @Produce json
 // @Security BearerAuth
+// @Deprecated
 // @Success 200 {object} models.User "Returns the authenticated user's profile information"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists in the database"

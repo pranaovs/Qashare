@@ -257,6 +257,7 @@ paths:
       - auth
   /v1/auth/me:
     get:
+      deprecated: true
       description: Get the authenticated user's profile information
       produces:
       - application/json
@@ -797,6 +798,7 @@ paths:
       - settlements
   /v1/groups/admin:
     get:
+      deprecated: true
       description: Get all groups that the authenticated user created (is admin of)
       produces:
       - application/json
@@ -823,6 +825,7 @@ paths:
       - groups
   /v1/groups/me:
     get:
+      deprecated: true
       description: Get all groups the logged in user is a member of
       produces:
       - application/json
@@ -847,6 +850,87 @@ paths:
       summary: List user's groups
       tags:
       - groups
+  /v1/me:
+    get:
+      description: Get the authenticated user's profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns the authenticated user's profile information
+          schema:
+            $ref: '#/definitions/models.User'
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'USER_NOT_FOUND: The authenticated user no longer exists in
+            the database'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - me
+  /v1/me/admin:
+    get:
+      description: Get all groups that the authenticated user created (is admin of)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns list of groups the user is admin of
+          schema:
+            items:
+              $ref: '#/definitions/models.Group'
+            type: array
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: List groups user administers
+      tags:
+      - me
+  /v1/me/groups:
+    get:
+      description: Get all groups the logged in user is a member of
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns list of groups the user is a member of
+          schema:
+            items:
+              $ref: '#/definitions/models.Group'
+            type: array
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: List user's groups
+      tags:
+      - me
   /v1/users/{id}:
     get:
       description: Get user information by user ID (users must be related through

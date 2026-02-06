@@ -30,6 +30,7 @@ func RegisterRoutes(basepath string, router *gin.Engine, pool *pgxpool.Pool) {
 	baseGroup := router.Group(basepath + "/v1")
 
 	RegisterAuthRoutes(baseGroup.Group("/auth"), pool)
+	RegisterMeRoutes(baseGroup.Group("/me"), pool)
 	RegisterUsersRoutes(baseGroup.Group("/users"), pool)
 	RegisterGroupsRoutes(baseGroup.Group("/groups"), pool)
 	RegisterExpensesRoutes(baseGroup.Group("/expenses"), pool)

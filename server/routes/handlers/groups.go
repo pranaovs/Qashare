@@ -78,6 +78,7 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 // @Tags groups
 // @Produce json
 // @Security BearerAuth
+// @Deprecated
 // @Success 200 {array} models.Group "Returns list of groups the user is a member of"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
@@ -99,6 +100,7 @@ func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
 // @Tags groups
 // @Produce json
 // @Security BearerAuth
+// @Deprecated
 // @Success 200 {array} models.Group "Returns list of groups the user is admin of"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
