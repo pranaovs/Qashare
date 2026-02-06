@@ -361,7 +361,7 @@ func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID string) ([]mod
 // It returns the total amount paid by the user, total amount owed, net spending,
 // and a list of all expenses where the user either paid or owes money.
 //
-// Returns UserSpending struct or an error if validation fails or operation fails.
+// Returns a *models.UserSpendings or an error if validation fails or the operation fails.
 func GetUserSpending(ctx context.Context, pool *pgxpool.Pool, userID, groupID string) (*models.UserSpendings, error) {
 	// Validate input
 	if userID == "" {
