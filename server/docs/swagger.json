@@ -1028,6 +1028,64 @@
                 }
             }
         },
+        "/v1/groups/{id}/spendings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get spending summary for the authenticated user in a specific group, including total paid, total owed, net spending, and list of expenses",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "groups"
+                ],
+                "summary": "Get user spending in group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns user spending summary with expenses list",
+                        "schema": {
+                            "$ref": "#/definitions/models.UserSpendings"
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the group",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "GROUP_NOT_FOUND: The specified group does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error - unexpected database error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/me": {
             "get": {
                 "security": [
@@ -1554,6 +1612,71 @@
                 },
                 "user_id": {
                     "type": "string"
+                }
+            }
+        },
+        "models.UserSpendings": {
+            "type": "object",
+            "properties": {
+                "expenses": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.UserSpendingsExpense"
+                    }
+                },
+                "net_spending": {
+                    "type": "number"
+                },
+                "total_owed": {
+                    "type": "number"
+                },
+                "total_paid": {
+                    "type": "number"
+                }
+            }
+        },
+        "models.UserSpendingsExpense": {
+            "type": "object",
+            "properties": {
+                "added_by": {
+                    "type": "string"
+                },
+                "amount": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "description": {
+                    "description": "pointer because nullable in db",
+                    "type": "string"
+                },
+                "expense_id": {
+                    "type": "string"
+                },
+                "group_id": {
+                    "type": "string"
+                },
+                "is_incomplete_amount": {
+                    "type": "boolean"
+                },
+                "is_incomplete_split": {
+                    "type": "boolean"
+                },
+                "latitude": {
+                    "description": "pointer because nullable in db",
+                    "type": "number"
+                },
+                "longitude": {
+                    "description": "pointer because nullable in db",
+                    "type": "number"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "user_amount": {
+                    "description": "Amount user paid/owes for this expense",
+                    "type": "number"
                 }
             }
         }

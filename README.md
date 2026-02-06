@@ -165,7 +165,7 @@ The Swagger UI provides:
     - [ ] Settlement verification
 - [x] Bill splitting algorithms
 - [ ] Group management features
-- [ ] User spending reports
+- [x] User spending reports
 - [x] Guest Users
 - [ ] Permission management
 - [ ] Edit history

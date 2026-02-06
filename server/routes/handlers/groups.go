@@ -286,10 +286,34 @@ func (h *GroupsHandler) ListGroupExpenses(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 	expenses, err := db.GetExpenses(c.Request.Context(), h.pool, groupID)
 	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrNotFound: apierrors.ErrGroupNotFound,
-		}))
+		utils.SendError(c, err) // Shouln't send any error as everything is validated in the middleware
 		return
 	}
 	utils.SendData(c, expenses)
+}
+
+// GetSpendings godoc
+// @Summary Get user spending in group
+// @Description Get spending summary for the authenticated user in a specific group, including total paid, total owed, net spending, and list of expenses
+// @Tags groups
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Group ID"
+// @Success 200 {object} models.UserSpendings "Returns user spending summary with expenses list"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the group"
+// @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
+// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
+// @Router /v1/groups/{id}/spendings [get]
+func (h *GroupsHandler) GetSpendings(c *gin.Context) {
+	userID := middleware.MustGetUserID(c)
+	groupID := middleware.MustGetGroupID(c)
+
+	spending, err := db.GetUserSpending(c.Request.Context(), h.pool, userID, groupID)
+	if err != nil {
+		utils.SendError(c, err) // Shouln't send any error as everything is validated in the middleware
+		return
+	}
+
+	utils.SendData(c, spending)
 }
