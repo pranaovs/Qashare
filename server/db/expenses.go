@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/models"
 
 	"github.com/jackc/pgx/v5"
@@ -196,7 +197,7 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.Expe
 
 // GetExpense retrieves a complete expense record including all its splits.
 // Returns ErrExpenseNotFound if no expense with the ID exists.
-func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (models.ExpenseDetails, error) {
+func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID uuid.UUID) (models.ExpenseDetails, error) {
 	var expense models.ExpenseDetails
 
 	// Fetch expense details
@@ -270,7 +271,7 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 // This operation is atomic and uses a transaction.
 // Note: The database will handle cascading deletes for expense_splits if configured.
 // Returns ErrExpenseNotFound if no expense with the ID exists.
-func DeleteExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) error {
+func DeleteExpense(ctx context.Context, pool *pgxpool.Pool, expenseID uuid.UUID) error {
 	// Use WithTransaction helper for consistent transaction management
 	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
 		// Delete the expense (splits will be cascade deleted)
@@ -298,11 +299,11 @@ func DeleteExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) er
 // GetExpenses retrieves all expenses for a given group, ordered by creation time descending.
 // Returns an empty slice if no expenses are found.
 // Returns an error if the groupID is empty or the operation fails.
-func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID string) ([]models.Expense, error) {
+func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID uuid.UUID) ([]models.Expense, error) {
 	// TODO: Add pagination support for large datasets
 
 	// Validate input
-	if groupID == "" {
+	if groupID == uuid.Nil {
 		return nil, ErrInvalidInput.Msg("group id missing")
 	}
 
@@ -363,12 +364,12 @@ func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID string) ([]mod
 // This provides a comprehensive view of the user's financial interactions within the group.
 //
 // Returns a *models.UserSpendings or an error if validation fails or the operation fails.
-func GetUserSpending(ctx context.Context, pool *pgxpool.Pool, userID, groupID string) (*models.UserSpendings, error) {
+func GetUserSpending(ctx context.Context, pool *pgxpool.Pool, userID, groupID uuid.UUID) (*models.UserSpendings, error) {
 	// Validate input
-	if userID == "" {
+	if userID == uuid.Nil {
 		return nil, ErrInvalidInput.Msg("user id missing")
 	}
-	if groupID == "" {
+	if groupID == uuid.Nil {
 		return nil, ErrInvalidInput.Msg("group id missing")
 	}
 
