@@ -21,7 +21,7 @@ func NewUsersHandler(pool *pgxpool.Pool) *UsersHandler {
 	return &UsersHandler{pool: pool}
 }
 
-// GetUser godoc
+// Get godoc
 // @Summary Get user by ID
 // @Description Get user information by user ID (users must be related through a common group)
 // @Tags users
@@ -35,7 +35,7 @@ func NewUsersHandler(pool *pgxpool.Pool) *UsersHandler {
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The specified user does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/users/{id} [get]
-func (h *UsersHandler) GetUser(c *gin.Context) {
+func (h *UsersHandler) Get(c *gin.Context) {
 	qUserID := c.Param("id")
 
 	userID := middleware.MustGetUserID(c)

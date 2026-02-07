@@ -120,7 +120,7 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	utils.SendJSON(c, http.StatusCreated, created)
 }
 
-// GetExpense godoc
+// Get godoc
 // @Summary Get expense details
 // @Description Get detailed information about an expense including splits
 // @Tags expenses
@@ -133,7 +133,7 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 // @Failure 404 {object} apierrors.AppError "EXPENSE_NOT_FOUND: The specified expense does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/expenses/{id} [get]
-func (h *ExpensesHandler) GetExpense(c *gin.Context) {
+func (h *ExpensesHandler) Get(c *gin.Context) {
 	// Expense is already fetched and authorized by middleware
 	expense := middleware.MustGetExpense(c)
 	utils.SendJSON(c, http.StatusOK, expense)

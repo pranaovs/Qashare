@@ -83,7 +83,7 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 	utils.SendJSON(c, http.StatusCreated, created)
 }
 
-// ListUserGroups godoc
+// ListUser godoc
 // @Summary List user's groups
 // @Description Get all groups the logged in user is a member of
 // @Tags groups
@@ -94,7 +94,7 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/groups/me [get]
-func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
+func (h *GroupsHandler) ListUser(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 
 	groups, err := db.MemberOfGroups(c.Request.Context(), h.pool, userID)
@@ -105,7 +105,7 @@ func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
 	utils.SendJSON(c, http.StatusOK, groups)
 }
 
-// ListAdminGroups godoc
+// ListAdmin godoc
 // @Summary List groups user administers
 // @Description Get all groups that the authenticated user created (is admin of)
 // @Tags groups
@@ -116,7 +116,7 @@ func (h *GroupsHandler) ListUserGroups(c *gin.Context) {
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/groups/admin [get]
-func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
+func (h *GroupsHandler) ListAdmin(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	groups, err := db.AdminOfGroups(c.Request.Context(), h.pool, userID)
 	if err != nil {
@@ -128,7 +128,7 @@ func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
 	utils.SendJSON(c, http.StatusOK, groups)
 }
 
-// GetGroup godoc
+// Get godoc
 // @Summary Get group details
 // @Description Get detailed information about a group
 // @Tags groups
@@ -141,7 +141,7 @@ func (h *GroupsHandler) ListAdminGroups(c *gin.Context) {
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/groups/{id} [get]
-func (h *GroupsHandler) GetGroup(c *gin.Context) {
+func (h *GroupsHandler) Get(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 
 	group, err := db.GetGroup(c.Request.Context(), h.pool, groupID)
@@ -412,7 +412,7 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 	})
 }
 
-// ListGroupExpenses godoc
+// GetExpenses godoc
 // @Summary List group expenses
 // @Description Get all expenses of a group
 // @Tags groups
@@ -425,7 +425,7 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/groups/{id}/expenses [get]
-func (h *GroupsHandler) ListGroupExpenses(c *gin.Context) {
+func (h *GroupsHandler) GetExpenses(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 	expenses, err := db.GetExpenses(c.Request.Context(), h.pool, groupID)
 	if err != nil {

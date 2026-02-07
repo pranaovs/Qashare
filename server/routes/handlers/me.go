@@ -48,7 +48,7 @@ func (h *MeHandler) Me(c *gin.Context) {
 	utils.SendJSON(c, http.StatusOK, user)
 }
 
-// ListGroups godoc
+// GetGroups godoc
 // @Summary List user's groups
 // @Description Get all groups the logged in user is a member of
 // @Tags me
@@ -58,7 +58,7 @@ func (h *MeHandler) Me(c *gin.Context) {
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/me/groups [get]
-func (h *MeHandler) ListGroups(c *gin.Context) {
+func (h *MeHandler) GetGroups(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 
 	groups, err := db.MemberOfGroups(c.Request.Context(), h.pool, userID)
@@ -69,7 +69,7 @@ func (h *MeHandler) ListGroups(c *gin.Context) {
 	utils.SendJSON(c, http.StatusOK, groups)
 }
 
-// ListAdmin godoc
+// GetAdmin godoc
 // @Summary List groups user administers
 // @Description Get all groups that the authenticated user created (is admin of)
 // @Tags me
@@ -79,7 +79,7 @@ func (h *MeHandler) ListGroups(c *gin.Context) {
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/me/admin [get]
-func (h *MeHandler) ListAdmin(c *gin.Context) {
+func (h *MeHandler) GetAdmin(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	groups, err := db.AdminOfGroups(c.Request.Context(), h.pool, userID)
 	if err != nil {

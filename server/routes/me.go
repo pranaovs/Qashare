@@ -15,6 +15,6 @@ func RegisterMeRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, jwtConfig con
 	router.GET("/", middleware.RequireAuth(jwtConfig), handler.Me)
 	router.PUT("/", middleware.RequireAuth(jwtConfig), handler.Update)
 	router.PATCH("/", middleware.RequireAuth(jwtConfig), handler.Patch)
-	router.GET("/groups", middleware.RequireAuth(jwtConfig), handler.ListGroups)
-	router.GET("/admin", middleware.RequireAuth(jwtConfig), handler.ListAdmin)
+	router.GET("/groups", middleware.RequireAuth(jwtConfig), handler.GetGroups)
+	router.GET("/admin", middleware.RequireAuth(jwtConfig), handler.GetAdmin)
 }

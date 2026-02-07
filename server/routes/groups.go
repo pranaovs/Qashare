@@ -13,14 +13,14 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, jwtConfig
 	handler := handlers.NewGroupsHandler(pool, appConfig)
 
 	router.POST("/", middleware.RequireAuth(jwtConfig), handler.Create)
-	router.GET("/me", middleware.RequireAuth(jwtConfig), handler.ListUserGroups)
-	router.GET("/admin", middleware.RequireAuth(jwtConfig), handler.ListAdminGroups)
-	router.GET("/:id", middleware.RequireAuth(jwtConfig), middleware.RequireGroupMember(pool), handler.GetGroup)
+	router.GET("/me", middleware.RequireAuth(jwtConfig), handler.ListUser)
+	router.GET("/admin", middleware.RequireAuth(jwtConfig), handler.ListAdmin)
+	router.GET("/:id", middleware.RequireAuth(jwtConfig), middleware.RequireGroupMember(pool), handler.Get)
 	router.PUT("/:id", middleware.RequireAuth(jwtConfig), middleware.RequireGroupAdmin(pool), handler.Update)
 	router.PATCH("/:id", middleware.RequireAuth(jwtConfig), middleware.RequireGroupAdmin(pool), handler.Patch)
 	router.POST("/:id/members", middleware.RequireAuth(jwtConfig), middleware.RequireGroupAdmin(pool), handler.AddMembers)
 	router.DELETE("/:id/members", middleware.RequireAuth(jwtConfig), middleware.RequireGroupAdmin(pool), handler.RemoveMembers)
-	router.GET("/:id/expenses", middleware.RequireAuth(jwtConfig), middleware.RequireGroupMember(pool), handler.ListGroupExpenses)
+	router.GET("/:id/expenses", middleware.RequireAuth(jwtConfig), middleware.RequireGroupMember(pool), handler.GetExpenses)
 	router.GET("/:id/settlements", middleware.RequireAuth(jwtConfig), middleware.RequireGroupMember(pool), handler.GetSettlements)
 	router.GET("/:id/spendings", middleware.RequireAuth(jwtConfig), middleware.RequireGroupMember(pool), handler.GetSpendings)
 }
