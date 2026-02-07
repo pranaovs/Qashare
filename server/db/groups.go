@@ -243,7 +243,7 @@ func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string,
 func UpdateGroup(ctx context.Context, pool *pgxpool.Pool, group *models.Group) error {
 	// Validate input
 	if group.GroupID == "" {
-		return ErrNotFound.Msg("group not found")
+		return ErrInvalidInput.Msg("group ID is required")
 	}
 	if group.Name == "" {
 		return ErrInvalidInput.Msg("name is required")
