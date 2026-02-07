@@ -249,7 +249,7 @@ func (h *ExpensesHandler) Delete(c *gin.Context) {
 
 // Patch godoc
 // @Summary Partially update an expense
-// @Description Update specific fields of an expense. Only provided fields are updated, others remain unchanged. Immutable fields are automatically protected.
+// @Description Update specific fields of an expense (requires being group admin or expense creator). Only provided fields are updated, others remain unchanged. Immutable fields are automatically protected.
 // @Tags expenses
 // @Accept json
 // @Produce json

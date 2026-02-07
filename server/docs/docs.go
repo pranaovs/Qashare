@@ -546,7 +546,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update specific fields of an expense. Only provided fields are updated, others remain unchanged. Immutable fields are automatically protected.",
+                "description": "Update specific fields of an expense (requires being group admin or expense creator). Only provided fields are updated, others remain unchanged. Immutable fields are automatically protected.",
                 "consumes": [
                     "application/json"
                 ],
