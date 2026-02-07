@@ -693,6 +693,42 @@ paths:
       tags:
       - groups
   /v1/groups/{id}:
+    delete:
+      description: Delete a group and all its associated data (requires group admin/owner
+        permission)
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'GROUP_NOT_FOUND: The specified group does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Delete a group
+      tags:
+      - groups
     get:
       description: Get detailed information about a group
       parameters:
@@ -1127,6 +1163,36 @@ paths:
       tags:
       - groups
   /v1/me:
+    delete:
+      description: Delete the authenticated user's account and all associated data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'USER_NOT_FOUND: The authenticated user no longer exists in
+            the database'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Delete current user account
+      tags:
+      - me
     get:
       description: Get the authenticated user's profile information
       produces:

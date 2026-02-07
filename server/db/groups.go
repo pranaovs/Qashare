@@ -273,3 +273,32 @@ func UpdateGroup(ctx context.Context, pool *pgxpool.Pool, group *models.Group) e
 
 	return nil
 }
+
+// DeleteGroup deletes a group and all associated data from the database.
+// This operation is atomic - the group, members, and expenses are deleted together.
+// Note: The database will handle cascading deletes for group_members and expenses if configured.
+// Returns ErrNotFound if no group with the ID exists.
+func DeleteGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) error {
+	// Use WithTransaction helper for consistent transaction management
+	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
+		// Delete the group (members and expenses will be cascade deleted)
+		deleteQuery := `DELETE FROM groups WHERE group_id = $1`
+
+		result, err := tx.Exec(ctx, deleteQuery, groupID)
+		if err != nil {
+			return err
+		}
+
+		// Check if group was found
+		if result.RowsAffected() == 0 {
+			return ErrNotFound.Msgf("group with id %s not found", groupID)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

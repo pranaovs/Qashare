@@ -18,6 +18,7 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, jwtConfig
 	router.GET("/:id", middleware.RequireAuth(jwtConfig), middleware.RequireGroupMember(pool), handler.Get)
 	router.PUT("/:id", middleware.RequireAuth(jwtConfig), middleware.RequireGroupAdmin(pool), handler.Update)
 	router.PATCH("/:id", middleware.RequireAuth(jwtConfig), middleware.RequireGroupAdmin(pool), handler.Patch)
+	router.DELETE("/:id", middleware.RequireAuth(jwtConfig), middleware.RequireGroupAdmin(pool), handler.Delete)
 	router.POST("/:id/members", middleware.RequireAuth(jwtConfig), middleware.RequireGroupAdmin(pool), handler.AddMembers)
 	router.DELETE("/:id/members", middleware.RequireAuth(jwtConfig), middleware.RequireGroupAdmin(pool), handler.RemoveMembers)
 	router.GET("/:id/expenses", middleware.RequireAuth(jwtConfig), middleware.RequireGroupMember(pool), handler.GetExpenses)

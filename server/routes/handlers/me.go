@@ -230,3 +230,27 @@ func (h *MeHandler) Patch(c *gin.Context) {
 
 	utils.SendJSON(c, http.StatusOK, current)
 }
+
+// Delete godoc
+// @Summary Delete current user account
+// @Description Delete the authenticated user's account and all associated data
+// @Tags me
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]string "Returns success message"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists in the database"
+// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
+// @Router /v1/me [delete]
+func (h *MeHandler) Delete(c *gin.Context) {
+	userID := middleware.MustGetUserID(c)
+
+	if err := db.DeleteUser(c.Request.Context(), h.pool, userID); err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrUserNotFound,
+		}))
+		return
+	}
+
+	utils.SendOK(c, "account deleted")
+}
