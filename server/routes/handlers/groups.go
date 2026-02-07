@@ -218,7 +218,7 @@ func (h *GroupsHandler) Update(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Group ID"
-// @Param request body models.Group true "Partial group details (name and/or description, all optional)"
+// @Param request body models.GroupPatch true "Partial group details (name and/or description, all optional)"
 // @Success 200 {object} models.GroupDetails "Returns updated group with all fields"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or validation failed"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
