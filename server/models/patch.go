@@ -2,7 +2,7 @@
 // These use pointer fields to distinguish "field not provided" (nil) from
 // "field explicitly set to zero value" (non-nil pointer to zero).
 //
-// Use utils.ApplyPatch(target, patch) to apply these patches.
+// Use utils.Patch(target, patch) to apply these patches.
 package models
 
 // UserPatch represents a partial update to a User.
