@@ -1588,24 +1588,24 @@
                 }
             }
         },
-        "/v1/me/admin": {
+        "/v1/me/groups": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all groups that the authenticated user created (is admin of)",
+                "description": "Get all groups the logged in user is a member of",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "me"
                 ],
-                "summary": "List groups user administers",
+                "summary": "List user's groups",
                 "responses": {
                     "200": {
-                        "description": "Returns list of groups the user is admin of",
+                        "description": "Returns list of groups the user is a member of",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -1628,24 +1628,24 @@
                 }
             }
         },
-        "/v1/me/groups": {
+        "/v1/me/own": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all groups the logged in user is a member of",
+                "description": "Get all groups that the authenticated user created (is owner of)",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "me"
                 ],
-                "summary": "List user's groups",
+                "summary": "List groups user owns",
                 "responses": {
                     "200": {
-                        "description": "Returns list of groups the user is a member of",
+                        "description": "Returns list of groups the user is owner of",
                         "schema": {
                             "type": "array",
                             "items": {

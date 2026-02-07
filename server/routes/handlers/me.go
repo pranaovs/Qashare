@@ -69,17 +69,17 @@ func (h *MeHandler) GetGroups(c *gin.Context) {
 	utils.SendJSON(c, http.StatusOK, groups)
 }
 
-// GetAdmin godoc
-// @Summary List groups user administers
-// @Description Get all groups that the authenticated user created (is admin of)
+// GetOwner godoc
+// @Summary List groups user owns
+// @Description Get all groups that the authenticated user created (is owner of)
 // @Tags me
 // @Produce json
 // @Security BearerAuth
-// @Success 200 {array} models.Group "Returns list of groups the user is admin of"
+// @Success 200 {array} models.Group "Returns list of groups the user is owner of"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /v1/me/admin [get]
-func (h *MeHandler) GetAdmin(c *gin.Context) {
+// @Router /v1/me/own [get]
+func (h *MeHandler) GetOwner(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	groups, err := db.OwnerOfGroups(c.Request.Context(), h.pool, userID)
 	if err != nil {
