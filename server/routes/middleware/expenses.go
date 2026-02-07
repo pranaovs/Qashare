@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/models"
@@ -23,9 +24,15 @@ func VerifyExpenseAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := MustGetUserID(c)
 
-		expenseID := c.Param("id")
-		if expenseID == "" {
+		expenseIDStr := c.Param("id")
+		if expenseIDStr == "" {
 			utils.SendAbort(c, http.StatusBadRequest, "Expense ID not provided")
+			return
+		}
+
+		expenseID, err := db.ParseUUID(expenseIDStr)
+		if err != nil {
+			utils.SendAbort(c, http.StatusBadRequest, "Invalid Expense ID format")
 			return
 		}
 
@@ -67,9 +74,15 @@ func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := MustGetUserID(c)
 
-		expenseID := c.Param("id")
-		if expenseID == "" {
+		expenseIDStr := c.Param("id")
+		if expenseIDStr == "" {
 			utils.SendAbort(c, http.StatusBadRequest, "Expense ID not provided")
+			return
+		}
+
+		expenseID, err := db.ParseUUID(expenseIDStr)
+		if err != nil {
+			utils.SendAbort(c, http.StatusBadRequest, "Invalid Expense ID format")
 			return
 		}
 
@@ -95,7 +108,7 @@ func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 
 		// If the user is not the group creator or the expense creator, deny access
-		if creatorID != userID && (expense.AddedBy == nil || *expense.AddedBy != userID) {
+		if (creatorID == nil || *creatorID != userID) && (expense.AddedBy == nil || *expense.AddedBy != userID) {
 			utils.SendAbort(c, http.StatusForbidden, "access denied")
 			return
 		}
@@ -107,21 +120,21 @@ func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 	}
 }
 
-func GetExpenseID(c *gin.Context) (string, bool) {
+func GetExpenseID(c *gin.Context) (uuid.UUID, bool) {
 	expenseIDInterface, exists := c.Get(ExpenseIDKey)
 	if exists {
-		id, ok := expenseIDInterface.(string)
+		id, ok := expenseIDInterface.(uuid.UUID)
 		if ok {
 			return id, true
 		}
 	}
 
-	return "", false
+	return uuid.Nil, false
 }
 
 // MustGetExpenseID retrieves the expense ID from the context (set by VerifyExpenseAccess). Intended for use in handlers.
 // Panics if not found, indicating a server-side misconfiguration.
-func MustGetExpenseID(c *gin.Context) string {
+func MustGetExpenseID(c *gin.Context) uuid.UUID {
 	expenseID, ok := GetExpenseID(c)
 	if !ok {
 		panic("MustGetExpenseID: expense ID not found in context. Did you forget to add the VerifyExpenseAccess middleware?")

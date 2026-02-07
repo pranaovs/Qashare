@@ -7,6 +7,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/models"
 	"github.com/pranaovs/qashare/utils"
 
@@ -88,7 +89,7 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 // user ID of the user who added the guest.
 // Returns the created User model with UserID and CreatedAt populated.
 // Returns ErrDuplicateKey if a user with the given email already exists.
-func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy string) (models.User, error) {
+func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy uuid.UUID) (models.User, error) {
 	// Check if user already exists with this email
 	_, err := GetUserFromEmail(ctx, pool, email)
 	if err == nil {
@@ -163,16 +164,17 @@ func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (mo
 // This function is specifically designed for login verification.
 // Only returns the minimal information needed for authentication.
 // Returns ErrNotFound if no user with the email exists.
-func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (string, string, error) {
-	var userID, passwordHash string
+func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (uuid.UUID, string, error) {
+	var userID uuid.UUID
+	var passwordHash string
 	query := `SELECT user_id, password_hash FROM users WHERE email = $1`
 
 	err := pool.QueryRow(ctx, query, email).Scan(&userID, &passwordHash)
 	if err == pgx.ErrNoRows {
-		return "", "", ErrNotFound.Msgf("user with email %s not found", email)
+		return uuid.Nil, "", ErrNotFound.Msgf("user with email %s not found", email)
 	}
 	if err != nil {
-		return "", "", err
+		return uuid.Nil, "", err
 	}
 
 	return userID, passwordHash, nil
@@ -180,7 +182,7 @@ func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (
 
 // GetUser retrieves a user by their unique user ID.
 // Returns ErrNotFound if no user with the ID exists.
-func GetUser(ctx context.Context, pool *pgxpool.Pool, userID string) (models.User, error) {
+func GetUser(ctx context.Context, pool *pgxpool.Pool, userID uuid.UUID) (models.User, error) {
 	var user models.User
 	query := `SELECT user_id, user_name, email, is_guest, extract(epoch from created_at)::bigint
 		FROM users
@@ -205,7 +207,7 @@ func GetUser(ctx context.Context, pool *pgxpool.Pool, userID string) (models.Use
 // This is useful for privacy checks to ensure users can only see information
 // about other users they're connected to through groups.
 // Returns true if users are related, false otherwise, and an error if the check fails.
-func UsersRelated(ctx context.Context, pool *pgxpool.Pool, userID1, userID2 string) (bool, error) {
+func UsersRelated(ctx context.Context, pool *pgxpool.Pool, userID1, userID2 uuid.UUID) (bool, error) {
 	// Query to check if users share at least one group
 	query := `
 		SELECT EXISTS (
@@ -227,7 +229,7 @@ func UsersRelated(ctx context.Context, pool *pgxpool.Pool, userID1, userID2 stri
 // OwnerOfGroups returns all groups where the user is the creator/administrator.
 // Groups are returned in descending order by creation date (newest first).
 // This is useful for showing users the groups they manage.
-func OwnerOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]models.Group, error) {
+func OwnerOfGroups(ctx context.Context, pool *pgxpool.Pool, userID uuid.UUID) ([]models.Group, error) {
 	query := `
 		SELECT group_id, group_name, description, created_by, extract(epoch from created_at)::bigint
 		FROM groups
@@ -262,7 +264,7 @@ func OwnerOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]mo
 // MemberOfGroups returns all groups where the user is a member.
 // This includes both groups the user created and groups they were added to.
 // Groups are returned in descending order by creation date (newest first).
-func MemberOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]models.Group, error) {
+func MemberOfGroups(ctx context.Context, pool *pgxpool.Pool, userID uuid.UUID) ([]models.Group, error) {
 	query := `
 		SELECT g.group_id, g.group_name, g.description, g.created_by, extract(epoch from g.created_at)::bigint
 		FROM groups g
@@ -298,7 +300,7 @@ func MemberOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]m
 // UserExists checks if a user with the given ID exists in the database.
 // This is a lightweight check that doesn't retrieve the full user record.
 // Returns nil if user exists, or ErrNotFound if not.
-func UserExists(ctx context.Context, pool *pgxpool.Pool, userID string) error {
+func UserExists(ctx context.Context, pool *pgxpool.Pool, userID uuid.UUID) error {
 	exists, err := RecordExists(ctx, pool, "users", "user_id = $1", userID)
 	if err != nil {
 		return err
@@ -314,7 +316,7 @@ func UserExists(ctx context.Context, pool *pgxpool.Pool, userID string) error {
 // MemberOfGroup checks if a user is a member of a specific group.
 // This is used for authorization checks before allowing group operations.
 // Returns (true, nil) if the user is a member, (false, nil) if not, or a non-nil error if the membership check fails.
-func MemberOfGroup(ctx context.Context, pool *pgxpool.Pool, userID, groupID string) (bool, error) {
+func MemberOfGroup(ctx context.Context, pool *pgxpool.Pool, userID, groupID uuid.UUID) (bool, error) {
 	exists, err := RecordExists(ctx, pool, "group_members",
 		"user_id = $1 AND group_id = $2", userID, groupID)
 	if err != nil {
@@ -331,7 +333,7 @@ func MemberOfGroup(ctx context.Context, pool *pgxpool.Pool, userID, groupID stri
 // AllMembersOfGroup verifies that all users in the provided list are members of the group.
 // This is useful for validating expense splits where all participants must be group members.
 // Returns nil if all users are members, or ErrNotFound if any user is not a member.
-func AllMembersOfGroup(ctx context.Context, pool *pgxpool.Pool, userIDs []string, groupID string) error {
+func AllMembersOfGroup(ctx context.Context, pool *pgxpool.Pool, userIDs []uuid.UUID, groupID uuid.UUID) error {
 	if len(userIDs) == 0 {
 		return nil
 	}
@@ -367,7 +369,7 @@ func AllMembersOfGroup(ctx context.Context, pool *pgxpool.Pool, userIDs []string
 // Returns an error if validation fails or the operation fails.
 func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) error {
 	// Validate input
-	if user.UserID == "" {
+	if user.UserID == uuid.Nil {
 		return ErrInvalidInput.Msg("user_id is required")
 	}
 	if user.Name == "" {
@@ -399,7 +401,7 @@ func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 
 	// Check if user was found
 	if result.RowsAffected() == 0 {
-		return ErrNotFound.Msgf("user with id %s not found", user.UserID)
+		return ErrNotFound.Msgf("user with id %s not found", user.UserID.String())
 	}
 
 	return nil
@@ -409,7 +411,7 @@ func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 // This operation is atomic and uses a transaction.
 // Note: The database will handle cascading deletes for group_members, expenses, etc. if configured.
 // Returns ErrNotFound if no user with the ID exists.
-func DeleteUser(ctx context.Context, pool *pgxpool.Pool, userID string) error {
+func DeleteUser(ctx context.Context, pool *pgxpool.Pool, userID uuid.UUID) error {
 	// Use WithTransaction helper for consistent transaction management
 	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
 		// Delete the user (memberships, expenses, etc. will be cascade deleted)

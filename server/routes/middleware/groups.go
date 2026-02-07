@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/routes/apierrors"
@@ -16,14 +17,20 @@ const GroupIDKey = "groupID"
 func RequireGroupMember(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := MustGetUserID(c)
-		groupID, ok := c.Params.Get("id")
+		groupIDStr, ok := c.Params.Get("id")
 
 		if !ok {
 			utils.SendAbort(c, http.StatusBadRequest, "Group ID not provided")
 			return
 		}
 
-		ok, err := db.MemberOfGroup(c.Request.Context(), pool, userID, groupID)
+		groupID, err := db.ParseUUID(groupIDStr)
+		if err != nil {
+			utils.SendAbort(c, http.StatusBadRequest, "Invalid Group ID format")
+			return
+		}
+
+		ok, err = db.MemberOfGroup(c.Request.Context(), pool, userID, groupID)
 		if err != nil {
 			utils.SendAbort(c, http.StatusInternalServerError, "failed to verify membership")
 			return
@@ -43,9 +50,15 @@ func RequireGroupAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := MustGetUserID(c)
 
-		groupID, ok := c.Params.Get("id")
+		groupIDStr, ok := c.Params.Get("id")
 		if !ok {
 			utils.SendAbort(c, http.StatusBadRequest, "Group ID not provided")
+			return
+		}
+
+		groupID, err := db.ParseUUID(groupIDStr)
+		if err != nil {
+			utils.SendAbort(c, http.StatusBadRequest, "Invalid Group ID format")
 			return
 		}
 
@@ -59,7 +72,7 @@ func RequireGroupAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
-		if creatorID != userID {
+		if creatorID == nil || *creatorID != userID {
 			utils.SendAbort(c, http.StatusForbidden, "not the group admin")
 			return
 		}
@@ -73,9 +86,15 @@ func RequireGroupOwner(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := MustGetUserID(c)
 
-		groupID, ok := c.Params.Get("id")
+		groupIDStr, ok := c.Params.Get("id")
 		if !ok {
 			utils.SendAbort(c, http.StatusBadRequest, "Group ID not provided")
+			return
+		}
+
+		groupID, err := db.ParseUUID(groupIDStr)
+		if err != nil {
+			utils.SendAbort(c, http.StatusBadRequest, "Invalid Group ID format")
 			return
 		}
 
@@ -89,7 +108,7 @@ func RequireGroupOwner(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
-		if creatorID != userID {
+		if creatorID == nil || *creatorID != userID {
 			utils.SendAbort(c, http.StatusForbidden, "not the group owner")
 			return
 		}
@@ -99,21 +118,21 @@ func RequireGroupOwner(pool *pgxpool.Pool) gin.HandlerFunc {
 	}
 }
 
-func GetGroupID(c *gin.Context) (string, bool) {
+func GetGroupID(c *gin.Context) (uuid.UUID, bool) {
 	groupIDInterface, exists := c.Get(GroupIDKey)
 	if exists {
-		id, ok := groupIDInterface.(string)
+		id, ok := groupIDInterface.(uuid.UUID)
 		if ok {
 			return id, true
 		}
 	}
 
-	return "", false
+	return uuid.Nil, false
 }
 
 // MustGetGroupID retrieves the group ID from the context. Intended for use in handlers.
 // If the group ID is not found, it panics, indicating a server-side misconfiguration.
-func MustGetGroupID(c *gin.Context) string {
+func MustGetGroupID(c *gin.Context) uuid.UUID {
 	groupID, ok := GetGroupID(c)
 	if !ok {
 		// not a runtime user error. Gin will recover and return 500.

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/apperrors"
 	"github.com/pranaovs/qashare/config"
 	"github.com/pranaovs/qashare/routes/apierrors"
@@ -27,23 +28,23 @@ func RequireAuth(jwtConfig config.JWTConfig) gin.HandlerFunc {
 	}
 }
 
-func GetUserID(c *gin.Context) (string, bool) {
+func GetUserID(c *gin.Context) (uuid.UUID, bool) {
 	userID, exists := c.Get(UserIDKey)
 	if !exists {
-		return "", false
+		return uuid.Nil, false
 	}
 
-	userIDStr, ok := userID.(string)
+	userIDVal, ok := userID.(uuid.UUID)
 	if !ok {
-		return "", false
+		return uuid.Nil, false
 	}
 
-	return userIDStr, true
+	return userIDVal, true
 }
 
 // MustGetUserID retrieves the user ID from the context. Intended for use in handlers
 // If the user ID is not found, it panics, indicating a server-side misconfiguration.
-func MustGetUserID(c *gin.Context) string {
+func MustGetUserID(c *gin.Context) uuid.UUID {
 	userID, ok := GetUserID(c)
 	if !ok {
 		// not a runtime user error. Gin will recover and return 500.

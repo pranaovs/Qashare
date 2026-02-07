@@ -13,6 +13,7 @@ import (
 	"github.com/pranaovs/qashare/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -69,7 +70,7 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 		return
 	}
 
-	splitUserIDs := make([]string, 0, len(expense.Splits))
+	splitUserIDs := make([]uuid.UUID, 0, len(expense.Splits))
 	var paidTotal, owedTotal float64
 	for _, s := range expense.Splits {
 		splitUserIDs = append(splitUserIDs, s.UserID)
@@ -176,7 +177,7 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 		return
 	}
 
-	splitUserIDs := make([]string, 0, len(payload.Splits))
+	splitUserIDs := make([]uuid.UUID, 0, len(payload.Splits))
 	var paidTotal, owedTotal float64
 	for _, s := range payload.Splits {
 		splitUserIDs = append(splitUserIDs, s.UserID)
@@ -287,7 +288,7 @@ func (h *ExpensesHandler) Patch(c *gin.Context) {
 			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("no splits provided"))
 			return
 		}
-		splitUserIDs := make([]string, 0, len(*patch.Splits))
+		splitUserIDs := make([]uuid.UUID, 0, len(*patch.Splits))
 		for _, s := range *patch.Splits {
 			splitUserIDs = append(splitUserIDs, s.UserID)
 		}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/models"
 )
@@ -19,12 +20,12 @@ import (
 //   - Negative: Current user pays to UserID
 //
 // Uses greedy algorithm to minimize number of transactions while settling all debts.
-func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID string, splitTolerance float64) ([]models.Settlement, error) {
+func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID uuid.UUID, splitTolerance float64) ([]models.Settlement, error) {
 	// Validate input
-	if groupID == "" {
+	if groupID == uuid.Nil {
 		return nil, ErrInvalidInput.Msg("group id missing")
 	}
-	if userID == "" {
+	if userID == uuid.Nil {
 		return nil, ErrInvalidInput.Msg("user id missing")
 	}
 
@@ -65,10 +66,10 @@ func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID str
 	defer rows.Close()
 
 	// Collect all payer-debtor relationships
-	balances := make(map[string]float64)
+	balances := make(map[uuid.UUID]float64)
 
 	for rows.Next() {
-		var payer, debtor string
+		var payer, debtor uuid.UUID
 		var amount float64
 
 		err = rows.Scan(&payer, &debtor, &amount)
@@ -92,30 +93,30 @@ func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID str
 
 // optimizeSettlements uses greedy algorithm to minimize transactions
 // Returns settlements for the given user
-func optimizeSettlements(balances map[string]float64, userID string, tolerance float64) []models.Settlement {
+func optimizeSettlements(balances map[uuid.UUID]float64, userID uuid.UUID, tolerance float64) []models.Settlement {
 	if len(balances) == 0 {
 		return []models.Settlement{}
 	}
 
 	// Separate users into creditors (positive) and debtors (negative)
 	var creditors []struct {
-		userID string
+		userID uuid.UUID
 		amount float64
 	}
 	var debtors []struct {
-		userID string
+		userID uuid.UUID
 		amount float64
 	}
 
 	for uid, balance := range balances {
 		if balance > tolerance {
 			creditors = append(creditors, struct {
-				userID string
+				userID uuid.UUID
 				amount float64
 			}{uid, balance})
 		} else if balance < -tolerance {
 			debtors = append(debtors, struct {
-				userID string
+				userID uuid.UUID
 				amount float64
 			}{uid, -balance})
 		}
