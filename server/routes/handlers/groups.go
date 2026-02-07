@@ -33,7 +33,7 @@ func NewGroupsHandler(pool *pgxpool.Pool, appConfig config.AppConfig) *GroupsHan
 // @Produce json
 // @Security BearerAuth
 // @Param request body object{name=string,description=string} true "Group details"
-// @Success 201 {object} models.Group "Group successfully created"
+// @Success 201 {object} models.GroupDetails "Group successfully created"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format or missing required fields | BAD_NAME: Name contains invalid characters or is too short/long"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
@@ -164,7 +164,7 @@ func (h *GroupsHandler) GetGroup(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Group ID"
 // @Param request body models.Group true "Updated group details"
-// @Success 200 {object} models.Group "Returns updated group"
+// @Success 200 {object} models.GroupDetails "Returns updated group"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or missing required fields"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED: The authenticated user is not a member of the group"
@@ -208,7 +208,7 @@ func (h *GroupsHandler) Update(c *gin.Context) {
 	}
 
 	// Fetch the updated group to ensure immutable fields (e.g., created_by, created_at) are correct in the response
-	updatedGroup, err := db.GetGroupDetails(c.Request.Context(), h.pool, groupID)
+	updatedGroup, err := db.GetGroup(c.Request.Context(), h.pool, groupID)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrGroupNotFound,

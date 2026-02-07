@@ -648,7 +648,7 @@
                     "201": {
                         "description": "Group successfully created",
                         "schema": {
-                            "$ref": "#/definitions/models.Group"
+                            "$ref": "#/definitions/models.GroupDetails"
                         }
                     },
                     "400": {
@@ -850,7 +850,7 @@
                     "200": {
                         "description": "Returns updated group",
                         "schema": {
-                            "$ref": "#/definitions/models.Group"
+                            "$ref": "#/definitions/models.GroupDetails"
                         }
                     },
                     "400": {

@@ -656,7 +656,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Group successfully created",
                         "schema": {
-                            "$ref": "#/definitions/models.Group"
+                            "$ref": "#/definitions/models.GroupDetails"
                         }
                     },
                     "400": {
@@ -858,7 +858,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Returns updated group",
                         "schema": {
-                            "$ref": "#/definitions/models.Group"
+                            "$ref": "#/definitions/models.GroupDetails"
                         }
                     },
                     "400": {

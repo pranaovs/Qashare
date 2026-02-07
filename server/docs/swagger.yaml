@@ -672,7 +672,7 @@ paths:
         "201":
           description: Group successfully created
           schema:
-            $ref: '#/definitions/models.Group'
+            $ref: '#/definitions/models.GroupDetails'
         "400":
           description: 'BAD_REQUEST: Invalid request body format or missing required
             fields | BAD_NAME: Name contains invalid characters or is too short/long'
@@ -805,7 +805,7 @@ paths:
         "200":
           description: Returns updated group
           schema:
-            $ref: '#/definitions/models.Group'
+            $ref: '#/definitions/models.GroupDetails'
         "400":
           description: 'BAD_REQUEST: Invalid request body or missing required fields'
           schema:
