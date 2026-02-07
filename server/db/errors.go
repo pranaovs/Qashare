@@ -160,3 +160,13 @@ func IsDuplicateKey(err error) bool {
 	errStr := err.Error()
 	return strings.Contains(errStr, "duplicate key") || strings.Contains(errStr, "unique constraint")
 }
+
+// IsInvalidUUID checks if an error is an invalid UUID format error from PostgreSQL.
+// This is commonly returned when passing a non-UUID string to a UUID column query.
+func IsInvalidUUID(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := err.Error()
+	return strings.Contains(errStr, "invalid input syntax for type uuid")
+}
