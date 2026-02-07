@@ -194,14 +194,6 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.Expe
 	return nil
 }
 
-// PatchExpense implements HTTP PATCH semantics by merging partial update with current state.
-// This function:
-// 1. Fetches current expense from DB
-// 2. Merges patch with current using MergeStructs (immutable fields automatically protected)
-// 3. Calls UpdateExpense with merged result (all validation reused)
-// 4. Returns updated expense
-//
-// This elegant approach eliminates code duplication by delegating to UpdateExpense.
 // GetExpense retrieves a complete expense record including all its splits.
 // Returns ErrExpenseNotFound if no expense with the ID exists.
 func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (models.ExpenseDetails, error) {
