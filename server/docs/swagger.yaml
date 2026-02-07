@@ -68,6 +68,27 @@ definitions:
       title:
         type: string
     type: object
+  models.ExpenseDetailsPatch:
+    properties:
+      amount:
+        type: number
+      description:
+        type: string
+      is_incomplete_amount:
+        type: boolean
+      is_incomplete_split:
+        type: boolean
+      latitude:
+        type: number
+      longitude:
+        type: number
+      splits:
+        items:
+          $ref: '#/definitions/models.ExpenseSplit'
+        type: array
+      title:
+        type: string
+    type: object
   models.ExpenseSplit:
     properties:
       amount:
@@ -108,6 +129,13 @@ definitions:
       name:
         type: string
     type: object
+  models.GroupPatch:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
   models.GroupUser:
     properties:
       email:
@@ -140,6 +168,13 @@ definitions:
       name:
         type: string
       user_id:
+        type: string
+    type: object
+  models.UserPatch:
+    properties:
+      email:
+        type: string
+      name:
         type: string
     type: object
   models.UserSpendings:
@@ -520,7 +555,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/models.ExpenseDetails'
+          $ref: '#/definitions/models.ExpenseDetailsPatch'
       produces:
       - application/json
       responses:
@@ -711,7 +746,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/models.Group'
+          $ref: '#/definitions/models.GroupPatch'
       produces:
       - application/json
       responses:
@@ -1131,7 +1166,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/models.User'
+          $ref: '#/definitions/models.UserPatch'
       produces:
       - application/json
       responses:

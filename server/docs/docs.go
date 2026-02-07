@@ -571,7 +571,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.ExpenseDetails"
+                            "$ref": "#/definitions/models.ExpenseDetailsPatch"
                         }
                     }
                 ],
@@ -924,7 +924,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Group"
+                            "$ref": "#/definitions/models.GroupPatch"
                         }
                     }
                 ],
@@ -1440,7 +1440,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.User"
+                            "$ref": "#/definitions/models.UserPatch"
                         }
                     }
                 ],
@@ -1851,6 +1851,38 @@ const docTemplate = `{
                 }
             }
         },
+        "models.ExpenseDetailsPatch": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "is_incomplete_amount": {
+                    "type": "boolean"
+                },
+                "is_incomplete_split": {
+                    "type": "boolean"
+                },
+                "latitude": {
+                    "type": "number"
+                },
+                "longitude": {
+                    "type": "number"
+                },
+                "splits": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.ExpenseSplit"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
         "models.ExpenseSplit": {
             "type": "object",
             "properties": {
@@ -1912,6 +1944,17 @@ const docTemplate = `{
                 }
             }
         },
+        "models.GroupPatch": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "models.GroupUser": {
             "type": "object",
             "properties": {
@@ -1960,6 +2003,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UserPatch": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }

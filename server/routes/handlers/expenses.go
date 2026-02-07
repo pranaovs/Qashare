@@ -255,7 +255,7 @@ func (h *ExpensesHandler) Delete(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Expense ID"
-// @Param request body models.ExpenseDetails true "Partial expense details (all fields optional except where validation requires)"
+// @Param request body models.ExpenseDetailsPatch true "Partial expense details (all fields optional except where validation requires)"
 // @Success 200 {object} models.ExpenseDetails "Returns updated expense with all fields"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or validation failed | INVALID_SPLIT: Split totals do not match expense amount"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"

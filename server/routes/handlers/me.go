@@ -160,7 +160,7 @@ func (h *MeHandler) Update(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body models.User true "Partial user details (name and/or email, all optional)"
+// @Param request body models.UserPatch true "Partial user details (name and/or email, all optional)"
 // @Success 200 {object} models.User "Returns updated user"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or validation failed"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
