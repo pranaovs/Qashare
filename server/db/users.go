@@ -373,11 +373,10 @@ func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 		return ErrInvalidInput.Msg("email is required")
 	}
 
-	// Update user fields
+	// Update user fields (password_hash is immutable and not updated here)
 	updateQuery := `UPDATE users
 		SET user_name = $2,
 			email = $3
-			password_hash = $4
 		WHERE user_id = $1`
 
 	result, err := pool.Exec(
@@ -386,7 +385,6 @@ func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 		user.UserID,
 		user.Name,
 		user.Email,
-		user.PasswordHash,
 	)
 	if err != nil {
 		return err

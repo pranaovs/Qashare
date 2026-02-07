@@ -76,6 +76,7 @@ func ValidateNoImmutableFields(v any) error {
 // 2. For each remaining field in patch:
 //   - If field is zero value, use original value
 //   - If field is non-zero, use patch value
+//   - If field is an embedded struct, recursively merge it
 //
 // 3. Ensures immutable fields in result always come from original
 //
@@ -107,45 +108,53 @@ func MergeStructs[T any](original, patch *T) (*T, error) {
 		return nil, fmt.Errorf("patch must be struct, got %s", patchVal.Kind())
 	}
 
-	// Step 1: Strip immutable fields from patch
-	patchType := patchVal.Type()
-	for i := 0; i < patchVal.NumField(); i++ {
-		field := patchType.Field(i)
-		if tag := field.Tag.Get("immutable"); tag == "true" {
-			patchField := patchVal.Field(i)
-			if patchField.CanSet() {
-				patchField.Set(reflect.Zero(patchField.Type()))
-			}
-		}
-	}
-
-	// Step 2: Create merged struct starting with original
+	// Create merged struct starting with original
 	mergedVal := reflect.New(origVal.Type()).Elem()
 	mergedVal.Set(origVal)
 
-	// Step 3: Merge non-zero fields from patch
+	// Merge fields from patch
+	if err := mergeStructFields(mergedVal, patchVal); err != nil {
+		return nil, err
+	}
+
+	// Return pointer to merged struct
+	result := mergedVal.Addr().Interface().(*T)
+	return result, nil
+}
+
+// mergeStructFields recursively merges fields from patchVal into mergedVal.
+// It handles embedded structs by recursively merging their fields.
+func mergeStructFields(mergedVal, patchVal reflect.Value) error {
+	patchType := patchVal.Type()
+
 	for i := 0; i < patchVal.NumField(); i++ {
 		patchField := patchVal.Field(i)
 		mergedField := mergedVal.Field(i)
+		fieldInfo := patchType.Field(i)
 
 		// Skip if field is not settable
 		if !mergedField.CanSet() {
 			continue
 		}
 
-		// Skip if field is immutable (already has original value)
-		field := patchType.Field(i)
-		if tag := field.Tag.Get("immutable"); tag == "true" {
+		// Skip if field is immutable (keep original value)
+		if tag := fieldInfo.Tag.Get("immutable"); tag == "true" {
 			continue
 		}
 
-		// If patch field is non-zero, use it; otherwise keep original
+		// Handle embedded structs recursively
+		if fieldInfo.Anonymous && patchField.Kind() == reflect.Struct {
+			if err := mergeStructFields(mergedField, patchField); err != nil {
+				return err
+			}
+			continue
+		}
+
+		// For non-embedded fields: if patch field is non-zero, use it
 		if !patchField.IsZero() {
 			mergedField.Set(patchField)
 		}
 	}
 
-	// Return pointer to merged struct
-	result := mergedVal.Addr().Interface().(*T)
-	return result, nil
+	return nil
 }

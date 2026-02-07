@@ -13,11 +13,11 @@ type User struct {
 
 // Group represents a group
 type Group struct {
-	GroupID     string `json:"group_id" db:"group_id"`
+	GroupID     string `json:"group_id" db:"group_id" immutable:"true"`
 	Name        string `json:"name" db:"group_name"`
 	Description string `json:"description,omitempty" db:"description"`
-	CreatedBy   string `json:"created_by" db:"created_by"`
-	CreatedAt   int64  `json:"created_at" db:"created_at"`
+	CreatedBy   string `json:"created_by" db:"created_by" immutable:"true"`
+	CreatedAt   int64  `json:"created_at" db:"created_at" immutable:"true"`
 }
 
 // GroupDetails represents detailed information about a group including its members
@@ -44,12 +44,12 @@ type GroupUser struct {
 
 // Expense represents an expense in a group(ID)
 type Expense struct {
-	ExpenseID          string   `json:"expense_id" db:"expense_id"`
-	GroupID            string   `json:"group_id" db:"group_id"`
-	AddedBy            *string  `json:"added_by" db:"added_by"`
+	ExpenseID          string   `json:"expense_id" db:"expense_id" immutable:"true"`
+	GroupID            string   `json:"group_id" db:"group_id" immutable:"true"`
+	AddedBy            *string  `json:"added_by" db:"added_by" immutable:"true"`
 	Title              string   `json:"title" db:"title"`
 	Description        *string  `json:"description,omitempty" db:"description"` // pointer because nullable in db
-	CreatedAt          int64    `json:"created_at" db:"created_at"`
+	CreatedAt          int64    `json:"created_at" db:"created_at" immutable:"true"`
 	Amount             float64  `json:"amount" db:"amount"`
 	IsIncompleteAmount bool     `json:"is_incomplete_amount" db:"is_incomplete_amount"`
 	IsIncompleteSplit  bool     `json:"is_incomplete_split" db:"is_incomplete_split"`

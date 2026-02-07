@@ -93,13 +93,13 @@ func (h *MeHandler) ListAdmin(c *gin.Context) {
 
 // Update godoc
 // @Summary Update current user (full replacement)
-// @Description Update the authenticated user's editable details. This is a full replacement, so all required fields (name and email) must be provided. Immutable fields (like user_id) will be ignored if included in the request body.
+// @Description Update the authenticated user's editable details. This is a full replacement, so all required fields (name and email) must be provided. Immutable fields will be ignored if included in the request body.
 // @Tags me
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param request body models.User true "Updated user details"
-// @Success 200 {object} map[string]string "Returns success message"
+// @Success 200 {object} models.User "Returns updated user"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or missing required fields"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists"
@@ -114,8 +114,8 @@ func (h *MeHandler) Update(c *gin.Context) {
 		return
 	}
 
-	err := utils.StripImmutableFields(&payload)
-	if err != nil {
+	// Strip immutable fields (silently ignore if client sends them)
+	if err := utils.StripImmutableFields(&payload); err != nil {
 		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
@@ -136,9 +136,9 @@ func (h *MeHandler) Update(c *gin.Context) {
 		}))
 		return
 	}
-
 	payload.Email = validatedEmail
 
+	// Set immutable fields from authenticated context (no DB fetch needed)
 	payload.UserID = userID
 
 	err = db.UpdateUser(c.Request.Context(), h.pool, &payload)
@@ -150,7 +150,7 @@ func (h *MeHandler) Update(c *gin.Context) {
 		return
 	}
 
-	utils.SendOK(c, "user updated")
+	utils.SendJSON(c, http.StatusOK, payload)
 }
 
 // Patch godoc
@@ -224,5 +224,5 @@ func (h *MeHandler) Patch(c *gin.Context) {
 		return
 	}
 
-	utils.SendOK(c, "user patched")
+	utils.SendJSON(c, http.StatusOK, updated)
 }
