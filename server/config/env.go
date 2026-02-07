@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -88,4 +89,19 @@ func getEnvDuration(key string, defaultSeconds int) time.Duration {
 		return time.Duration(defaultSeconds) * time.Second
 	}
 	return time.Duration(val) * time.Second
+}
+
+func getEnvList(key string, defaultVal []string) []string {
+	val := os.Getenv(key)
+	if val == "" {
+		return defaultVal
+	}
+	parts := strings.Split(val, ",")
+	result := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if trimmed := strings.TrimSpace(p); trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
 }

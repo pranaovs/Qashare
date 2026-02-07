@@ -71,6 +71,10 @@ func run() error {
 
 	// Setup HTTP router
 	router := gin.Default()
+	if err := router.SetTrustedProxies(cfg.API.TrustedProxies); err != nil {
+		log.Printf("[ERROR] Invalid trusted proxies configuration: %v", err)
+		return err
+	}
 	routes.RegisterRoutes(cfg.API.BasePath, router, pool, cfg.JWT, cfg.App)
 
 	// Start server with graceful shutdown

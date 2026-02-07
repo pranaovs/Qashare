@@ -12,10 +12,11 @@ type Config struct {
 
 // APIConfig holds API server configuration
 type APIConfig struct {
-	BasePath  string
-	PublicURL string
-	BindAddr  string
-	BindPort  int
+	BasePath       string
+	PublicURL      string
+	BindAddr       string
+	BindPort       int
+	TrustedProxies []string
 }
 
 // DatabaseConfig holds database connection and pool configuration
