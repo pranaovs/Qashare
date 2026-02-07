@@ -364,15 +364,9 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 		return
 	}
 
-	// Convert UUIDs back to strings for JSON response
-	addedMemberStrings := make([]string, len(validUserIDs))
-	for i, uid := range validUserIDs {
-		addedMemberStrings[i] = uid.String()
-	}
-
 	utils.SendJSON(c, http.StatusOK, gin.H{
 		"message":       "members added successfully",
-		"added_members": addedMemberStrings,
+		"added_members": validUserIDs,
 	})
 }
 
