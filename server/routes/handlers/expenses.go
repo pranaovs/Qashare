@@ -108,7 +108,16 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusCreated, expense)
+	// Fetch the created expense from DB to return the complete entity
+	created, err := db.GetExpense(c.Request.Context(), h.pool, expense.ExpenseID)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrExpenseNotFound,
+		}))
+		return
+	}
+
+	utils.SendJSON(c, http.StatusCreated, created)
 }
 
 // GetExpense godoc
@@ -132,14 +141,14 @@ func (h *ExpensesHandler) GetExpense(c *gin.Context) {
 
 // Update godoc
 // @Summary Update an expense
-// @Description Update an existing expense (requires being group admin or expense creator)
+// @Description Update an existing expense (requires being group admin or expense creator). Immutable fields will be ignored if included in the request body.
 // @Tags expenses
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Expense ID"
 // @Param request body models.ExpenseDetails true "Updated expense details"
-// @Success 200 {object} map[string]string "Returns success message"
+// @Success 200 {object} models.ExpenseDetails "Returns updated expense with all fields"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or missing required fields | INVALID_SPLIT: No splits provided or split totals do not match expense amount"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin or expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group"
@@ -156,14 +165,14 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 		return
 	}
 
-	// Do not allow changing critical fields
-	payload.ExpenseID = expense.ExpenseID
-	payload.GroupID = expense.GroupID
-	payload.AddedBy = expense.AddedBy
-	payload.CreatedAt = expense.CreatedAt
+	// Strip immutable fields (silently ignore if client sends them)
+	if err := utils.StripImmutableFields(&payload); err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
 
 	if len(payload.Splits) == 0 {
-		utils.SendError(c, apierrors.ErrInvalidSplit)
+		utils.SendError(c, apierrors.ErrInvalidSplit.Msg("no splits provided"))
 		return
 	}
 
@@ -196,6 +205,12 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 		}
 	}
 
+	// Set immutable fields from middleware-fetched expense (no extra DB fetch needed)
+	payload.ExpenseID = expense.ExpenseID
+	payload.GroupID = expense.GroupID
+	payload.AddedBy = expense.AddedBy
+	payload.CreatedAt = expense.CreatedAt
+
 	if err := db.UpdateExpense(c.Request.Context(), h.pool, &payload); err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrExpenseNotFound,
@@ -203,7 +218,15 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 		return
 	}
 
-	utils.SendOK(c, "expense updated")
+	expense, err := db.GetExpense(c.Request.Context(), h.pool, expense.ExpenseID)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrExpenseNotFound,
+		}))
+		return
+	}
+
+	utils.SendJSON(c, http.StatusOK, expense)
 }
 
 // Delete godoc
@@ -230,4 +253,89 @@ func (h *ExpensesHandler) Delete(c *gin.Context) {
 	}
 
 	utils.SendOK(c, "expense deleted")
+}
+
+// Patch godoc
+// @Summary Partially update an expense
+// @Description Update specific fields of an expense (requires being group admin or expense creator). Only provided fields are updated, others remain unchanged. Immutable fields are automatically protected.
+// @Tags expenses
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Expense ID"
+// @Param request body models.ExpenseDetailsPatch true "Partial expense details (all fields optional except where validation requires)"
+// @Success 200 {object} models.ExpenseDetails "Returns updated expense with all fields"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or validation failed | INVALID_SPLIT: Split totals do not match expense amount"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin or expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group"
+// @Failure 404 {object} apierrors.AppError "EXPENSE_NOT_FOUND: The specified expense does not exist"
+// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
+// @Router /v1/expenses/{id} [patch]
+func (h *ExpensesHandler) Patch(c *gin.Context) {
+	expense := middleware.MustGetExpense(c)
+	groupID := middleware.MustGetGroupID(c)
+
+	var patch models.ExpenseDetailsPatch
+	if err := c.ShouldBindJSON(&patch); err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
+
+	// Validate splits members are in group (if splits provided in patch)
+	if patch.Splits != nil {
+		if len(*patch.Splits) == 0 {
+			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("no splits provided"))
+			return
+		}
+		splitUserIDs := make([]string, 0, len(*patch.Splits))
+		for _, s := range *patch.Splits {
+			splitUserIDs = append(splitUserIDs, s.UserID)
+		}
+		uniqueUserIDs := utils.GetUniqueUserIDs(splitUserIDs)
+
+		if err := db.AllMembersOfGroup(c.Request.Context(), h.pool, uniqueUserIDs, groupID); err != nil {
+			utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+				db.ErrNotFound: apierrors.ErrUserNotInGroup,
+			}))
+			return
+		}
+	}
+
+	// Apply patch to expense (only non-nil fields are applied)
+	if err := utils.Patch(&expense, &patch); err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
+
+	// Validate split totals AFTER applying patch
+	if len(expense.Splits) > 0 && !expense.IsIncompleteAmount && !expense.IsIncompleteSplit {
+		var paidTotal, owedTotal float64
+		for _, s := range expense.Splits {
+			if s.IsPaid {
+				paidTotal += s.Amount
+			} else {
+				owedTotal += s.Amount
+			}
+		}
+
+		if math.Abs(paidTotal-expense.Amount) > h.appConfig.SplitTolerance {
+			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("paid split total does not match expense amount"))
+			return
+		}
+		if math.Abs(owedTotal-expense.Amount) > h.appConfig.SplitTolerance {
+			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("owed split total does not match expense amount"))
+			return
+		}
+	}
+
+	err := db.UpdateExpense(c.Request.Context(), h.pool, &expense)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound:     apierrors.ErrExpenseNotFound,
+			db.ErrInvalidInput: apierrors.ErrBadRequest,
+		}))
+		return
+	}
+
+	utils.SendJSON(c, http.StatusOK, expense)
 }

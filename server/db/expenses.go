@@ -227,7 +227,7 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (mode
 		&expense.Latitude,
 		&expense.Longitude,
 	)
-	if err == pgx.ErrNoRows {
+	if err == pgx.ErrNoRows || IsInvalidUUID(err) {
 		return models.ExpenseDetails{}, ErrNotFound.Msgf("expense with id %s not found", expenseID)
 	}
 	if err != nil {

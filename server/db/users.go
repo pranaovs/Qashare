@@ -347,12 +347,59 @@ func AllMembersOfGroup(ctx context.Context, pool *pgxpool.Pool, userIDs []string
 	var count int
 	err := pool.QueryRow(ctx, query, groupID, uniqueUserIDs).Scan(&count)
 	if err != nil {
+		// Invalid UUID format for group_id or one or more user_ids
+		if IsInvalidUUID(err) {
+			return ErrNotFound.Msg("invalid UUID format for group_id or one or more user_ids")
+		}
 		return err
 	}
 
 	// If count doesn't match, some users are not members
 	if count != len(uniqueUserIDs) {
 		return ErrNotFound.Msg("one or more users are not members of the group")
+	}
+
+	return nil
+}
+
+// UpdateUser updates an existing user's editable fields (name and email).
+// This operation updates the user's basic information.
+// Returns an error if validation fails or the operation fails.
+func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) error {
+	// Validate input
+	if user.UserID == "" {
+		return ErrInvalidInput.Msg("user_id is required")
+	}
+	if user.Name == "" {
+		return ErrInvalidInput.Msg("name is required")
+	}
+	if user.Email == "" {
+		return ErrInvalidInput.Msg("email is required")
+	}
+
+	// Update user fields (password_hash is immutable and not updated here)
+	updateQuery := `UPDATE users
+		SET user_name = $2,
+			email = $3
+		WHERE user_id = $1`
+
+	result, err := pool.Exec(
+		ctx,
+		updateQuery,
+		user.UserID,
+		user.Name,
+		user.Email,
+	)
+	if err != nil {
+		if IsDuplicateKey(err) {
+			return ErrDuplicateKey
+		}
+		return err
+	}
+
+	// Check if user was found
+	if result.RowsAffected() == 0 {
+		return ErrNotFound.Msgf("user with id %s not found", user.UserID)
 	}
 
 	return nil

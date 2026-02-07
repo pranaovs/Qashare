@@ -33,7 +33,7 @@ func NewGroupsHandler(pool *pgxpool.Pool, appConfig config.AppConfig) *GroupsHan
 // @Produce json
 // @Security BearerAuth
 // @Param request body object{name=string,description=string} true "Group details"
-// @Success 201 {object} models.Group "Group successfully created"
+// @Success 201 {object} models.GroupDetails "Group successfully created"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format or missing required fields | BAD_NAME: Name contains invalid characters or is too short/long"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
@@ -71,7 +71,16 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusCreated, group)
+	// Fetch the created group from DB to return the complete entity with members
+	created, err := db.GetGroup(c.Request.Context(), h.pool, group.GroupID)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrGroupNotFound,
+		}))
+		return
+	}
+
+	utils.SendJSON(c, http.StatusCreated, created)
 }
 
 // ListUserGroups godoc
@@ -144,6 +153,140 @@ func (h *GroupsHandler) GetGroup(c *gin.Context) {
 	}
 
 	utils.SendJSON(c, http.StatusOK, group)
+}
+
+// Update godoc
+// @Summary Update a group (full replacement)
+// @Description Update group name and description (requires group admin permission). Immutable fields will be ignored if included in the request body.
+// @Tags groups
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Group ID"
+// @Param request body models.Group true "Updated group details"
+// @Success 200 {object} models.GroupDetails "Returns updated group"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or missing required fields"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED: The authenticated user is not a member of the group"
+// @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
+// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
+// @Router /v1/groups/{id} [put]
+func (h *GroupsHandler) Update(c *gin.Context) {
+	groupID := middleware.MustGetGroupID(c)
+
+	var payload models.Group
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
+
+	// Strip immutable fields (silently ignore if client sends them)
+	if err := utils.StripImmutableFields(&payload); err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
+
+	// Validate name
+	validatedName, err := utils.ValidateName(payload.Name)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			utils.ErrInvalidName: apierrors.ErrInvalidName,
+		}))
+		return
+	}
+	payload.Name = validatedName
+
+	// Set immutable fields from authenticated context (no DB fetch needed)
+	payload.GroupID = groupID
+
+	err = db.UpdateGroup(c.Request.Context(), h.pool, &payload)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrGroupNotFound,
+		}))
+		return
+	}
+
+	// Fetch the updated group to ensure immutable fields (e.g., created_by, created_at) are correct in the response
+	updatedGroup, err := db.GetGroup(c.Request.Context(), h.pool, groupID)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrGroupNotFound,
+		}))
+		return
+	}
+
+	utils.SendJSON(c, http.StatusOK, updatedGroup)
+}
+
+// Patch godoc
+// @Summary Partially update a group
+// @Description Update specific fields of a group. Only provided fields are updated, others remain unchanged.
+// @Tags groups
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Group ID"
+// @Param request body models.GroupPatch true "Partial group details (name and/or description, all optional)"
+// @Success 200 {object} models.GroupDetails "Returns updated group with all fields"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or validation failed"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED: The authenticated user is not a member of the group"
+// @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
+// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
+// @Router /v1/groups/{id} [patch]
+func (h *GroupsHandler) Patch(c *gin.Context) {
+	groupID := middleware.MustGetGroupID(c)
+
+	var patch models.GroupPatch
+	if err := c.ShouldBindJSON(&patch); err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
+
+	current, err := db.GetGroup(c.Request.Context(), h.pool, groupID)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound:     apierrors.ErrGroupNotFound,
+			db.ErrInvalidInput: apierrors.ErrBadRequest,
+		}))
+		return
+	}
+
+	// Validate name if provided
+	if patch.Name != nil {
+		validatedName, err := utils.ValidateName(*patch.Name)
+		if err != nil {
+			utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+				utils.ErrInvalidName: apierrors.ErrInvalidName,
+			}))
+			return
+		}
+		patch.Name = &validatedName
+	}
+
+	// Apply patch to group (only non-nil fields are applied)
+	if err := utils.Patch(&current.Group, &patch); err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
+
+	err = db.UpdateGroup(c.Request.Context(), h.pool, &current.Group)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound:     apierrors.ErrGroupNotFound,
+			db.ErrInvalidInput: apierrors.ErrBadRequest,
+		}))
+		return
+	}
+
+	// Return GroupDetails with updated Group and existing Members
+	updated := models.GroupDetails{
+		Group:   current.Group,
+		Members: current.Members,
+	}
+
+	utils.SendJSON(c, http.StatusOK, updated)
 }
 
 // AddMembers godoc

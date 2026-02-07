@@ -68,6 +68,27 @@ definitions:
       title:
         type: string
     type: object
+  models.ExpenseDetailsPatch:
+    properties:
+      amount:
+        type: number
+      description:
+        type: string
+      is_incomplete_amount:
+        type: boolean
+      is_incomplete_split:
+        type: boolean
+      latitude:
+        type: number
+      longitude:
+        type: number
+      splits:
+        items:
+          $ref: '#/definitions/models.ExpenseSplit'
+        type: array
+      title:
+        type: string
+    type: object
   models.ExpenseSplit:
     properties:
       amount:
@@ -108,6 +129,13 @@ definitions:
       name:
         type: string
     type: object
+  models.GroupPatch:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    type: object
   models.GroupUser:
     properties:
       email:
@@ -140,6 +168,13 @@ definitions:
       name:
         type: string
       user_id:
+        type: string
+    type: object
+  models.UserPatch:
+    properties:
+      email:
+        type: string
+      name:
         type: string
     type: object
   models.UserSpendings:
@@ -503,11 +538,67 @@ paths:
       summary: Get expense details
       tags:
       - expenses
+    patch:
+      consumes:
+      - application/json
+      description: Update specific fields of an expense (requires being group admin
+        or expense creator). Only provided fields are updated, others remain unchanged.
+        Immutable fields are automatically protected.
+      parameters:
+      - description: Expense ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Partial expense details (all fields optional except where validation
+          requires)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.ExpenseDetailsPatch'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns updated expense with all fields
+          schema:
+            $ref: '#/definitions/models.ExpenseDetails'
+        "400":
+          description: 'BAD_REQUEST: Invalid request body or validation failed | INVALID_SPLIT:
+            Split totals do not match expense amount'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'NO_PERMISSIONS: User is not the group admin or expense creator
+            | USERS_NOT_RELATED: The authenticated user is not a member of the group
+            | USER_NOT_IN_GROUP: One or more users in the splits are not members of
+            the group'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'EXPENSE_NOT_FOUND: The specified expense does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Partially update an expense
+      tags:
+      - expenses
     put:
       consumes:
       - application/json
       description: Update an existing expense (requires being group admin or expense
-        creator)
+        creator). Immutable fields will be ignored if included in the request body.
       parameters:
       - description: Expense ID
         in: path
@@ -524,11 +615,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Returns success message
+          description: Returns updated expense with all fields
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.ExpenseDetails'
         "400":
           description: 'BAD_REQUEST: Invalid request body or missing required fields
             | INVALID_SPLIT: No splits provided or split totals do not match expense
@@ -583,7 +672,7 @@ paths:
         "201":
           description: Group successfully created
           schema:
-            $ref: '#/definitions/models.Group'
+            $ref: '#/definitions/models.GroupDetails'
         "400":
           description: 'BAD_REQUEST: Invalid request body format or missing required
             fields | BAD_NAME: Name contains invalid characters or is too short/long'
@@ -640,6 +729,108 @@ paths:
       security:
       - BearerAuth: []
       summary: Get group details
+      tags:
+      - groups
+    patch:
+      consumes:
+      - application/json
+      description: Update specific fields of a group. Only provided fields are updated,
+        others remain unchanged.
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Partial group details (name and/or description, all optional)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.GroupPatch'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns updated group with all fields
+          schema:
+            $ref: '#/definitions/models.GroupDetails'
+        "400":
+          description: 'BAD_REQUEST: Invalid request body or validation failed'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED:
+            The authenticated user is not a member of the group'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'GROUP_NOT_FOUND: The specified group does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Partially update a group
+      tags:
+      - groups
+    put:
+      consumes:
+      - application/json
+      description: Update group name and description (requires group admin permission).
+        Immutable fields will be ignored if included in the request body.
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated group details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Group'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns updated group
+          schema:
+            $ref: '#/definitions/models.GroupDetails'
+        "400":
+          description: 'BAD_REQUEST: Invalid request body or missing required fields'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED:
+            The authenticated user is not a member of the group'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'GROUP_NOT_FOUND: The specified group does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Update a group (full replacement)
       tags:
       - groups
   /v1/groups/{id}/expenses:
@@ -962,6 +1153,98 @@ paths:
       security:
       - BearerAuth: []
       summary: Get current user
+      tags:
+      - me
+    patch:
+      consumes:
+      - application/json
+      description: Update specific fields of the authenticated user. Only provided
+        fields are updated, others remain unchanged. Immutable fields (like user_id)
+        will be ignored if included in the request body.
+      parameters:
+      - description: Partial user details (name and/or email, all optional)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserPatch'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns updated user
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: 'BAD_REQUEST: Invalid request body or validation failed'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'USER_NOT_FOUND: The authenticated user no longer exists'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "409":
+          description: 'EMAIL_EXISTS: An account with this email already exists'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Partially update current user
+      tags:
+      - me
+    put:
+      consumes:
+      - application/json
+      description: Update the authenticated user's editable details. This is a full
+        replacement, so all required fields (name and email) must be provided. Immutable
+        fields will be ignored if included in the request body.
+      parameters:
+      - description: Updated user details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns updated user
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: 'BAD_REQUEST: Invalid request body or missing required fields'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'USER_NOT_FOUND: The authenticated user no longer exists'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "409":
+          description: 'EMAIL_EXISTS: An account with this email already exists'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Update current user (full replacement)
       tags:
       - me
   /v1/me/admin:

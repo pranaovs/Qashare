@@ -236,3 +236,40 @@ func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string,
 
 	return nil
 }
+
+// UpdateGroup updates an existing group's editable fields (name and description).
+// This operation updates the group's basic information.
+// Returns an error if validation fails or the operation fails.
+func UpdateGroup(ctx context.Context, pool *pgxpool.Pool, group *models.Group) error {
+	// Validate input
+	if group.GroupID == "" {
+		return ErrInvalidInput.Msg("group ID is required")
+	}
+	if group.Name == "" {
+		return ErrInvalidInput.Msg("name is required")
+	}
+
+	// Update group fields
+	updateQuery := `UPDATE groups
+		SET group_name = $2,
+			description = $3
+		WHERE group_id = $1`
+
+	result, err := pool.Exec(
+		ctx,
+		updateQuery,
+		group.GroupID,
+		group.Name,
+		group.Description,
+	)
+	if err != nil {
+		return err
+	}
+
+	// Check if group was found
+	if result.RowsAffected() == 0 {
+		return ErrNotFound.Msgf("group with id %s not found", group.GroupID)
+	}
+
+	return nil
+}
