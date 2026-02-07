@@ -118,7 +118,7 @@ func (h *GroupsHandler) ListUser(c *gin.Context) {
 // @Router /v1/groups/admin [get]
 func (h *GroupsHandler) ListAdmin(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
-	groups, err := db.AdminOfGroups(c.Request.Context(), h.pool, userID)
+	groups, err := db.OwnerOfGroups(c.Request.Context(), h.pool, userID)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrUserNotFound,

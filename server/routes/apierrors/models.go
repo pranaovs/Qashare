@@ -20,6 +20,7 @@ var (
 	ErrUserNotInGroup  = New(http.StatusForbidden, "USER_NOT_IN_GROUP", "The user is not a member of the specified group.", nil)
 	ErrUsersNotRelated = New(http.StatusForbidden, "USERS_NOT_RELATED", "The users are not related in the specified context.", nil)
 	ErrNoPermissions   = New(http.StatusForbidden, "NO_PERMISSIONS", "You do not have sufficient permissions to perform this action.", nil)
+	ErrUserOwnsGroups  = New(http.StatusConflict, "USER_OWNS_GROUPS", "Cannot delete account while owning groups. Transfer ownership first.", nil)
 
 	// Expenses errors
 	ErrExpenseNotFound = New(http.StatusNotFound, "EXPENSE_NOT_FOUND", "The requested expense does not exist.", nil)

@@ -1481,7 +1481,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete the authenticated user's account and all associated data",
+                "description": "Delete the authenticated user's account and all associated data.",
                 "produces": [
                     "application/json"
                 ],
@@ -1507,6 +1507,12 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "USER_NOT_FOUND: The authenticated user no longer exists in the database",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "409": {
+                        "description": "USER_OWNS_GROUPS: User owns groups and must delete the groups or transfer ownership first",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }

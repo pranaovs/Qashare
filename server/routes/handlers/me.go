@@ -81,7 +81,7 @@ func (h *MeHandler) GetGroups(c *gin.Context) {
 // @Router /v1/me/admin [get]
 func (h *MeHandler) GetAdmin(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
-	groups, err := db.AdminOfGroups(c.Request.Context(), h.pool, userID)
+	groups, err := db.OwnerOfGroups(c.Request.Context(), h.pool, userID)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrUserNotFound,
@@ -233,17 +233,29 @@ func (h *MeHandler) Patch(c *gin.Context) {
 
 // Delete godoc
 // @Summary Delete current user account
-// @Description Delete the authenticated user's account and all associated data
+// @Description Delete the authenticated user's account and all associated data.
 // @Tags me
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} map[string]string "Returns success message"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists in the database"
+// @Failure 409 {object} apierrors.AppError "USER_OWNS_GROUPS: User owns groups and must delete the groups or transfer ownership first"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/me [delete]
 func (h *MeHandler) Delete(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
+
+	// Check if user owns any groups
+	ownedGroups, err := db.OwnerOfGroups(c.Request.Context(), h.pool, userID)
+	if err != nil {
+		utils.SendError(c, err)
+		return
+	}
+	if len(ownedGroups) > 0 {
+		utils.SendError(c, apierrors.ErrUserOwnsGroups)
+		return
+	}
 
 	if err := db.DeleteUser(c.Request.Context(), h.pool, userID); err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{

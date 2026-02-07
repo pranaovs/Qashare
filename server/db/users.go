@@ -224,10 +224,10 @@ func UsersRelated(ctx context.Context, pool *pgxpool.Pool, userID1, userID2 stri
 	return areRelated, nil
 }
 
-// AdminOfGroups returns all groups where the user is the creator/administrator.
+// OwnerOfGroups returns all groups where the user is the creator/administrator.
 // Groups are returned in descending order by creation date (newest first).
 // This is useful for showing users the groups they manage.
-func AdminOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]models.Group, error) {
+func OwnerOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]models.Group, error) {
 	query := `
 		SELECT group_id, group_name, description, created_by, extract(epoch from created_at)::bigint
 		FROM groups
