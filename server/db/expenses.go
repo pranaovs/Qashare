@@ -203,46 +203,6 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.Expe
 // 4. Returns updated expense
 //
 // This elegant approach eliminates code duplication by delegating to UpdateExpense.
-func PatchExpense(
-	ctx context.Context,
-	pool *pgxpool.Pool,
-	expenseID string,
-	patch *models.ExpenseDetails,
-) (*models.ExpenseDetails, error) {
-	if expenseID == "" {
-		return nil, ErrNotFound.Msg("expense not found")
-	}
-	if patch == nil {
-		return nil, ErrInvalidInput.Msg("patch request is required")
-	}
-
-	// Fetch current expense
-	current, err := GetExpense(ctx, pool, expenseID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Merge patch with current (immutable fields automatically stripped and preserved)
-	merged, err := utils.MergeStructs(&current, patch)
-	if err != nil {
-		return nil, fmt.Errorf("failed to merge patch: %w", err)
-	}
-
-	// Call UpdateExpense with merged result (all validation runs here)
-	err = UpdateExpense(ctx, pool, merged)
-	if err != nil {
-		return nil, err
-	}
-
-	// Fetch and return updated expense
-	updated, err := GetExpense(ctx, pool, expenseID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &updated, nil
-}
-
 // GetExpense retrieves a complete expense record including all its splits.
 // Returns ErrExpenseNotFound if no expense with the ID exists.
 func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID string) (models.ExpenseDetails, error) {
