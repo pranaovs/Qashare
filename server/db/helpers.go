@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -192,29 +193,19 @@ func isRetryableError(err error) bool {
 	return false
 }
 
+// ParseUUID parses a string into a UUID.
+// Returns the UUID and nil error if valid, or uuid.Nil and an error if invalid.
+func ParseUUID(s string) (uuid.UUID, error) {
+	id, err := uuid.Parse(s)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("invalid UUID format: %w", err)
+	}
+	return id, nil
+}
+
 // ValidateUUID checks if a string is a valid UUID format
-// This is a basic validation that checks format structure
-// For more rigorous validation, consider using github.com/google/uuid package
-func ValidateUUID(uuid string) bool {
-	if len(uuid) != 36 {
-		return false
-	}
-	// Basic format check: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-	if uuid[8] != '-' || uuid[13] != '-' || uuid[18] != '-' || uuid[23] != '-' {
-		return false
-	}
-
-	// Check that all other characters are valid hexadecimal
-	for i, c := range uuid {
-		// Skip the dash positions
-		if i == 8 || i == 13 || i == 18 || i == 23 {
-			continue
-		}
-		// Check if character is a valid hex digit
-		if (c < '0' || c > '9') && (c < 'a' || c > 'f') && (c < 'A' || c > 'F') {
-			return false
-		}
-	}
-
-	return true
+// Deprecated: Use ParseUUID instead for better error handling
+func ValidateUUID(uuidStr string) bool {
+	_, err := uuid.Parse(uuidStr)
+	return err == nil
 }
