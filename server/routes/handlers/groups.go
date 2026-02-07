@@ -460,3 +460,28 @@ func (h *GroupsHandler) GetSpendings(c *gin.Context) {
 
 	utils.SendData(c, spending)
 }
+
+// Delete godoc
+// @Summary Delete a group
+// @Description Delete a group and all its associated data (requires group admin/owner permission)
+// @Tags groups
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Group ID"
+// @Success 200 {object} map[string]string "Returns success message"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
+// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
+// @Router /v1/groups/{id} [delete]
+func (h *GroupsHandler) Delete(c *gin.Context) {
+	groupID := middleware.MustGetGroupID(c)
+
+	if err := db.DeleteGroup(c.Request.Context(), h.pool, groupID); err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrGroupNotFound,
+		}))
+		return
+	}
+
+	utils.SendOK(c, "group deleted")
+}

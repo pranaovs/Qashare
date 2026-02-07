@@ -893,6 +893,59 @@ const docTemplate = `{
                     }
                 }
             },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a group and all its associated data (requires group admin/owner permission)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "groups"
+                ],
+                "summary": "Delete a group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns success message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "GROUP_NOT_FOUND: The specified group does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error - unexpected database error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            },
             "patch": {
                 "security": [
                     {
@@ -1410,6 +1463,50 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "EMAIL_EXISTS: An account with this email already exists",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error - unexpected database error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete the authenticated user's account and all associated data",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "Delete current user account",
+                "responses": {
+                    "200": {
+                        "description": "Returns success message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "USER_NOT_FOUND: The authenticated user no longer exists in the database",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }

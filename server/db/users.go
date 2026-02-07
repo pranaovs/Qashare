@@ -404,3 +404,32 @@ func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 
 	return nil
 }
+
+// DeleteUser deletes a user and all associated data from the database.
+// This operation is atomic and uses a transaction.
+// Note: The database will handle cascading deletes for group_members, expenses, etc. if configured.
+// Returns ErrNotFound if no user with the ID exists.
+func DeleteUser(ctx context.Context, pool *pgxpool.Pool, userID string) error {
+	// Use WithTransaction helper for consistent transaction management
+	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
+		// Delete the user (memberships, expenses, etc. will be cascade deleted)
+		deleteQuery := `DELETE FROM users WHERE user_id = $1`
+
+		result, err := tx.Exec(ctx, deleteQuery, userID)
+		if err != nil {
+			return err
+		}
+
+		// Check if user was found
+		if result.RowsAffected() == 0 {
+			return ErrNotFound.Msgf("user with id %s not found", userID)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
