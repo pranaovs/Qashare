@@ -14,7 +14,6 @@ import (
 // @Summary Get payment settlements for a group
 // @Description Get the payment balances between the authenticated user and all other members in a group. Positive amount means other user owes you, negative means you owe them.
 // @Tags settlements
-// @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Group ID"

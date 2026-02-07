@@ -470,6 +470,7 @@ func (h *GroupsHandler) GetSpendings(c *gin.Context) {
 // @Param id path string true "Group ID"
 // @Success 200 {object} map[string]string "Returns success message"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin/owner"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/groups/{id} [delete]

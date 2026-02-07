@@ -932,6 +932,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
+                    "403": {
+                        "description": "NO_PERMISSIONS: User is not the group admin/owner",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
                     "404": {
                         "description": "GROUP_NOT_FOUND: The specified group does not exist",
                         "schema": {
@@ -1252,9 +1258,6 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Get the payment balances between the authenticated user and all other members in a group. Positive amount means other user owes you, negative means you owe them.",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -1444,7 +1447,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "BAD_REQUEST: Invalid request body or missing required fields",
+                        "description": "BAD_EMAIL: The email format is incorrect",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1561,7 +1564,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "BAD_REQUEST: Invalid request body or validation failed",
+                        "description": "BAD_EMAIL: The email format is incorrect",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
