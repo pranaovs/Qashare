@@ -290,7 +290,10 @@ func (h *ExpensesHandler) Patch(c *gin.Context) {
 	}
 
 	// Apply patch to expense (only non-nil fields are applied)
-	patch.Apply(&expense)
+	if err := utils.Patch(&expense, &patch); err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
 
 	// Validate split totals AFTER applying patch
 	if len(expense.Splits) > 0 && !expense.IsIncompleteAmount && !expense.IsIncompleteSplit {

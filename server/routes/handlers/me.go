@@ -210,7 +210,10 @@ func (h *MeHandler) Patch(c *gin.Context) {
 	}
 
 	// Apply patch to user (only non-nil fields are applied)
-	patch.Apply(&current)
+	if err := utils.Patch(&current, &patch); err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
 
 	err = db.UpdateUser(c.Request.Context(), h.pool, &current)
 	if err != nil {

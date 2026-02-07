@@ -257,7 +257,10 @@ func (h *GroupsHandler) Patch(c *gin.Context) {
 	}
 
 	// Apply patch to group (only non-nil fields are applied)
-	patch.Apply(&current.Group)
+	if err := utils.Patch(&current.Group, &patch); err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
 
 	err = db.UpdateGroup(c.Request.Context(), h.pool, &current.Group)
 	if err != nil {
