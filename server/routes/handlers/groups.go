@@ -207,7 +207,16 @@ func (h *GroupsHandler) Update(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, payload)
+	// Fetch the updated group to ensure immutable fields (e.g., created_by, created_at) are correct in the response
+	updatedGroup, err := db.GetGroupDetails(c.Request.Context(), h.pool, groupID)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrGroupNotFound,
+		}))
+		return
+	}
+
+	utils.SendJSON(c, http.StatusOK, updatedGroup)
 }
 
 // Patch godoc
