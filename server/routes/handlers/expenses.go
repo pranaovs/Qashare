@@ -218,7 +218,15 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, payload)
+	expense, err := db.GetExpense(c.Request.Context(), h.pool, expense.ExpenseID)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrExpenseNotFound,
+		}))
+		return
+	}
+
+	utils.SendJSON(c, http.StatusOK, expense)
 }
 
 // Delete godoc
