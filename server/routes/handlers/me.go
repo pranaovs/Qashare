@@ -145,9 +145,9 @@ func (h *MeHandler) Update(c *gin.Context) {
 	err = db.UpdateUser(c.Request.Context(), h.pool, &payload)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrNotFound:      apierrors.ErrUserNotFound,
-			db.ErrInvalidInput:  apierrors.ErrBadRequest,
-			db.ErrDuplicateKey:  apierrors.ErrEmailAlreadyExists,
+			db.ErrNotFound:     apierrors.ErrUserNotFound,
+			db.ErrInvalidInput: apierrors.ErrBadRequest,
+			db.ErrDuplicateKey: apierrors.ErrEmailAlreadyExists,
 		}))
 		return
 	}
@@ -221,9 +221,9 @@ func (h *MeHandler) Patch(c *gin.Context) {
 	err = db.UpdateUser(c.Request.Context(), h.pool, &current)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrNotFound:      apierrors.ErrUserNotFound,
-			db.ErrInvalidInput:  apierrors.ErrBadRequest,
-			db.ErrDuplicateKey:  apierrors.ErrEmailAlreadyExists,
+			db.ErrNotFound:     apierrors.ErrUserNotFound,
+			db.ErrInvalidInput: apierrors.ErrBadRequest,
+			db.ErrDuplicateKey: apierrors.ErrEmailAlreadyExists,
 		}))
 		return
 	}
