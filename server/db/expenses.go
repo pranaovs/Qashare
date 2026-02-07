@@ -109,7 +109,7 @@ func CreateExpense(
 // Returns an error if validation fails or the operation fails.
 func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.ExpenseDetails) error {
 	// Validate input
-	if expense.ExpenseID == "" {
+	if expense.ExpenseID == uuid.Nil {
 		return ErrNotFound.Msg("expense not found")
 	}
 	if expense.Title == "" {

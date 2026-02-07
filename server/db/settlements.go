@@ -93,30 +93,30 @@ func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID uui
 
 // optimizeSettlements uses greedy algorithm to minimize transactions
 // Returns settlements for the given user
-func optimizeSettlements(balances map[string]float64, userID string, tolerance float64) []models.Settlement {
+func optimizeSettlements(balances map[uuid.UUID]float64, userID uuid.UUID, tolerance float64) []models.Settlement {
 	if len(balances) == 0 {
 		return []models.Settlement{}
 	}
 
 	// Separate users into creditors (positive) and debtors (negative)
 	var creditors []struct {
-		userID string
+		userID uuid.UUID
 		amount float64
 	}
 	var debtors []struct {
-		userID string
+		userID uuid.UUID
 		amount float64
 	}
 
 	for uid, balance := range balances {
 		if balance > tolerance {
 			creditors = append(creditors, struct {
-				userID string
+				userID uuid.UUID
 				amount float64
 			}{uid, balance})
 		} else if balance < -tolerance {
 			debtors = append(debtors, struct {
-				userID string
+				userID uuid.UUID
 				amount float64
 			}{uid, -balance})
 		}

@@ -36,7 +36,11 @@ func NewUsersHandler(pool *pgxpool.Pool) *UsersHandler {
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/users/{id} [get]
 func (h *UsersHandler) Get(c *gin.Context) {
-	qUserID := c.Param("id")
+	qUserID, err := db.ParseUUID(c.Param("id"))
+	if err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
 
 	userID := middleware.MustGetUserID(c)
 

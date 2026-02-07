@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"slices"
 
 	"github.com/pranaovs/qashare/apperrors"
 	"github.com/pranaovs/qashare/config"
@@ -13,6 +12,7 @@ import (
 	"github.com/pranaovs/qashare/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -42,7 +42,8 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 	group := models.Group{}
 	var err error
 
-	group.CreatedBy = middleware.MustGetUserID(c)
+	userID := middleware.MustGetUserID(c)
+	group.CreatedBy = &userID
 
 	var request struct {
 		Name        string `json:"name" binding:"required"`
@@ -327,21 +328,26 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 		}))
 		return
 	}
-	if groupCreator != userID {
+	if groupCreator != nil && *groupCreator != userID {
 		utils.SendError(c, apierrors.ErrNoPermissions)
 		return
 	}
 
-	validUserIDs := make([]string, 0, len(req.UserIDs))
+	validUserIDs := make([]uuid.UUID, 0, len(req.UserIDs))
 	for _, uid := range req.UserIDs {
-		err := db.UserExists(c.Request.Context(), h.pool, uid)
+		parsedUID, err := db.ParseUUID(uid)
+		if err != nil {
+			utils.SendError(c, apierrors.ErrBadRequest)
+			return
+		}
+		err = db.UserExists(c.Request.Context(), h.pool, parsedUID)
 		if err != nil {
 			utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 				db.ErrNotFound: apierrors.ErrUserNotFound,
 			}))
 			return
 		}
-		validUserIDs = append(validUserIDs, uid)
+		validUserIDs = append(validUserIDs, parsedUID)
 	}
 
 	if len(validUserIDs) == 0 {
@@ -358,9 +364,15 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 		return
 	}
 
+	// Convert UUIDs back to strings for JSON response
+	addedMemberStrings := make([]string, len(validUserIDs))
+	for i, uid := range validUserIDs {
+		addedMemberStrings[i] = uid.String()
+	}
+
 	utils.SendJSON(c, http.StatusOK, gin.H{
 		"message":       "members added successfully",
-		"added_members": validUserIDs,
+		"added_members": addedMemberStrings,
 	})
 }
 
@@ -393,12 +405,21 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	groupID := middleware.MustGetGroupID(c)
 
-	if slices.Contains(req.UserIDs, userID) {
-		utils.SendError(c, apierrors.ErrBadRequest.Msg("cannot remove self from group"))
-		return
+	parsedUserIDs := make([]uuid.UUID, 0, len(req.UserIDs))
+	for _, uid := range req.UserIDs {
+		parsedUID, err := db.ParseUUID(uid)
+		if err != nil {
+			utils.SendError(c, apierrors.ErrBadRequest)
+			return
+		}
+		if parsedUID == userID {
+			utils.SendError(c, apierrors.ErrBadRequest.Msg("cannot remove self from group"))
+			return
+		}
+		parsedUserIDs = append(parsedUserIDs, parsedUID)
 	}
 
-	err := db.RemoveGroupMembers(c.Request.Context(), h.pool, groupID, req.UserIDs)
+	err := db.RemoveGroupMembers(c.Request.Context(), h.pool, groupID, parsedUserIDs)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrUserNotInGroup,
