@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/config"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -44,9 +45,9 @@ func randB64() string {
 	return base64.StdEncoding.EncodeToString(b)
 }
 
-func GenerateJWT(userID string, jwtConfig config.JWTConfig) (string, error) {
+func GenerateJWT(userID uuid.UUID, jwtConfig config.JWTConfig) (string, error) {
 	claims := jwt.MapClaims{
-		"user_id": userID,
+		"user_id": userID.String(),
 		"exp":     time.Now().Add(jwtConfig.Expiry).Unix(),
 	}
 
@@ -81,15 +82,20 @@ func ExtractClaims(authHeader string, jwtConfig config.JWTConfig) (jwt.MapClaims
 	return claims, nil
 }
 
-func ExtractUserID(authHeader string, jwtConfig config.JWTConfig) (string, error) {
+func ExtractUserID(authHeader string, jwtConfig config.JWTConfig) (uuid.UUID, error) {
 	claims, err := ExtractClaims(authHeader, jwtConfig)
 	if err != nil {
-		return "", err
+		return uuid.Nil, err
 	}
 
-	userID, ok := claims["user_id"].(string)
+	userIDStr, ok := claims["user_id"].(string)
 	if !ok {
-		return "", ErrInvalidToken.Msg("invalid token claims")
+		return uuid.Nil, ErrInvalidToken.Msg("invalid token claims")
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return uuid.Nil, ErrInvalidToken.Msg("invalid user_id format in token")
 	}
 
 	return userID, nil
