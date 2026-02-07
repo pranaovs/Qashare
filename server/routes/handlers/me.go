@@ -120,6 +120,25 @@ func (h *MeHandler) Update(c *gin.Context) {
 		return
 	}
 
+	validatedName, err := utils.ValidateName(payload.Name)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			utils.ErrInvalidName: apierrors.ErrInvalidName,
+		}))
+		return
+	}
+	payload.Name = validatedName
+
+	validatedEmail, err := utils.ValidateEmail(payload.Email)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			utils.ErrInvalidEmail: apierrors.ErrInvalidEmail,
+		}))
+		return
+	}
+
+	payload.Email = validatedEmail
+
 	payload.UserID = userID
 
 	err = db.UpdateUser(c.Request.Context(), h.pool, &payload)
@@ -157,6 +176,28 @@ func (h *MeHandler) Patch(c *gin.Context) {
 		return
 	}
 
+	if patch.Name != "" {
+		validatedName, err := utils.ValidateName(patch.Name)
+		if err != nil {
+			utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+				utils.ErrInvalidName: apierrors.ErrInvalidName,
+			}))
+			return
+		}
+		patch.Name = validatedName
+	}
+
+	if patch.Email != "" {
+		validatedEmail, err := utils.ValidateEmail(patch.Email)
+		if err != nil {
+			utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+				utils.ErrInvalidEmail: apierrors.ErrInvalidEmail,
+			}))
+			return
+		}
+		patch.Email = validatedEmail
+	}
+
 	current, err := db.GetUser(c.Request.Context(), h.pool, userID)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
@@ -183,5 +224,5 @@ func (h *MeHandler) Patch(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, updated)
+	utils.SendOK(c, "user patched")
 }
