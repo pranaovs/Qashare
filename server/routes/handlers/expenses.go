@@ -282,7 +282,11 @@ func (h *ExpensesHandler) Patch(c *gin.Context) {
 	}
 
 	// Validate splits members are in group (if splits provided in patch)
-	if patch.Splits != nil && len(*patch.Splits) > 0 {
+	if patch.Splits != nil {
+		if len(*patch.Splits) == 0 {
+			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("no splits provided"))
+			return
+		}
 		splitUserIDs := make([]string, 0, len(*patch.Splits))
 		for _, s := range *patch.Splits {
 			splitUserIDs = append(splitUserIDs, s.UserID)
