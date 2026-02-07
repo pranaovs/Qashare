@@ -73,6 +73,9 @@ func applyPatchFields(targetVal, patchVal reflect.Value) error {
 
 		// Get JSON field name from patch
 		jsonName := getJSONName(patchFieldInfo)
+		if jsonName == "" {
+			continue // Skip fields excluded from JSON (json:"-")
+		}
 
 		// Find corresponding target field
 		targetFieldEntry, ok := targetFields[jsonName]
@@ -129,6 +132,9 @@ func buildFieldMapRecursive(val reflect.Value, fields map[string]fieldEntry) {
 		}
 
 		jsonName := getJSONName(fieldInfo)
+		if jsonName == "" {
+			continue // Skip fields excluded from JSON (json:"-")
+		}
 		fields[jsonName] = fieldEntry{
 			value:       fieldVal,
 			structField: fieldInfo,
@@ -167,9 +173,13 @@ func applyValue(targetField, patchValue reflect.Value) error {
 }
 
 // getJSONName extracts the JSON field name from struct field tags.
+// Returns empty string for fields tagged with json:"-" (excluded from JSON).
 func getJSONName(field reflect.StructField) string {
 	jsonTag := field.Tag.Get("json")
-	if jsonTag == "" || jsonTag == "-" {
+	if jsonTag == "-" {
+		return "" // Field is explicitly excluded from JSON
+	}
+	if jsonTag == "" {
 		return field.Name
 	}
 	// Handle "name,omitempty" format
