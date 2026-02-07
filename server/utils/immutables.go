@@ -8,14 +8,14 @@ import (
 var ErrImmutableFieldSet = &UtilsError{Code: "IMMUTABLE_FIELD_SET", Message: "cannot set immutable field"}
 
 // StripImmutableFields sets any field tagged with immutable:"true" to its zero value.
-// This prevents clients from tampering with immutable fields in PATCH requests.
-// It recursively handles anonymous embedded structs.
+// This helps prevent clients from tampering with immutable fields in request payloads
+// (e.g., PATCH and PUT). It recursively handles anonymous embedded structs.
 //
 // Usage:
 //
 //	patch := &models.ExpenseDetails{ExpenseID: "exp123", Title: "New"}
 //	StripImmutableFields(patch)  // ExpenseID becomes ""
-//	// Now safe to use patch
+//	// Now safe to use patch/update payload
 func StripImmutableFields(v any) error {
 	rv := reflect.ValueOf(v)
 	if rv.Kind() != reflect.Pointer || rv.IsNil() {
