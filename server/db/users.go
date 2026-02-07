@@ -364,7 +364,7 @@ func AllMembersOfGroup(ctx context.Context, pool *pgxpool.Pool, userIDs []string
 func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) error {
 	// Validate input
 	if user.UserID == "" {
-		return ErrInvalidInput.Msg("userid is required")
+		return ErrInvalidInput.Msg("user_id is required")
 	}
 	if user.Name == "" {
 		return ErrInvalidInput.Msg("name is required")
