@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"math"
 	"net/http"
 
@@ -268,24 +267,16 @@ func (h *ExpensesHandler) Patch(c *gin.Context) {
 	expense := middleware.MustGetExpense(c)
 	groupID := middleware.MustGetGroupID(c)
 
-	// Read raw body for proper PATCH semantics (to distinguish absent vs zero values)
-	jsonData, err := c.GetRawData()
-	if err != nil {
-		utils.SendError(c, apierrors.ErrBadRequest)
-		return
-	}
-
-	// Parse patch for validation
-	var patch models.ExpenseDetails
-	if err := json.Unmarshal(jsonData, &patch); err != nil {
+	var patch models.ExpenseDetailsPatch
+	if err := c.ShouldBindJSON(&patch); err != nil {
 		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
 	// Validate splits members are in group (if splits provided in patch)
-	if len(patch.Splits) > 0 {
-		splitUserIDs := make([]string, 0, len(patch.Splits))
-		for _, s := range patch.Splits {
+	if patch.Splits != nil && len(*patch.Splits) > 0 {
+		splitUserIDs := make([]string, 0, len(*patch.Splits))
+		for _, s := range *patch.Splits {
 			splitUserIDs = append(splitUserIDs, s.UserID)
 		}
 		uniqueUserIDs := utils.GetUniqueUserIDs(splitUserIDs)
@@ -298,19 +289,13 @@ func (h *ExpensesHandler) Patch(c *gin.Context) {
 		}
 	}
 
-	// Merge with proper PATCH semantics (zero values are applied if present in JSON)
-	updated, err := utils.MergeWithJSON(&expense, jsonData)
-	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			utils.ErrImmutableFieldSet: apierrors.ErrBadRequest,
-		}))
-		return
-	}
+	// Apply patch to expense (only non-nil fields are applied)
+	patch.Apply(&expense)
 
-	// Validate split totals AFTER merge (using final merged values)
-	if len(updated.Splits) > 0 && !updated.IsIncompleteAmount && !updated.IsIncompleteSplit {
+	// Validate split totals AFTER applying patch
+	if len(expense.Splits) > 0 && !expense.IsIncompleteAmount && !expense.IsIncompleteSplit {
 		var paidTotal, owedTotal float64
-		for _, s := range updated.Splits {
+		for _, s := range expense.Splits {
 			if s.IsPaid {
 				paidTotal += s.Amount
 			} else {
@@ -318,17 +303,17 @@ func (h *ExpensesHandler) Patch(c *gin.Context) {
 			}
 		}
 
-		if math.Abs(paidTotal-updated.Amount) > h.appConfig.SplitTolerance {
+		if math.Abs(paidTotal-expense.Amount) > h.appConfig.SplitTolerance {
 			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("paid split total does not match expense amount"))
 			return
 		}
-		if math.Abs(owedTotal-updated.Amount) > h.appConfig.SplitTolerance {
+		if math.Abs(owedTotal-expense.Amount) > h.appConfig.SplitTolerance {
 			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("owed split total does not match expense amount"))
 			return
 		}
 	}
 
-	err = db.UpdateExpense(c.Request.Context(), h.pool, updated)
+	err := db.UpdateExpense(c.Request.Context(), h.pool, &expense)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound:     apierrors.ErrExpenseNotFound,
@@ -337,5 +322,5 @@ func (h *ExpensesHandler) Patch(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, updated)
+	utils.SendJSON(c, http.StatusOK, expense)
 }

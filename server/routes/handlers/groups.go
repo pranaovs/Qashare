@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"slices"
 
@@ -230,16 +229,8 @@ func (h *GroupsHandler) Update(c *gin.Context) {
 func (h *GroupsHandler) Patch(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 
-	// Read raw body for proper PATCH semantics
-	jsonData, err := c.GetRawData()
-	if err != nil {
-		utils.SendError(c, apierrors.ErrBadRequest)
-		return
-	}
-
-	// Parse patch for validation
-	var patch models.Group
-	if err := json.Unmarshal(jsonData, &patch); err != nil {
+	var patch models.GroupPatch
+	if err := c.ShouldBindJSON(&patch); err != nil {
 		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
@@ -254,32 +245,21 @@ func (h *GroupsHandler) Patch(c *gin.Context) {
 	}
 
 	// Validate name if provided
-	if patch.Name != "" {
-		validatedName, err := utils.ValidateName(patch.Name)
+	if patch.Name != nil {
+		validatedName, err := utils.ValidateName(*patch.Name)
 		if err != nil {
 			utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 				utils.ErrInvalidName: apierrors.ErrInvalidName,
 			}))
 			return
 		}
-		patch.Name = validatedName
+		patch.Name = &validatedName
 	}
 
-	// Merge with proper PATCH semantics
-	updatedGroup, err := utils.MergeWithJSON(&current.Group, jsonData)
-	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			utils.ErrImmutableFieldSet: apierrors.ErrBadRequest,
-		}))
-		return
-	}
+	// Apply patch to group (only non-nil fields are applied)
+	patch.Apply(&current.Group)
 
-	// Apply validated name if it was provided
-	if patch.Name != "" {
-		updatedGroup.Name = patch.Name
-	}
-
-	err = db.UpdateGroup(c.Request.Context(), h.pool, updatedGroup)
+	err = db.UpdateGroup(c.Request.Context(), h.pool, &current.Group)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound:     apierrors.ErrGroupNotFound,
@@ -290,7 +270,7 @@ func (h *GroupsHandler) Patch(c *gin.Context) {
 
 	// Return GroupDetails with updated Group and existing Members
 	updated := models.GroupDetails{
-		Group:   *updatedGroup,
+		Group:   current.Group,
 		Members: current.Members,
 	}
 

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -171,40 +170,34 @@ func (h *MeHandler) Update(c *gin.Context) {
 func (h *MeHandler) Patch(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 
-	// Read raw body for proper PATCH semantics
-	jsonData, err := c.GetRawData()
-	if err != nil {
+	var patch models.UserPatch
+	if err := c.ShouldBindJSON(&patch); err != nil {
 		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
 
-	// Parse patch for validation
-	var patch models.User
-	if err := json.Unmarshal(jsonData, &patch); err != nil {
-		utils.SendError(c, apierrors.ErrBadRequest)
-		return
-	}
-
-	if patch.Name != "" {
-		validatedName, err := utils.ValidateName(patch.Name)
+	// Validate name if provided
+	if patch.Name != nil {
+		validatedName, err := utils.ValidateName(*patch.Name)
 		if err != nil {
 			utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 				utils.ErrInvalidName: apierrors.ErrInvalidName,
 			}))
 			return
 		}
-		patch.Name = validatedName
+		patch.Name = &validatedName
 	}
 
-	if patch.Email != "" {
-		validatedEmail, err := utils.ValidateEmail(patch.Email)
+	// Validate email if provided
+	if patch.Email != nil {
+		validatedEmail, err := utils.ValidateEmail(*patch.Email)
 		if err != nil {
 			utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 				utils.ErrInvalidEmail: apierrors.ErrInvalidEmail,
 			}))
 			return
 		}
-		patch.Email = validatedEmail
+		patch.Email = &validatedEmail
 	}
 
 	current, err := db.GetUser(c.Request.Context(), h.pool, userID)
@@ -216,24 +209,10 @@ func (h *MeHandler) Patch(c *gin.Context) {
 		return
 	}
 
-	// Merge with proper PATCH semantics
-	updated, err := utils.MergeWithJSON(&current, jsonData)
-	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			utils.ErrImmutableFieldSet: apierrors.ErrBadRequest,
-		}))
-		return
-	}
+	// Apply patch to user (only non-nil fields are applied)
+	patch.Apply(&current)
 
-	// Apply validated name and email if provided
-	if patch.Name != "" {
-		updated.Name = patch.Name
-	}
-	if patch.Email != "" {
-		updated.Email = patch.Email
-	}
-
-	err = db.UpdateUser(c.Request.Context(), h.pool, updated)
+	err = db.UpdateUser(c.Request.Context(), h.pool, &current)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound:     apierrors.ErrUserNotFound,
@@ -242,5 +221,5 @@ func (h *MeHandler) Patch(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, updated)
+	utils.SendJSON(c, http.StatusOK, current)
 }
