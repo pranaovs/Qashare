@@ -391,6 +391,9 @@ func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 		user.Email,
 	)
 	if err != nil {
+		if IsDuplicateKey(err) {
+			return ErrDuplicateKey
+		}
 		return err
 	}
 

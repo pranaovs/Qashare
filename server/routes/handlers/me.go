@@ -103,6 +103,7 @@ func (h *MeHandler) ListAdmin(c *gin.Context) {
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or missing required fields"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists"
+// @Failure 409 {object} apierrors.AppError "EMAIL_EXISTS: An account with this email already exists"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/me [put]
 func (h *MeHandler) Update(c *gin.Context) {
@@ -144,8 +145,9 @@ func (h *MeHandler) Update(c *gin.Context) {
 	err = db.UpdateUser(c.Request.Context(), h.pool, &payload)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrNotFound:     apierrors.ErrUserNotFound,
-			db.ErrInvalidInput: apierrors.ErrBadRequest,
+			db.ErrNotFound:      apierrors.ErrUserNotFound,
+			db.ErrInvalidInput:  apierrors.ErrBadRequest,
+			db.ErrDuplicateKey:  apierrors.ErrEmailAlreadyExists,
 		}))
 		return
 	}
@@ -165,6 +167,7 @@ func (h *MeHandler) Update(c *gin.Context) {
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or validation failed"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists"
+// @Failure 409 {object} apierrors.AppError "EMAIL_EXISTS: An account with this email already exists"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/me [patch]
 func (h *MeHandler) Patch(c *gin.Context) {
@@ -218,8 +221,9 @@ func (h *MeHandler) Patch(c *gin.Context) {
 	err = db.UpdateUser(c.Request.Context(), h.pool, &current)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrNotFound:     apierrors.ErrUserNotFound,
-			db.ErrInvalidInput: apierrors.ErrBadRequest,
+			db.ErrNotFound:      apierrors.ErrUserNotFound,
+			db.ErrInvalidInput:  apierrors.ErrBadRequest,
+			db.ErrDuplicateKey:  apierrors.ErrEmailAlreadyExists,
 		}))
 		return
 	}

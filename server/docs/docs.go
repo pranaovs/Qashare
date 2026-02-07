@@ -1408,6 +1408,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
+                    "409": {
+                        "description": "EMAIL_EXISTS: An account with this email already exists",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
                     "500": {
                         "description": "Internal server error - unexpected database error",
                         "schema": {
@@ -1465,6 +1471,12 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "USER_NOT_FOUND: The authenticated user no longer exists",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "409": {
+                        "description": "EMAIL_EXISTS: An account with this email already exists",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
