@@ -328,7 +328,7 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 		}))
 		return
 	}
-	if groupCreator != nil && *groupCreator != userID {
+	if groupCreator == nil || *groupCreator != userID {
 		utils.SendError(c, apierrors.ErrNoPermissions)
 		return
 	}
