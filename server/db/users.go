@@ -357,3 +357,45 @@ func AllMembersOfGroup(ctx context.Context, pool *pgxpool.Pool, userIDs []string
 
 	return nil
 }
+
+// UpdateUser updates an existing user's editable fields (name and email).
+// This operation updates the user's basic information.
+// Returns an error if validation fails or the operation fails.
+func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) error {
+	// Validate input
+	if user.UserID == "" {
+		return ErrInvalidInput.Msg("userid is required")
+	}
+	if user.Name == "" {
+		return ErrInvalidInput.Msg("name is required")
+	}
+	if user.Email == "" {
+		return ErrInvalidInput.Msg("email is required")
+	}
+
+	// Update user fields
+	updateQuery := `UPDATE users
+		SET user_name = $2,
+			email = $3
+			password_hash = $4
+		WHERE user_id = $1`
+
+	result, err := pool.Exec(
+		ctx,
+		updateQuery,
+		user.UserID,
+		user.Name,
+		user.Email,
+		user.PasswordHash,
+	)
+	if err != nil {
+		return err
+	}
+
+	// Check if user was found
+	if result.RowsAffected() == 0 {
+		return ErrNotFound.Msgf("user with id %s not found", user.UserID)
+	}
+
+	return nil
+}

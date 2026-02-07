@@ -3,12 +3,12 @@ package models
 
 // User represents a user in the system
 type User struct {
-	UserID       string  `json:"user_id" db:"user_id"`
+	UserID       string  `json:"user_id" db:"user_id" immutable:"true"`
 	Name         string  `json:"name" db:"user_name"`
 	Email        string  `json:"email" db:"email"`
-	Guest        bool    `json:"guest" db:"is_guest"`
-	PasswordHash *string `json:"-" db:"password_hash"` // excluded from JSON responses
-	CreatedAt    int64   `json:"created_at" db:"created_at"`
+	Guest        bool    `json:"guest" db:"is_guest" immutable:"true"`
+	PasswordHash *string `json:"-" db:"password_hash" immutable:"true"` // excluded from JSON responses
+	CreatedAt    int64   `json:"created_at" db:"created_at" immutable:"true"`
 }
 
 // Group represents a group

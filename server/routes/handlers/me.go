@@ -90,3 +90,98 @@ func (h *MeHandler) ListAdmin(c *gin.Context) {
 	}
 	utils.SendJSON(c, http.StatusOK, groups)
 }
+
+// Update godoc
+// @Summary Update current user (full replacement)
+// @Description Update the authenticated user's editable details. This is a full replacement, so all required fields (name and email) must be provided. Immutable fields (like user_id) will be ignored if included in the request body.
+// @Tags me
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body models.User true "Updated user details"
+// @Success 200 {object} map[string]string "Returns success message"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or missing required fields"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists"
+// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
+// @Router /v1/me [put]
+func (h *MeHandler) Update(c *gin.Context) {
+	userID := middleware.MustGetUserID(c)
+
+	var payload models.User
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
+
+	err := utils.StripImmutableFields(&payload)
+	if err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
+
+	payload.UserID = userID
+
+	err = db.UpdateUser(c.Request.Context(), h.pool, &payload)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound:     apierrors.ErrUserNotFound,
+			db.ErrInvalidInput: apierrors.ErrBadRequest,
+		}))
+		return
+	}
+
+	utils.SendOK(c, "user updated")
+}
+
+// Patch godoc
+// @Summary Partially update current user
+// @Description Update specific fields of the authenticated user. Only provided fields are updated, others remain unchanged. Immutable fields (like user_id) will be ignored if included in the request body.
+// @Tags me
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body models.User true "Partial user details (name and/or email, all optional)"
+// @Success 200 {object} models.User "Returns updated user"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or validation failed"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists"
+// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
+// @Router /v1/me [patch]
+func (h *MeHandler) Patch(c *gin.Context) {
+	userID := middleware.MustGetUserID(c)
+
+	var patch models.User
+	if err := c.ShouldBindJSON(&patch); err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
+
+	current, err := db.GetUser(c.Request.Context(), h.pool, userID)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound:     apierrors.ErrUserNotFound,
+			db.ErrInvalidInput: apierrors.ErrBadRequest,
+		}))
+		return
+	}
+
+	updated, err := utils.MergeStructs(&current, &patch)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			utils.ErrImmutableFieldSet: apierrors.ErrBadRequest,
+		}))
+		return
+	}
+
+	err = db.UpdateUser(c.Request.Context(), h.pool, updated)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound:     apierrors.ErrUserNotFound,
+			db.ErrInvalidInput: apierrors.ErrBadRequest,
+		}))
+		return
+	}
+
+	utils.SendJSON(c, http.StatusOK, updated)
+}
