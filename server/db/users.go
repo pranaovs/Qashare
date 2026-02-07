@@ -347,9 +347,9 @@ func AllMembersOfGroup(ctx context.Context, pool *pgxpool.Pool, userIDs []string
 	var count int
 	err := pool.QueryRow(ctx, query, groupID, uniqueUserIDs).Scan(&count)
 	if err != nil {
-		// Invalid UUID format means the user doesn't exist
+		// Invalid UUID format for group_id or one or more user_ids
 		if IsInvalidUUID(err) {
-			return ErrNotFound.Msg("one or more users are not members of the group")
+			return ErrNotFound.Msg("invalid UUID format for group_id or one or more user_ids")
 		}
 		return err
 	}
