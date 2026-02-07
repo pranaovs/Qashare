@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"math"
 	"net/http"
 
@@ -108,7 +109,16 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusCreated, expense)
+	// Fetch the created expense from DB to return the complete entity
+	created, err := db.GetExpense(c.Request.Context(), h.pool, expense.ExpenseID)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrExpenseNotFound,
+		}))
+		return
+	}
+
+	utils.SendJSON(c, http.StatusCreated, created)
 }
 
 // GetExpense godoc
@@ -258,8 +268,16 @@ func (h *ExpensesHandler) Patch(c *gin.Context) {
 	expense := middleware.MustGetExpense(c)
 	groupID := middleware.MustGetGroupID(c)
 
+	// Read raw body for proper PATCH semantics (to distinguish absent vs zero values)
+	jsonData, err := c.GetRawData()
+	if err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
+
+	// Parse patch for validation
 	var patch models.ExpenseDetails
-	if err := c.ShouldBindJSON(&patch); err != nil {
+	if err := json.Unmarshal(jsonData, &patch); err != nil {
 		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
@@ -280,7 +298,8 @@ func (h *ExpensesHandler) Patch(c *gin.Context) {
 		}
 	}
 
-	updated, err := utils.MergeStructs(&expense, &patch)
+	// Merge with proper PATCH semantics (zero values are applied if present in JSON)
+	updated, err := utils.MergeWithJSON(&expense, jsonData)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			utils.ErrImmutableFieldSet: apierrors.ErrBadRequest,

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -170,8 +171,16 @@ func (h *MeHandler) Update(c *gin.Context) {
 func (h *MeHandler) Patch(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 
+	// Read raw body for proper PATCH semantics
+	jsonData, err := c.GetRawData()
+	if err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
+
+	// Parse patch for validation
 	var patch models.User
-	if err := c.ShouldBindJSON(&patch); err != nil {
+	if err := json.Unmarshal(jsonData, &patch); err != nil {
 		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
@@ -207,12 +216,21 @@ func (h *MeHandler) Patch(c *gin.Context) {
 		return
 	}
 
-	updated, err := utils.MergeStructs(&current, &patch)
+	// Merge with proper PATCH semantics
+	updated, err := utils.MergeWithJSON(&current, jsonData)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			utils.ErrImmutableFieldSet: apierrors.ErrBadRequest,
 		}))
 		return
+	}
+
+	// Apply validated name and email if provided
+	if patch.Name != "" {
+		updated.Name = patch.Name
+	}
+	if patch.Email != "" {
+		updated.Email = patch.Email
 	}
 
 	err = db.UpdateUser(c.Request.Context(), h.pool, updated)

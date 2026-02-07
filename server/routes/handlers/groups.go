@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"slices"
 
@@ -71,7 +72,16 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusCreated, group)
+	// Fetch the created group from DB to return the complete entity with members
+	created, err := db.GetGroup(c.Request.Context(), h.pool, group.GroupID)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrGroupNotFound,
+		}))
+		return
+	}
+
+	utils.SendJSON(c, http.StatusCreated, created)
 }
 
 // ListUserGroups godoc
@@ -220,8 +230,16 @@ func (h *GroupsHandler) Update(c *gin.Context) {
 func (h *GroupsHandler) Patch(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 
+	// Read raw body for proper PATCH semantics
+	jsonData, err := c.GetRawData()
+	if err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
+
+	// Parse patch for validation
 	var patch models.Group
-	if err := c.ShouldBindJSON(&patch); err != nil {
+	if err := json.Unmarshal(jsonData, &patch); err != nil {
 		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
@@ -247,13 +265,18 @@ func (h *GroupsHandler) Patch(c *gin.Context) {
 		patch.Name = validatedName
 	}
 
-	// Merge with the embedded Group struct (same type as patch)
-	updatedGroup, err := utils.MergeStructs(&current.Group, &patch)
+	// Merge with proper PATCH semantics
+	updatedGroup, err := utils.MergeWithJSON(&current.Group, jsonData)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			utils.ErrImmutableFieldSet: apierrors.ErrBadRequest,
 		}))
 		return
+	}
+
+	// Apply validated name if it was provided
+	if patch.Name != "" {
+		updatedGroup.Name = patch.Name
 	}
 
 	err = db.UpdateGroup(c.Request.Context(), h.pool, updatedGroup)
