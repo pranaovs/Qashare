@@ -239,6 +239,11 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 		return
 	}
 
+	if expense.AddedBy == nil {
+		// The original creator of this expense no longer exists; for now, forbid updating.
+		utils.SendError(c, apierrors.ErrExpenseNotFound)
+		return
+	}
 	addedByID := *expense.AddedBy
 
 	if req.UserID == addedByID {
