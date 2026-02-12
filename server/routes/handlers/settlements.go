@@ -167,18 +167,48 @@ func (h *SettlementsHandler) Create(c *gin.Context) {
 }
 
 // expenseToSettlement converts an ExpenseDetails to a Settlement response.
-// Amount sign is relative to AddedBy: positive means AddedBy paid the other user.
+// Amount sign is relative to AddedBy: positive means AddedBy paid the other user,
+// negative means the other user paid AddedBy.
 func expenseToSettlement(expense models.ExpenseDetails) models.Settlement {
-	var amount float64
-	if expense.Splits[0].IsPaid {
-		amount = expense.Splits[0].Amount
-	} else {
-		amount = -expense.Splits[0].Amount
+	if len(expense.Splits) < 2 || expense.AddedBy == nil {
+		return models.Settlement{
+			Title:     expense.Title,
+			CreatedAt: expense.CreatedAt,
+			GroupID:   expense.GroupID,
+		}
 	}
 
-	otherUserID := expense.Splits[0].UserID
-	if otherUserID == *expense.AddedBy {
-		otherUserID = expense.Splits[1].UserID
+	addedByID := *expense.AddedBy
+
+	// Find the payer and determine the other user
+	var payerID, otherUserID string
+	var absAmount float64
+	for _, split := range expense.Splits {
+		if split.IsPaid {
+			payerID = split.UserID
+			absAmount = split.Amount
+		}
+	}
+	for _, split := range expense.Splits {
+		if split.UserID != addedByID {
+			otherUserID = split.UserID
+			break
+		}
+	}
+	// If both splits belong to AddedBy (shouldn't happen), fall back to the non-payer
+	if otherUserID == "" {
+		for _, split := range expense.Splits {
+			if !split.IsPaid {
+				otherUserID = split.UserID
+				break
+			}
+		}
+	}
+
+	// Positive = AddedBy paid, Negative = other user paid AddedBy
+	amount := absAmount
+	if payerID != addedByID {
+		amount = -absAmount
 	}
 
 	return models.Settlement{
