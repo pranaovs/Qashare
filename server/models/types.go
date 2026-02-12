@@ -53,7 +53,7 @@ type Expense struct {
 	Amount             float64  `json:"amount" db:"amount"`
 	IsIncompleteAmount bool     `json:"is_incomplete_amount" db:"is_incomplete_amount"`
 	IsIncompleteSplit  bool     `json:"is_incomplete_split" db:"is_incomplete_split"`
-	IsSettlement       bool     `json:"is_settlement" db:"is_settlement"`
+	IsSettlement       bool     `json:"is_settlement" db:"is_settlement" immutable:"true"`
 	Latitude           *float64 `json:"latitude,omitempty" db:"latitude"`   // pointer because nullable in db
 	Longitude          *float64 `json:"longitude,omitempty" db:"longitude"` // pointer because nullable in db
 }
