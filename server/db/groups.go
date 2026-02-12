@@ -5,7 +5,7 @@ package db
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/pranaovs/qashare/models"
@@ -150,7 +150,7 @@ func AddGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, us
 	br := pool.SendBatch(ctx, batch)
 	defer func() {
 		if err := br.Close(); err != nil {
-			log.Printf("[DB] Error closing batch: %v", err)
+			slog.Error("Error closing batch", "error", err)
 		}
 	}()
 
@@ -222,7 +222,7 @@ func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string,
 
 	defer func() {
 		if err := br.Close(); err != nil {
-			log.Printf("[DB] Error closing batch: %v", err)
+			slog.Error("Error closing batch", "error", err)
 		}
 	}()
 

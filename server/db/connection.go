@@ -4,7 +4,7 @@ package db
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/url"
 	"strings"
 	"time"
@@ -24,7 +24,7 @@ func Connect(dbConfig config.DatabaseConfig) (*pgxpool.Pool, error) {
 	}
 
 	dbName := strings.TrimPrefix(parsedURL.Path, "/")
-	log.Printf("[DB] Attempting to connect to database: %s", dbName)
+	slog.Info("Attempting to connect to database", "name", dbName)
 
 	var pool *pgxpool.Pool
 	var lastErr error
@@ -33,7 +33,7 @@ func Connect(dbConfig config.DatabaseConfig) (*pgxpool.Pool, error) {
 	for attempt := 1; attempt <= dbConfig.RetryAttempts; attempt++ {
 		ctx, cancel := context.WithTimeout(context.Background(), dbConfig.ConnectTimeout)
 
-		log.Printf("[DB] Connection attempt %d/%d", attempt, dbConfig.RetryAttempts)
+		slog.Info("Connection attempt", "attempt", attempt, "max", dbConfig.RetryAttempts)
 
 		pool, err = createPool(ctx, dbConfig)
 		if err != nil {
@@ -41,7 +41,8 @@ func Connect(dbConfig config.DatabaseConfig) (*pgxpool.Pool, error) {
 			cancel()
 
 			if attempt < dbConfig.RetryAttempts {
-				log.Printf("[DB] Connection attempt %d failed: %v, retrying in %v", attempt, err, dbConfig.RetryInterval)
+				slog.Warn("Connection attempt failed, retrying",
+					"attempt", attempt, "error", err, "retry_in", dbConfig.RetryInterval)
 				time.Sleep(dbConfig.RetryInterval)
 				continue
 			}
@@ -55,7 +56,8 @@ func Connect(dbConfig config.DatabaseConfig) (*pgxpool.Pool, error) {
 			cancel()
 
 			if attempt < dbConfig.RetryAttempts {
-				log.Printf("[DB] Database verification failed on attempt %d: %v, retrying in %v", attempt, err, dbConfig.RetryInterval)
+				slog.Warn("Database verification failed, retrying",
+					"attempt", attempt, "error", err, "retry_in", dbConfig.RetryInterval)
 				time.Sleep(dbConfig.RetryInterval)
 				continue
 			}
@@ -63,7 +65,7 @@ func Connect(dbConfig config.DatabaseConfig) (*pgxpool.Pool, error) {
 		}
 
 		cancel()
-		log.Printf("[DB] Successfully connected to database: %s on attempt %d", dbName, attempt)
+		slog.Info("Successfully connected to database", "name", dbName, "attempt", attempt)
 		return pool, nil
 	}
 
@@ -107,7 +109,7 @@ func createPool(ctx context.Context, dbConfig config.DatabaseConfig) (*pgxpool.P
 // Close gracefully closes the database connection pool
 func Close(pool *pgxpool.Pool) {
 	if pool != nil {
-		log.Println("[DB] Closing database connection pool")
+		slog.Info("Closing database connection pool")
 		pool.Close()
 	}
 }

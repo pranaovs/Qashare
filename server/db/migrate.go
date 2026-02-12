@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -34,7 +34,7 @@ type MigrationStatus struct {
 func Migrate(pool *pgxpool.Pool, migrationsDir string) error {
 	ctx := context.Background()
 
-	log.Printf("[MIGRATIONS] Starting migration process from directory: %s", migrationsDir)
+	slog.Info("Starting migration process", "dir", migrationsDir)
 
 	// Initialize migration tracking table
 	if err := initMigrationTable(ctx, pool); err != nil {
@@ -48,11 +48,11 @@ func Migrate(pool *pgxpool.Pool, migrationsDir string) error {
 	}
 
 	if len(migrationFiles) == 0 {
-		log.Println("[MIGRATIONS] No migration files found")
+		slog.Info("No migration files found")
 		return nil
 	}
 
-	log.Printf("[MIGRATIONS] Found %d migration file(s)", len(migrationFiles))
+	slog.Info("Found migration files", "count", len(migrationFiles))
 
 	// Apply each migration
 	appliedCount := 0
@@ -68,9 +68,9 @@ func Migrate(pool *pgxpool.Pool, migrationsDir string) error {
 
 	// Log summary
 	if appliedCount > 0 {
-		log.Printf("[MIGRATIONS] Successfully applied %d new migration(s)", appliedCount)
+		slog.Info("Successfully applied new migrations", "count", appliedCount)
 	} else {
-		log.Println("[MIGRATIONS] Database is up to date - no new migrations to apply")
+		slog.Info("Database is up to date - no new migrations to apply")
 	}
 
 	return nil
@@ -92,7 +92,7 @@ func initMigrationTable(ctx context.Context, pool *pgxpool.Pool) error {
 		return fmt.Errorf("failed to create schema_migrations table: %w", err)
 	}
 
-	log.Println("[MIGRATIONS] Migration tracking table initialized")
+	slog.Debug("Migration tracking table initialized")
 	return nil
 }
 
@@ -128,7 +128,7 @@ func applyMigration(ctx context.Context, pool *pgxpool.Pool, filePath string) (b
 	}
 
 	if alreadyApplied {
-		log.Printf("[MIGRATIONS] Skipping already applied: %s", migrationName)
+		slog.Debug("Skipping already applied migration", "name", migrationName)
 		return false, nil
 	}
 
@@ -142,7 +142,7 @@ func applyMigration(ctx context.Context, pool *pgxpool.Pool, filePath string) (b
 	checksum := calculateChecksum(sqlContent)
 
 	// Execute migration in a transaction
-	log.Printf("[MIGRATIONS] Applying migration: %s", migrationName)
+	slog.Info("Applying migration", "name", migrationName)
 	startTime := time.Now()
 
 	tx, err := pool.Begin(ctx)
@@ -154,7 +154,7 @@ func applyMigration(ctx context.Context, pool *pgxpool.Pool, filePath string) (b
 	defer func() {
 		if err != nil {
 			if rbErr := tx.Rollback(ctx); rbErr != nil {
-				log.Printf("[MIGRATIONS] Failed to rollback transaction for '%s': %v", migrationName, rbErr)
+				slog.Error("Failed to rollback migration transaction", "name", migrationName, "error", rbErr)
 			}
 		}
 	}()
@@ -186,7 +186,7 @@ func applyMigration(ctx context.Context, pool *pgxpool.Pool, filePath string) (b
 		return false, fmt.Errorf("failed to commit transaction for '%s': %w", migrationName, err)
 	}
 
-	log.Printf("[MIGRATIONS] Successfully applied: %s (took %dms)", migrationName, executionTime)
+	slog.Info("Successfully applied migration", "name", migrationName, "took_ms", executionTime)
 	return true, nil
 }
 
@@ -211,8 +211,8 @@ func calculateChecksum(content []byte) string {
 // GetMigrationStatus returns the current status of all migrations
 func GetMigrationStatus(ctx context.Context, pool *pgxpool.Pool) (*MigrationStatus, error) {
 	rows, err := pool.Query(ctx,
-		`SELECT migration_name, applied_at, checksum 
-		 FROM schema_migrations 
+		`SELECT migration_name, applied_at, checksum
+		 FROM schema_migrations
 		 ORDER BY applied_at ASC`,
 	)
 	if err != nil {
@@ -238,7 +238,7 @@ func GetMigrationStatus(ctx context.Context, pool *pgxpool.Pool) (*MigrationStat
 
 // VerifyMigrationIntegrity checks if applied migrations match their recorded checksums
 func VerifyMigrationIntegrity(ctx context.Context, pool *pgxpool.Pool, migrationsDir string) error {
-	log.Println("[MIGRATIONS] Verifying migration integrity...")
+	slog.Info("Verifying migration integrity...")
 
 	status, err := GetMigrationStatus(ctx, pool)
 	if err != nil {
@@ -252,7 +252,7 @@ func VerifyMigrationIntegrity(ctx context.Context, pool *pgxpool.Pool, migration
 		content, err := os.ReadFile(filePath)
 		if err != nil {
 			if os.IsNotExist(err) {
-				log.Printf("[MIGRATIONS] Warning: Migration file '%s' no longer exists", migration.Name)
+				slog.Warn("Migration file no longer exists", "name", migration.Name)
 				continue
 			}
 			return fmt.Errorf("failed to read migration file '%s': %w", migration.Name, err)
@@ -266,6 +266,6 @@ func VerifyMigrationIntegrity(ctx context.Context, pool *pgxpool.Pool, migration
 		}
 	}
 
-	log.Printf("[MIGRATIONS] Integrity verification passed for %d migration(s)", len(status.Migrations))
+	slog.Info("Integrity verification passed", "count", len(status.Migrations))
 	return nil
 }

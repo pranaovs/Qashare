@@ -4,7 +4,8 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
-	"log"
+	"log/slog"
+	"os"
 	"strings"
 	"time"
 
@@ -38,7 +39,8 @@ func randB64() string {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
 	if err != nil {
-		log.Fatal("failed to generate random bytes for JWT secret:", err)
+		slog.Error("Failed to generate random bytes for JWT secret", "error", err)
+		os.Exit(1)
 	}
 
 	return base64.StdEncoding.EncodeToString(b)

@@ -3,7 +3,7 @@ package config
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -20,7 +20,7 @@ func Load() (*Config, error) {
 	envPath := getEnv("ENV_PATH", ".env")
 	err := godotenv.Load(envPath)
 	if err != nil {
-		log.Printf("[WARNING] Could not load .env file at %s: %v", envPath, err)
+		slog.Warn("Could not load .env file", "path", envPath, "error", err)
 	}
 
 	cfg := &Config{}
@@ -37,7 +37,7 @@ func Load() (*Config, error) {
 	// Load App configuration
 	cfg.App = loadAppConfig(envPath)
 
-	log.Println("[CONFIG] Configuration loaded successfully")
+	slog.Info("Configuration loaded successfully")
 	return cfg, nil
 }
 
@@ -70,7 +70,7 @@ func loadDatabaseConfig() DatabaseConfig {
 func loadJWTConfig() JWTConfig {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		log.Printf("[WARNING] JWT_SECRET not provided, using random value. Tokens will not be remembered across restarts.")
+		slog.Warn("JWT_SECRET not provided, using random value. Tokens will not be remembered across restarts.")
 		secret = generateRandomSecret(JwtRandomSecretLength)
 	}
 
@@ -93,7 +93,8 @@ func generateRandomSecret(length int) string {
 	b := make([]byte, length)
 	_, err := rand.Read(b)
 	if err != nil {
-		log.Fatal("failed to generate random bytes for JWT secret:", err)
+		slog.Error("Failed to generate random bytes for JWT secret", "error", err)
+		os.Exit(1)
 	}
 
 	return base64.StdEncoding.EncodeToString(b)

@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"log"
+	"log/slog"
 	"os"
 	"strconv"
 	"time"
@@ -22,11 +22,12 @@ func GetEnv(key, defaultValue string) string {
 	return defaultValue
 }
 
-// GetEnvRequired retrieves a string, calls log.Fatal if missing
+// GetEnvRequired retrieves a string, exits if missing
 func GetEnvRequired(key string) string {
 	val := os.Getenv(key)
 	if val == "" {
-		log.Fatalf("Config Error: Required environment variable %s is missing", key)
+		slog.Error("Required environment variable is missing", "key", key)
+		os.Exit(1)
 	}
 	return val
 }
@@ -40,22 +41,24 @@ func GetEnvInt(key string, defaultValue int) int {
 
 	val, err := strconv.Atoi(valStr)
 	if err != nil {
-		log.Printf("Warning: Invalid integer for %s: '%s', using default: %d", key, valStr, defaultValue)
+		slog.Warn("Invalid integer config value, using default", "key", key, "value", valStr, "default", defaultValue)
 		return defaultValue
 	}
 	return val
 }
 
-// GetEnvIntRequired retrieves an integer environment variable, calls log.Fatal if missing or invalid
+// GetEnvIntRequired retrieves an integer environment variable, exits if missing or invalid
 func GetEnvIntRequired(key string) int {
 	valStr := os.Getenv(key)
 	if valStr == "" {
-		log.Fatalf("Config Error: Required environment variable %s is missing", key)
+		slog.Error("Required environment variable is missing", "key", key)
+		os.Exit(1)
 	}
 
 	val, err := strconv.Atoi(valStr)
 	if err != nil {
-		log.Fatalf("Config Error: %s must be a valid integer", key)
+		slog.Error("Environment variable must be a valid integer", "key", key)
+		os.Exit(1)
 	}
 	return val
 }
@@ -69,22 +72,24 @@ func GetEnvBool(key string, defaultValue bool) bool {
 	// ParseBool handles "1", "t", "T", "true", "TRUE", "True"
 	b, err := strconv.ParseBool(val)
 	if err != nil {
-		log.Printf("Warning: Invalid boolean for %s: '%s', using default: %t", key, val, defaultValue)
+		slog.Warn("Invalid boolean config value, using default", "key", key, "value", val, "default", defaultValue)
 		return defaultValue
 	}
 	return b
 }
 
-// GetEnvBoolRequired retrieves a boolean, calls log.Fatal if missing or invalid
+// GetEnvBoolRequired retrieves a boolean, exits if missing or invalid
 func GetEnvBoolRequired(key string) bool {
 	val := os.Getenv(key)
 	if val == "" {
-		log.Fatalf("Config Error: Required environment variable %s is missing", key)
+		slog.Error("Required environment variable is missing", "key", key)
+		os.Exit(1)
 	}
 	// ParseBool handles "1", "t", "T", "true", "TRUE", "True"
 	b, err := strconv.ParseBool(val)
 	if err != nil {
-		log.Fatalf("Config Error: Invalid boolean for %s: '%s'", key, val)
+		slog.Error("Invalid boolean config value", "key", key, "value", val)
+		os.Exit(1)
 	}
 	return b
 }
@@ -98,31 +103,34 @@ func GetEnvPort(key string, defaultValue int) int {
 
 	val, err := strconv.Atoi(valStr)
 	if err != nil {
-		log.Printf("Config Warning: %s must be a number, using default %d", key, defaultValue)
+		slog.Warn("Config port must be a number, using default", "key", key, "default", defaultValue)
 		return defaultValue
 	}
 
 	if val < 0 || val > 65535 {
-		log.Printf("Config Warning: %s must be between 0 and 65535, using default %d", key, defaultValue)
+		slog.Warn("Config port out of range, using default", "key", key, "value", val, "default", defaultValue)
 		return defaultValue
 	}
 	return val
 }
 
-// GetEnvPortRequired retrieves a port number, calls log.Fatal if missing or invalid
+// GetEnvPortRequired retrieves a port number, exits if missing or invalid
 func GetEnvPortRequired(key string) int {
 	valStr := os.Getenv(key)
 	if valStr == "" {
-		log.Fatalf("Config Error: Required environment variable %s is missing", key)
+		slog.Error("Required environment variable is missing", "key", key)
+		os.Exit(1)
 	}
 
 	val, err := strconv.Atoi(valStr)
 	if err != nil {
-		log.Fatalf("Config Error: %s must be a number", key)
+		slog.Error("Config port must be a number", "key", key)
+		os.Exit(1)
 	}
 
 	if val < 0 || val > 65535 {
-		log.Fatalf("Config Error: %s must be between 0 and 65535", key)
+		slog.Error("Config port must be between 0 and 65535", "key", key, "value", val)
+		os.Exit(1)
 	}
 	return val
 }
@@ -136,22 +144,24 @@ func GetEnvDuration(key string, defaultSeconds int) time.Duration {
 
 	val, err := strconv.Atoi(valStr)
 	if err != nil || val < 0 {
-		log.Printf("Config Warning: %s must be a valid number of seconds, using default %d", key, defaultSeconds)
+		slog.Warn("Config duration must be valid seconds, using default", "key", key, "default", defaultSeconds)
 		return time.Duration(defaultSeconds) * time.Second
 	}
 	return time.Duration(val) * time.Second
 }
 
-// GetEnvDurationRequired parses a string (e.g. "60") into seconds, calls log.Fatal if missing or invalid
+// GetEnvDurationRequired parses a string (e.g. "60") into seconds, exits if missing or invalid
 func GetEnvDurationRequired(key string) time.Duration {
 	valStr := os.Getenv(key)
 	if valStr == "" {
-		log.Fatalf("Config Error: Required environment variable %s is missing", key)
+		slog.Error("Required environment variable is missing", "key", key)
+		os.Exit(1)
 	}
 
 	val, err := strconv.Atoi(valStr)
 	if err != nil || val < 0 {
-		log.Fatalf("Config Error: %s must be a valid number of seconds", key)
+		slog.Error("Config duration must be valid seconds", "key", key)
+		os.Exit(1)
 	}
 	return time.Duration(val) * time.Second
 }

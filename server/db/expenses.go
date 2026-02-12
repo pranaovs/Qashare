@@ -6,7 +6,7 @@ package db
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/pranaovs/qashare/models"
 
@@ -79,7 +79,7 @@ func CreateExpense(
 			br := tx.SendBatch(ctx, batch)
 			defer func() {
 				if err := br.Close(); err != nil {
-					log.Printf("[DB] Error closing batch: %v", err)
+					slog.Error("Error closing batch", "error", err)
 				}
 			}()
 			// Execute all batched queries and check for errors
@@ -171,7 +171,7 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.Expe
 			br := tx.SendBatch(ctx, batch)
 			defer func() {
 				if err := br.Close(); err != nil {
-					log.Printf("[DB] Error closing batch: %v", err)
+					slog.Error("Error closing batch", "error", err)
 				}
 			}()
 

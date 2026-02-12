@@ -2,7 +2,8 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -37,8 +38,12 @@ import (
 // @description Type "Bearer" followed by a space and JWT token.
 
 func main() {
+	// Initialize pretty logger early so config-loading logs are formatted
+	utils.InitDefaultLogger()
+
 	if err := run(); err != nil {
-		log.Fatal(err)
+		slog.Error("Fatal error", "error", err)
+		os.Exit(1)
 	}
 }
 
@@ -49,7 +54,7 @@ func run() error {
 		return err
 	}
 
-	// Initialize logger
+	// Re-initialize logger with config (applies debug level if set)
 	utils.InitLogger(cfg)
 
 	// Initialize database with enhanced configuration
@@ -62,7 +67,7 @@ func run() error {
 	// Swagger url setup
 	u, err := url.Parse(cfg.API.PublicURL)
 	if err != nil {
-		log.Fatalf("Invalid API_PUBLIC_URL: %v", err)
+		return fmt.Errorf("invalid API_PUBLIC_URL: %w", err)
 	}
 
 	docs.SwaggerInfo.Host = u.Host
@@ -72,7 +77,7 @@ func run() error {
 	// Setup HTTP router
 	router := gin.Default()
 	if err := router.SetTrustedProxies(cfg.API.TrustedProxies); err != nil {
-		log.Printf("[ERROR] Invalid trusted proxies configuration: %v", err)
+		slog.Error("Invalid trusted proxies configuration", "error", err)
 		return err
 	}
 	routes.RegisterRoutes(cfg.API.BasePath, router, pool, cfg.JWT, cfg.App)
@@ -82,7 +87,7 @@ func run() error {
 }
 
 func initDatabase(dbConfig config.DatabaseConfig) (*pgxpool.Pool, error) {
-	log.Println("[INIT] Initializing database connection...")
+	slog.Info("Initializing database connection...")
 
 	// Connects to the PostgreSQL database using the provided URL. The database must already exist.
 	pool, err := db.Connect(dbConfig)
@@ -98,7 +103,7 @@ func initDatabase(dbConfig config.DatabaseConfig) (*pgxpool.Pool, error) {
 		db.Close(pool)
 		return nil, err
 	}
-	log.Println("[INIT] Database health check passed")
+	slog.Info("Database health check passed")
 
 	// Run migrations
 	if err := db.Migrate(pool, dbConfig.MigrationsDir); err != nil {
@@ -109,12 +114,12 @@ func initDatabase(dbConfig config.DatabaseConfig) (*pgxpool.Pool, error) {
 	// Verify migration integrity (optional, can be disabled via env var)
 	if dbConfig.VerifyMigrations {
 		if err := db.VerifyMigrationIntegrity(ctx, pool, dbConfig.MigrationsDir); err != nil {
-			log.Printf("[INIT] Migration integrity check failed: %v", err)
+			slog.Warn("Migration integrity check failed", "error", err)
 			// Non-fatal warning - allow startup but log the issue
 		}
 	}
 
-	log.Println("[INIT] Database initialized successfully")
+	slog.Info("Database initialized successfully")
 	return pool, nil
 }
 
@@ -128,14 +133,15 @@ func startServer(router *gin.Engine, apiConfig config.APIConfig) error {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		log.Printf("Server starting on port %d", apiConfig.BindPort)
+		slog.Info("Server starting", "port", apiConfig.BindPort)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server failed to start: %v", err)
+			slog.Error("Server failed to start", "error", err)
+			os.Exit(1)
 		}
 	}()
 
 	<-quit
-	log.Println("Shutting down server...")
+	slog.Info("Shutting down server...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -144,6 +150,6 @@ func startServer(router *gin.Engine, apiConfig config.APIConfig) error {
 		return err
 	}
 
-	log.Println("Server stopped gracefully")
+	slog.Info("Server stopped gracefully")
 	return nil
 }

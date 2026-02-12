@@ -3,7 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -33,7 +33,7 @@ func WithTransaction(ctx context.Context, pool *pgxpool.Pool, fn TxFunc) error {
 		} else if err != nil {
 			// Rollback on error
 			if rbErr := tx.Rollback(ctx); rbErr != nil {
-				log.Printf("[DB] Failed to rollback transaction: %v", rbErr)
+				slog.Error("Failed to rollback transaction", "error", rbErr)
 			}
 		}
 	}()
@@ -68,7 +68,7 @@ func ExecuteInBatch(ctx context.Context, pool *pgxpool.Pool, queries []BatchQuer
 
 	defer func() {
 		if err := br.Close(); err != nil {
-			log.Printf("[DB] Error closing batch: %v", err)
+			slog.Error("Error closing batch", "error", err)
 		}
 	}()
 
@@ -120,7 +120,7 @@ func CountRecords(ctx context.Context, pool *pgxpool.Pool, table, condition stri
 // LogQuery logs a database query with its parameters (for debugging)
 // This should only be used in development, not in production
 func LogQuery(query string, args ...any) {
-	log.Printf("[DB QUERY] %s [args: %v]", query, args)
+	slog.Debug("DB query", "sql", query, "args", args)
 }
 
 // MeasureQueryTime measures and logs the execution time of a query
@@ -129,7 +129,7 @@ func MeasureQueryTime(operation string) func() {
 	start := time.Now()
 	return func() {
 		duration := time.Since(start)
-		log.Printf("[DB TIMING] %s took %v", operation, duration)
+		slog.Debug("DB timing", "operation", operation, "duration", duration)
 	}
 }
 
@@ -151,8 +151,8 @@ func RetryOnError(ctx context.Context, maxRetries int, operation func() error) e
 		// Wait before retrying with exponential backoff
 		if i < maxRetries-1 {
 			waitTime := time.Duration(1<<uint(i)) * 100 * time.Millisecond
-			log.Printf("[DB] Operation failed, retrying in %v (attempt %d/%d): %v",
-				waitTime, i+1, maxRetries, err)
+			slog.Warn("DB operation failed, retrying",
+				"retry_in", waitTime, "attempt", i+1, "max", maxRetries, "error", err)
 
 			select {
 			case <-ctx.Done():

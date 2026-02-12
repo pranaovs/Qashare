@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"log/slog"
 	"os"
 	"strconv"
 	"strings"
@@ -24,7 +24,7 @@ func getEnvInt(key string, defaultValue int) int {
 
 	val, err := strconv.Atoi(valStr)
 	if err != nil {
-		log.Printf("Config Warning: Invalid integer for %s: '%s', using default: %d", key, valStr, defaultValue)
+		slog.Warn("Invalid integer config value, using default", "key", key, "value", valStr, "default", defaultValue)
 		return defaultValue
 	}
 	return val
@@ -38,7 +38,7 @@ func getEnvBool(key string, defaultValue bool) bool {
 
 	b, err := strconv.ParseBool(val)
 	if err != nil {
-		log.Printf("Config Warning: Invalid boolean for %s: '%s', using default: %t", key, val, defaultValue)
+		slog.Warn("Invalid boolean config value, using default", "key", key, "value", val, "default", defaultValue)
 		return defaultValue
 	}
 	return b
@@ -52,7 +52,7 @@ func getEnvFloat(key string, defaultValue float64) float64 {
 
 	val, err := strconv.ParseFloat(valStr, 64)
 	if err != nil {
-		log.Printf("Config Warning: Invalid float for %s: '%s', using default: %f", key, valStr, defaultValue)
+		slog.Warn("Invalid float config value, using default", "key", key, "value", valStr, "default", defaultValue)
 		return defaultValue
 	}
 	return val
@@ -66,12 +66,12 @@ func getEnvPort(key string, defaultValue int) int {
 
 	val, err := strconv.Atoi(valStr)
 	if err != nil {
-		log.Printf("Config Warning: %s must be a number, using default %d", key, defaultValue)
+		slog.Warn("Config port must be a number, using default", "key", key, "default", defaultValue)
 		return defaultValue
 	}
 
 	if val < 0 || val > 65535 {
-		log.Printf("Config Warning: %s must be between 0 and 65535, using default %d", key, defaultValue)
+		slog.Warn("Config port out of range, using default", "key", key, "value", val, "default", defaultValue)
 		return defaultValue
 	}
 	return val
@@ -85,7 +85,7 @@ func getEnvDuration(key string, defaultSeconds int) time.Duration {
 
 	val, err := strconv.Atoi(valStr)
 	if err != nil || val < 0 {
-		log.Printf("Config Warning: %s must be a valid number of seconds, using default %d", key, defaultSeconds)
+		slog.Warn("Config duration must be valid seconds, using default", "key", key, "default", defaultSeconds)
 		return time.Duration(defaultSeconds) * time.Second
 	}
 	return time.Duration(val) * time.Second
