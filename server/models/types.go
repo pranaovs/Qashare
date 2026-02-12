@@ -74,8 +74,11 @@ type ExpenseSplit struct {
 
 // Settlement represents the balance between two users (positive = owed, negative = owes)
 type Settlement struct {
-	UserID string  `json:"user_id"`
-	Amount float64 `json:"amount"` // positive: user owes you, negative: you owe user
+	Title     string  `json:"title"`
+	CreatedAt int64   `json:"created_at"`
+	GroupID   string  `json:"group_id,omitempty"`
+	UserID    string  `json:"user_id"`
+	Amount    float64 `json:"amount"` // positive: user owes you, negative: you owe user
 }
 
 // UserExpense extends Expense with user-specific amount
