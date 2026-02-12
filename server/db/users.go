@@ -326,7 +326,7 @@ func UsersExist(ctx context.Context, pool *pgxpool.Pool, userIDs []string) error
 		return nil
 	}
 
-	query := `SELECT user_id FROM users WHERE user_id = ANY($1)`
+	query := `SELECT user_id FROM users WHERE user_id = ANY($1::uuid[])`
 	rows, err := pool.Query(ctx, query, userIDs)
 	if err != nil {
 		return err
