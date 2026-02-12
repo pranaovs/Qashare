@@ -91,7 +91,7 @@ func (h *GroupsHandler) GetSettlements(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Group ID"
 // @Param request body models.Settlement true "Settle payment request"
-// @Success 200 {object} models.Settlement "Created settlement expense with splits"
+// @Success 201 {object} models.Settlement "Created settlement expense with splits"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Cannot settle with yourself or missing group_id | INVALID_AMOUNT: Settlement amount cannot be zero"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user or the other user is not a member of the specified group"

@@ -1343,7 +1343,7 @@
                     }
                 ],
                 "responses": {
-                    "200": {
+                    "201": {
                         "description": "Created settlement expense with splits",
                         "schema": {
                             "$ref": "#/definitions/models.Settlement"
