@@ -27,6 +27,7 @@ type ExpensePatch struct {
 	Amount             *float64 `json:"amount,omitempty"`
 	IsIncompleteAmount *bool    `json:"is_incomplete_amount,omitempty"`
 	IsIncompleteSplit  *bool    `json:"is_incomplete_split,omitempty"`
+	IsSettlement       *bool    `json:"is_settlement,omitempty"`
 	Latitude           *float64 `json:"latitude,omitempty"`
 	Longitude          *float64 `json:"longitude,omitempty"`
 }
