@@ -28,34 +28,42 @@ func GetSettlement(ctx context.Context, pool *pgxpool.Pool, userID, groupID stri
 		return nil, ErrInvalidInput.Msg("user id missing")
 	}
 
-	// Query to calculate proportional debt distribution when multiple payers exist
-	// For each expense, distribute each debtor's amount proportionally to all payers
-	// based on what percentage each payer contributed
+	// Query to calculate proportional debt distribution when multiple payers exist.
+	// Accumulation is done in PostgreSQL using NUMERIC precision to avoid
+	// floating-point errors that would occur if summed in Go with float64.
 	query := `
 	WITH expense_totals AS (
-	  -- Calculate total paid for each expense
 	  SELECT
 	    expense_id,
 	    SUM(amount) as total_paid
 	  FROM expense_splits
 	  WHERE is_paid = true
 	  GROUP BY expense_id
+	),
+	proportional_debts AS (
+	  SELECT
+	    es_payer.user_id as payer_id,
+	    es_debtor.user_id as debtor_id,
+	    es_debtor.amount * (es_payer.amount / et.total_paid) as proportional_amount
+	  FROM expense_splits es_payer
+	  JOIN expense_splits es_debtor ON es_payer.expense_id = es_debtor.expense_id
+	  JOIN expenses e ON e.expense_id = es_payer.expense_id
+	  JOIN expense_totals et ON et.expense_id = es_payer.expense_id
+	  WHERE e.group_id = $1
+	    AND es_payer.is_paid = true
+	    AND es_debtor.is_paid = false
+	    AND es_payer.user_id != es_debtor.user_id
+	    AND et.total_paid > 0
 	)
-	SELECT
-	  es_payer.user_id as payer_id,
-	  es_debtor.user_id as debtor_id,
-	  -- Distribute debtor's amount proportionally based on payer's contribution
-	  es_debtor.amount * (es_payer.amount / et.total_paid) as proportional_amount
-	FROM expense_splits es_payer
-	JOIN expense_splits es_debtor ON es_payer.expense_id = es_debtor.expense_id
-	JOIN expenses e ON e.expense_id = es_payer.expense_id
-	JOIN expense_totals et ON et.expense_id = es_payer.expense_id
-	WHERE e.group_id = $1
-	  AND es_payer.is_paid = true
-	  AND es_debtor.is_paid = false
-	  AND es_payer.user_id != es_debtor.user_id  -- Don't calculate debt to self
-	  AND et.total_paid > 0  -- Avoid division by zero
-	ORDER BY es_payer.user_id, es_debtor.user_id
+	SELECT user_id, SUM(balance)::float8 AS net_balance
+	FROM (
+	  SELECT payer_id AS user_id, SUM(proportional_amount) AS balance
+	  FROM proportional_debts GROUP BY payer_id
+	  UNION ALL
+	  SELECT debtor_id AS user_id, -SUM(proportional_amount) AS balance
+	  FROM proportional_debts GROUP BY debtor_id
+	) AS net
+	GROUP BY user_id
 	`
 
 	rows, err := pool.Query(ctx, query, groupID)
@@ -64,20 +72,19 @@ func GetSettlement(ctx context.Context, pool *pgxpool.Pool, userID, groupID stri
 	}
 	defer rows.Close()
 
-	// Collect all payer-debtor relationships
+	// Net balances are already accumulated in NUMERIC by PostgreSQL
 	balances := make(map[string]float64)
 
 	for rows.Next() {
-		var payer, debtor string
-		var amount float64
+		var userID string
+		var balance float64
 
-		err = rows.Scan(&payer, &debtor, &amount)
+		err = rows.Scan(&userID, &balance)
 		if err != nil {
 			return nil, err
 		}
 
-		balances[payer] += amount  // Payer receives money
-		balances[debtor] -= amount // Debtor owes money
+		balances[userID] = balance
 	}
 
 	if err := rows.Err(); err != nil {
