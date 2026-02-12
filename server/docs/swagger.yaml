@@ -27,6 +27,8 @@ definitions:
         type: boolean
       is_incomplete_split:
         type: boolean
+      is_settlement:
+        type: boolean
       latitude:
         description: pointer because nullable in db
         type: number
@@ -55,6 +57,8 @@ definitions:
         type: boolean
       is_incomplete_split:
         type: boolean
+      is_settlement:
+        type: boolean
       latitude:
         description: pointer because nullable in db
         type: number
@@ -77,6 +81,8 @@ definitions:
       is_incomplete_amount:
         type: boolean
       is_incomplete_split:
+        type: boolean
+      is_settlement:
         type: boolean
       latitude:
         type: number
@@ -170,27 +176,7 @@ definitions:
       user_id:
         type: string
     type: object
-  models.UserPatch:
-    properties:
-      email:
-        type: string
-      name:
-        type: string
-    type: object
-  models.UserSpendings:
-    properties:
-      expenses:
-        items:
-          $ref: '#/definitions/models.UserSpendingsExpense'
-        type: array
-      net_spending:
-        type: number
-      total_owed:
-        type: number
-      total_paid:
-        type: number
-    type: object
-  models.UserSpendingsExpense:
+  models.UserExpense:
     properties:
       added_by:
         type: string
@@ -209,6 +195,8 @@ definitions:
         type: boolean
       is_incomplete_split:
         type: boolean
+      is_settlement:
+        type: boolean
       latitude:
         description: pointer because nullable in db
         type: number
@@ -220,6 +208,13 @@ definitions:
       user_amount:
         description: Amount user paid/owes for this expense
         type: number
+    type: object
+  models.UserPatch:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
     type: object
 info:
   contact:
@@ -1027,7 +1022,7 @@ paths:
       summary: Add members to group
       tags:
       - groups
-  /v1/groups/{id}/settlements:
+  /v1/groups/{id}/settle:
     get:
       description: Get the payment balances between the authenticated user and all
         other members in a group. Positive amount means other user owes you, negative
@@ -1070,10 +1065,64 @@ paths:
       summary: Get payment settlements for a group
       tags:
       - settlements
-  /v1/groups/{id}/spendings:
+    post:
+      consumes:
+      - application/json
+      description: Settle a payment with another user in a group by specifying the
+        other user's ID and the amount to settle. Positive amount means you are paying
+        them, negative means they are paying you. The settlement is stored as an expense
+        with is_settlement=true.
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Settle payment request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Settlement'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Created settlement expense with splits
+          schema:
+            $ref: '#/definitions/models.ExpenseDetails'
+        "400":
+          description: 'BAD_REQUEST: Cannot settle with yourself | INVALID_AMOUNT:
+            Settlement amount cannot be zero'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'USERS_NOT_RELATED: The authenticated user or the other user
+            is not a member of the specified group'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'GROUP_NOT_FOUND: The specified group does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Settle a payment with another user in a group
+      tags:
+      - settlements
+  /v1/groups/{id}/settlements:
     get:
-      description: Get spending summary for the authenticated user in a specific group,
-        including total paid, total owed, net spending, and list of expenses
+      description: Get all settlement transactions where the authenticated user is
+        a participant (payer or receiver)
       parameters:
       - description: Group ID
         in: path
@@ -1084,9 +1133,53 @@ paths:
       - application/json
       responses:
         "200":
-          description: Returns user spending summary with expenses list
+          description: List of settlement expenses with splits
           schema:
-            $ref: '#/definitions/models.UserSpendings'
+            items:
+              $ref: '#/definitions/models.ExpenseDetails'
+            type: array
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'USERS_NOT_RELATED: The authenticated user is not a member
+            of the specified group'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'GROUP_NOT_FOUND: The specified group does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Get settlement history for the current user in the group
+      tags:
+      - settlements
+  /v1/groups/{id}/spendings:
+    get:
+      description: Get all expenses where the authenticated user owes money in a specific
+        group, with the user's owed amount per expense
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of expenses with user-specific amounts
+          schema:
+            items:
+              $ref: '#/definitions/models.UserExpense'
+            type: array
         "401":
           description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
             expired'
@@ -1107,7 +1200,7 @@ paths:
             $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
-      summary: Get user spending in group
+      summary: Get user expenses in group
       tags:
       - groups
   /v1/groups/admin:

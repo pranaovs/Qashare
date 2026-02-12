@@ -1250,7 +1250,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/groups/{id}/settlements": {
+        "/v1/groups/{id}/settle": {
             "get": {
                 "security": [
                     {
@@ -1309,23 +1309,97 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Settle a payment with another user in a group by specifying the other user's ID and the amount to settle. Positive amount means you are paying them, negative means they are paying you. The settlement is stored as an expense with is_settlement=true.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "settlements"
+                ],
+                "summary": "Settle a payment with another user in a group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Settle payment request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Settlement"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Created settlement expense with splits",
+                        "schema": {
+                            "$ref": "#/definitions/models.ExpenseDetails"
+                        }
+                    },
+                    "400": {
+                        "description": "BAD_REQUEST: Cannot settle with yourself | INVALID_AMOUNT: Settlement amount cannot be zero",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "USERS_NOT_RELATED: The authenticated user or the other user is not a member of the specified group",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "GROUP_NOT_FOUND: The specified group does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
             }
         },
-        "/v1/groups/{id}/spendings": {
+        "/v1/groups/{id}/settlements": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get spending summary for the authenticated user in a specific group, including total paid, total owed, net spending, and list of expenses",
+                "description": "Get all settlement transactions where the authenticated user is a participant (payer or receiver)",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "settlements"
                 ],
-                "summary": "Get user spending in group",
+                "summary": "Get settlement history for the current user in the group",
                 "parameters": [
                     {
                         "type": "string",
@@ -1337,9 +1411,73 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Returns user spending summary with expenses list",
+                        "description": "List of settlement expenses with splits",
                         "schema": {
-                            "$ref": "#/definitions/models.UserSpendings"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.ExpenseDetails"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the specified group",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "GROUP_NOT_FOUND: The specified group does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/groups/{id}/spendings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all expenses where the authenticated user owes money in a specific group, with the user's owed amount per expense",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "groups"
+                ],
+                "summary": "Get user expenses in group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of expenses with user-specific amounts",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.UserExpense"
+                            }
                         }
                     },
                     "401": {
@@ -1909,6 +2047,9 @@ const docTemplate = `{
                 "is_incomplete_split": {
                     "type": "boolean"
                 },
+                "is_settlement": {
+                    "type": "boolean"
+                },
                 "latitude": {
                     "description": "pointer because nullable in db",
                     "type": "number"
@@ -1950,6 +2091,9 @@ const docTemplate = `{
                 "is_incomplete_split": {
                     "type": "boolean"
                 },
+                "is_settlement": {
+                    "type": "boolean"
+                },
                 "latitude": {
                     "description": "pointer because nullable in db",
                     "type": "number"
@@ -1982,6 +2126,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "is_incomplete_split": {
+                    "type": "boolean"
+                },
+                "is_settlement": {
                     "type": "boolean"
                 },
                 "latitude": {
@@ -2125,38 +2272,7 @@ const docTemplate = `{
                 }
             }
         },
-        "models.UserPatch": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.UserSpendings": {
-            "type": "object",
-            "properties": {
-                "expenses": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.UserSpendingsExpense"
-                    }
-                },
-                "net_spending": {
-                    "type": "number"
-                },
-                "total_owed": {
-                    "type": "number"
-                },
-                "total_paid": {
-                    "type": "number"
-                }
-            }
-        },
-        "models.UserSpendingsExpense": {
+        "models.UserExpense": {
             "type": "object",
             "properties": {
                 "added_by": {
@@ -2184,6 +2300,9 @@ const docTemplate = `{
                 "is_incomplete_split": {
                     "type": "boolean"
                 },
+                "is_settlement": {
+                    "type": "boolean"
+                },
                 "latitude": {
                     "description": "pointer because nullable in db",
                     "type": "number"
@@ -2198,6 +2317,17 @@ const docTemplate = `{
                 "user_amount": {
                     "description": "Amount user paid/owes for this expense",
                     "type": "number"
+                }
+            }
+        },
+        "models.UserPatch": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         }
