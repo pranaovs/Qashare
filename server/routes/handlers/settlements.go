@@ -81,7 +81,7 @@ func (h *GroupsHandler) GetSettlements(c *gin.Context) {
 
 	settlements := make([]models.Settlement, len(history))
 	for i, exp := range history {
-		settlements[i] = expenseToSettlementForUser(exp, userID)
+		settlements[i] = expenseToSettlement(exp, userID)
 	}
 
 	utils.SendData(c, settlements)
@@ -168,14 +168,14 @@ func (h *SettlementsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusCreated, expenseToSettlement(expense))
+	utils.SendJSON(c, http.StatusCreated, expenseToSettlement(expense, userID))
 }
 
 // expenseToSettlement converts an ExpenseDetails to a Settlement response.
-// Amount sign is relative to AddedBy: positive means AddedBy paid the other user,
-// negative means the other user paid AddedBy.
-func expenseToSettlement(expense models.ExpenseDetails) models.Settlement {
-	if len(expense.Splits) < 2 || expense.AddedBy == nil {
+// Amount sign is relative to the given userID: positive means userID paid the other user,
+// negative means the other user paid userID.
+func expenseToSettlement(expense models.ExpenseDetails, userID string) models.Settlement {
+	if len(expense.Splits) < 2 {
 		return models.Settlement{
 			Title:     expense.Title,
 			CreatedAt: expense.CreatedAt,
@@ -183,36 +183,21 @@ func expenseToSettlement(expense models.ExpenseDetails) models.Settlement {
 		}
 	}
 
-	addedByID := *expense.AddedBy
-
-	// Find the payer and determine the other user
-	var payerID, otherUserID string
+	var otherUserID string
 	var absAmount float64
+	var userIsPayer bool
+
 	for _, split := range expense.Splits {
-		if split.IsPaid {
-			payerID = split.UserID
+		if split.UserID == userID {
+			userIsPayer = split.IsPaid
 			absAmount = split.Amount
-		}
-	}
-	for _, split := range expense.Splits {
-		if split.UserID != addedByID {
+		} else {
 			otherUserID = split.UserID
-			break
-		}
-	}
-	// If both splits belong to AddedBy (shouldn't happen), fall back to the non-payer
-	if otherUserID == "" {
-		for _, split := range expense.Splits {
-			if !split.IsPaid {
-				otherUserID = split.UserID
-				break
-			}
 		}
 	}
 
-	// Positive = AddedBy paid, Negative = other user paid AddedBy
 	amount := absAmount
-	if payerID != addedByID {
+	if !userIsPayer {
 		amount = -absAmount
 	}
 
@@ -239,8 +224,9 @@ func expenseToSettlement(expense models.ExpenseDetails) models.Settlement {
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/settlements/{id} [get]
 func (h *SettlementsHandler) Get(c *gin.Context) {
+	userID := middleware.MustGetUserID(c)
 	expense := middleware.MustGetExpense(c)
-	utils.SendData(c, expenseToSettlement(expense))
+	utils.SendData(c, expenseToSettlement(expense, userID))
 }
 
 // Update godoc
@@ -333,7 +319,7 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, expenseToSettlement(updated))
+	utils.SendJSON(c, http.StatusOK, expenseToSettlement(updated, *expense.AddedBy))
 }
 
 // Patch godoc
@@ -469,7 +455,7 @@ func (h *SettlementsHandler) Patch(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, expenseToSettlement(expense))
+	utils.SendJSON(c, http.StatusOK, expenseToSettlement(expense, addedByID))
 }
 
 // Delete godoc
