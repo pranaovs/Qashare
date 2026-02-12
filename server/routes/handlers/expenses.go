@@ -3,6 +3,7 @@ package handlers
 import (
 	"math"
 	"net/http"
+	"sort"
 
 	"github.com/pranaovs/qashare/apperrors"
 	"github.com/pranaovs/qashare/config"
@@ -108,16 +109,10 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 		return
 	}
 
-	// Fetch the created expense from DB to return the complete entity
-	created, err := db.GetExpense(c.Request.Context(), h.pool, expense.ExpenseID)
-	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrNotFound: apierrors.ErrExpenseNotFound,
-		}))
-		return
-	}
+	// Sort splits to match consistent ordering (is_paid DESC, user_id ASC)
+	sortExpenseSplits(expense.Splits)
 
-	utils.SendJSON(c, http.StatusCreated, created)
+	utils.SendJSON(c, http.StatusCreated, expense)
 }
 
 // Get godoc
@@ -218,15 +213,10 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 		return
 	}
 
-	expense, err := db.GetExpense(c.Request.Context(), h.pool, expense.ExpenseID)
-	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrNotFound: apierrors.ErrExpenseNotFound,
-		}))
-		return
-	}
+	// Sort splits to match consistent ordering (is_paid DESC, user_id ASC)
+	sortExpenseSplits(payload.Splits)
 
-	utils.SendJSON(c, http.StatusOK, expense)
+	utils.SendJSON(c, http.StatusOK, payload)
 }
 
 // Delete godoc
@@ -338,4 +328,14 @@ func (h *ExpensesHandler) Patch(c *gin.Context) {
 	}
 
 	utils.SendJSON(c, http.StatusOK, expense)
+}
+
+// sortExpenseSplits sorts splits by is_paid DESC then user_id ASC for consistent ordering.
+func sortExpenseSplits(splits []models.ExpenseSplit) {
+	sort.Slice(splits, func(i, j int) bool {
+		if splits[i].IsPaid != splits[j].IsPaid {
+			return splits[i].IsPaid // true (paid) before false (owed)
+		}
+		return splits[i].UserID < splits[j].UserID
+	})
 }

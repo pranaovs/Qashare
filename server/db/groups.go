@@ -68,59 +68,72 @@ func GetGroupCreator(ctx context.Context, pool *pgxpool.Pool, groupID string) (s
 	return creatorID, nil
 }
 
-// GetGroup retrieves complete group information including all members.
+// GetGroup retrieves complete group information including all members in a single query.
 // Returns a models.GroupDetails struct with full details and a list of all group members.
 // Returns ErrNotFound if no group with the ID exists.
 func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.GroupDetails, error) {
 	var group models.GroupDetails
 
-	// Fetch group basic information
-	groupQuery := `SELECT group_id, group_name, description, created_by, extract(epoch from created_at)::bigint
-		FROM groups
-		WHERE group_id = $1`
+	query := `SELECT g.group_id, g.group_name, g.description, g.created_by,
+		extract(epoch from g.created_at)::bigint,
+		u.user_id, u.user_name, u.email, u.is_guest,
+		extract(epoch from gm.joined_at)::bigint
+	FROM groups g
+	LEFT JOIN group_members gm ON g.group_id = gm.group_id
+	LEFT JOIN users u ON gm.user_id = u.user_id
+	WHERE g.group_id = $1
+	ORDER BY gm.joined_at ASC`
 
-	err := pool.QueryRow(ctx, groupQuery, groupID).Scan(
-		&group.GroupID,
-		&group.Name,
-		&group.Description,
-		&group.CreatedBy,
-		&group.CreatedAt,
-	)
-
-	if err == pgx.ErrNoRows {
-		return models.GroupDetails{}, ErrNotFound.Msgf("group with id %s not found", groupID)
-	}
-	if err != nil {
-		return models.GroupDetails{}, err
-	}
-
-	// Fetch group members with user details
-	membersQuery := `SELECT u.user_id, u.user_name, u.email, u.is_guest, extract(epoch from gm.joined_at)::bigint
-		FROM group_members gm
-		JOIN users u ON gm.user_id = u.user_id
-		WHERE gm.group_id = $1
-		ORDER BY gm.joined_at ASC`
-
-	rows, err := pool.Query(ctx, membersQuery, groupID)
+	rows, err := pool.Query(ctx, query, groupID)
 	if err != nil {
 		return models.GroupDetails{}, err
 	}
 	defer rows.Close()
 
-	// Scan members into the group
 	group.Members = make([]models.GroupUser, 0)
+	first := true
 	for rows.Next() {
-		var member models.GroupUser
-		err := rows.Scan(&member.UserID, &member.Name, &member.Email, &member.Guest, &member.JoinedAt)
+		var memberUserID *string
+		var memberName *string
+		var memberEmail *string
+		var memberGuest *bool
+		var memberJoinedAt *int64
+
+		err := rows.Scan(
+			&group.GroupID,
+			&group.Name,
+			&group.Description,
+			&group.CreatedBy,
+			&group.CreatedAt,
+			&memberUserID,
+			&memberName,
+			&memberEmail,
+			&memberGuest,
+			&memberJoinedAt,
+		)
 		if err != nil {
 			return models.GroupDetails{}, err
 		}
-		group.Members = append(group.Members, member)
+		first = false
+
+		// Skip NULL members (group has no members)
+		if memberUserID != nil {
+			group.Members = append(group.Members, models.GroupUser{
+				UserID:   *memberUserID,
+				Name:     *memberName,
+				Email:    *memberEmail,
+				Guest:    *memberGuest,
+				JoinedAt: *memberJoinedAt,
+			})
+		}
 	}
 
-	// Check for any errors during iteration
 	if err := rows.Err(); err != nil {
 		return models.GroupDetails{}, err
+	}
+
+	if first {
+		return models.GroupDetails{}, ErrNotFound.Msgf("group with id %s not found", groupID)
 	}
 
 	return group, nil

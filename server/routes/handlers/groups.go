@@ -332,24 +332,14 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 		return
 	}
 
-	validUserIDs := make([]string, 0, len(req.UserIDs))
-	for _, uid := range req.UserIDs {
-		err := db.UserExists(c.Request.Context(), h.pool, uid)
-		if err != nil {
-			utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-				db.ErrNotFound: apierrors.ErrUserNotFound,
-			}))
-			return
-		}
-		validUserIDs = append(validUserIDs, uid)
-	}
-
-	if len(validUserIDs) == 0 {
-		utils.SendError(c, apierrors.ErrUserNotFound.Msg("No valid user IDs provided"))
+	if err = db.UsersExist(c.Request.Context(), h.pool, req.UserIDs); err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrUserNotFound,
+		}))
 		return
 	}
 
-	err = db.AddGroupMembers(c.Request.Context(), h.pool, groupID, validUserIDs)
+	err = db.AddGroupMembers(c.Request.Context(), h.pool, groupID, req.UserIDs)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound:            apierrors.ErrGroupNotFound,
@@ -360,7 +350,7 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 
 	utils.SendJSON(c, http.StatusOK, gin.H{
 		"message":       "members added successfully",
-		"added_members": validUserIDs,
+		"added_members": req.UserIDs,
 	})
 }
 
