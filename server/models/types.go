@@ -72,7 +72,9 @@ type ExpenseSplit struct {
 	IsPaid    bool    `json:"is_paid" db:"is_paid"` // "paid" or "owes"
 }
 
-// Settlement represents the balance between two users (positive = owed, negative = owes)
+// Settlement represents the a balance settlement between two users, not stored in DB, used for responses
+// It is stored as an Expense with IsSettlement=true in the DB
+// If Amount is positive, it means UserID owes you, if negative, it means you owe UserID
 type Settlement struct {
 	Title     string  `json:"title"`
 	CreatedAt int64   `json:"created_at"`
