@@ -78,16 +78,8 @@ type Settlement struct {
 	Amount float64 `json:"amount"` // positive: user owes you, negative: you owe user
 }
 
-// UserSpendings represents a user's spending summary in a group
-type UserSpendings struct {
-	TotalPaid   float64                `json:"total_paid"`
-	TotalOwed   float64                `json:"total_owed"`
-	NetSpending float64                `json:"net_spending"`
-	Expenses    []UserSpendingsExpense `json:"expenses"`
-}
-
-// UserSpendingsExpense extends Expense with user-specific amount
-type UserSpendingsExpense struct {
+// UserExpense extends Expense with user-specific amount
+type UserExpense struct {
 	Expense
 	UserAmount float64 `json:"user_amount"` // Amount user paid/owes for this expense
 }

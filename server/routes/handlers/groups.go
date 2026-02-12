@@ -426,13 +426,13 @@ func (h *GroupsHandler) GetExpenses(c *gin.Context) {
 }
 
 // GetSpendings godoc
-// @Summary Get user spending in group
-// @Description Get spending summary for the authenticated user in a specific group, including total paid, total owed, net spending, and list of expenses
+// @Summary Get user expenses in group
+// @Description Get all expenses where the authenticated user owes money in a specific group, with the user's owed amount per expense
 // @Tags groups
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Group ID"
-// @Success 200 {object} models.UserSpendings "Returns user spending summary with expenses list"
+// @Success 200 {array} models.UserExpense "List of expenses with user-specific amounts"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the group"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
@@ -442,13 +442,13 @@ func (h *GroupsHandler) GetSpendings(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	groupID := middleware.MustGetGroupID(c)
 
-	spending, err := db.GetUserSpending(c.Request.Context(), h.pool, userID, groupID)
+	expenses, err := db.GetUserSpending(c.Request.Context(), h.pool, userID, groupID)
 	if err != nil {
-		utils.SendError(c, err) // Shouln't send any error as everything is validated in the middleware
+		utils.SendError(c, err)
 		return
 	}
 
-	utils.SendData(c, spending)
+	utils.SendData(c, expenses)
 }
 
 // Delete godoc
