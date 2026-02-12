@@ -61,7 +61,7 @@ func (h *GroupsHandler) GetSettle(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Group ID"
-// @Success 200 {array} models.ExpenseDetails "List of settlement expenses with splits"
+// @Success 200 {array} models.Settlement "List of settlement history entries"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the specified group"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
@@ -79,7 +79,12 @@ func (h *GroupsHandler) GetSettlements(c *gin.Context) {
 		return
 	}
 
-	utils.SendData(c, history)
+	settlements := make([]models.Settlement, len(history))
+	for i, exp := range history {
+		settlements[i] = expenseToSettlementForUser(exp, userID)
+	}
+
+	utils.SendData(c, settlements)
 }
 
 // Create godoc
@@ -163,7 +168,7 @@ func (h *SettlementsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusCreated, expense)
+	utils.SendJSON(c, http.StatusCreated, expenseToSettlement(expense))
 }
 
 // expenseToSettlement converts an ExpenseDetails to a Settlement response.

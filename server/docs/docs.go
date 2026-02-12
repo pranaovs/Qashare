@@ -1418,11 +1418,11 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of settlement expenses with splits",
+                        "description": "List of settlement history entries",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.ExpenseDetails"
+                                "$ref": "#/definitions/models.Settlement"
                             }
                         }
                     },

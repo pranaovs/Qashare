@@ -318,28 +318,16 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 		return
 	}
 
-	userID := middleware.MustGetUserID(c)
+	// Admin permission is already verified by RequireGroupAdmin middleware
 
-	groupCreator, err := db.GetGroupCreator(c.Request.Context(), h.pool, groupID)
-	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrNotFound: apierrors.ErrGroupNotFound,
-		}))
-		return
-	}
-	if groupCreator != userID {
-		utils.SendError(c, apierrors.ErrNoPermissions)
-		return
-	}
-
-	if err = db.UsersExist(c.Request.Context(), h.pool, req.UserIDs); err != nil {
+	if err := db.UsersExist(c.Request.Context(), h.pool, req.UserIDs); err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrUserNotFound,
 		}))
 		return
 	}
 
-	err = db.AddGroupMembers(c.Request.Context(), h.pool, groupID, req.UserIDs)
+	err := db.AddGroupMembers(c.Request.Context(), h.pool, groupID, req.UserIDs)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound:            apierrors.ErrGroupNotFound,

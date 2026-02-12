@@ -215,6 +215,7 @@ func RemoveGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID 
 
 // RemoveGroupMembers removes multiple users from a group in a single batch operation.
 // Uses batch operations for better performance when removing many members at once.
+// Returns ErrNotFound if any user is not a member of the group.
 // Returns ErrInvalidInput if no user IDs are provided.
 func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, userIDs []string) error {
 	if len(userIDs) == 0 {
@@ -240,10 +241,13 @@ func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string,
 	}()
 
 	// Check results for each query
-	for range userIDs {
-		_, err := br.Exec()
+	for _, userID := range userIDs {
+		result, err := br.Exec()
 		if err != nil {
 			return err
+		}
+		if result.RowsAffected() == 0 {
+			return ErrNotFound.Msgf("user %s is not a member of the group", userID)
 		}
 	}
 

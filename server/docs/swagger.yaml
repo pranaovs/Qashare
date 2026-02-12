@@ -1150,10 +1150,10 @@ paths:
       - application/json
       responses:
         "200":
-          description: List of settlement expenses with splits
+          description: List of settlement history entries
           schema:
             items:
-              $ref: '#/definitions/models.ExpenseDetails'
+              $ref: '#/definitions/models.Settlement'
             type: array
         "401":
           description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
