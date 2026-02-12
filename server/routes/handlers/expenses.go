@@ -41,7 +41,7 @@ func NewExpensesHandler(pool *pgxpool.Pool, appConfig config.AppConfig) *Expense
 // @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the specified group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /v1/groups/{id}/expenses [post]
+// @Router /v1/groups/{id}/expense [post]
 func (h *ExpensesHandler) Create(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	groupID := middleware.MustGetGroupID(c)

@@ -405,7 +405,7 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 // GetExpenses godoc
 // @Summary List group expenses
 // @Description Get all expenses of a group
-// @Tags groups
+// @Tags expenses
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Group ID"

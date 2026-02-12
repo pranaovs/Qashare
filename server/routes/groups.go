@@ -32,7 +32,7 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, jwtConfig
 
 	// Expenses
 	router.GET("/:id/expenses", middleware.RequireGroupMember(pool), handler.GetExpenses)
-	router.POST("/:id/expenses", middleware.RequireGroupMember(pool), expensesHandler.Create)
+	router.POST("/:id/expense", middleware.RequireGroupMember(pool), expensesHandler.Create)
 
 	// Settlements
 	router.GET("/:id/settle", middleware.RequireGroupMember(pool), handler.GetSettle)
