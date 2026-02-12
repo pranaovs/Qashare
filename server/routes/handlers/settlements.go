@@ -84,30 +84,27 @@ func (h *GroupsHandler) GetSettlements(c *gin.Context) {
 
 // Create godoc
 // @Summary Settle a payment with another user in a group
-// @Description Settle a payment with another user in a group by specifying the group_id, user_id, and amount. Positive amount means you are paying them, negative means they are paying you. The settlement is stored as an expense with is_settlement=true.
+// @Description Settle a payment with another user in a group by specifying the user_id and amount. Positive amount means you are paying them, negative means they are paying you. The settlement is stored as an expense with is_settlement=true.
 // @Tags settlements
 // @Accept json
 // @Produce json
 // @Security BearerAuth
+// @Param id path string true "Group ID"
 // @Param request body models.Settlement true "Settle payment request"
-// @Success 200 {object} models.ExpenseDetails "Created settlement expense with splits"
+// @Success 200 {object} models.Settlement "Created settlement expense with splits"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Cannot settle with yourself or missing group_id | INVALID_AMOUNT: Settlement amount cannot be zero"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
 // @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user or the other user is not a member of the specified group"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
-// @Router /v1/settlements/ [post]
+// @Router /v1/groups/{id}/settle [post]
 func (h *SettlementsHandler) Create(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
+	groupID := middleware.MustGetGroupID(c)
 
 	var req models.Settlement
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.SendError(c, apierrors.ErrBadRequest)
-		return
-	}
-
-	if req.GroupID == "" {
-		utils.SendError(c, apierrors.ErrBadRequest.Msg("group_id is required"))
 		return
 	}
 
@@ -147,7 +144,7 @@ func (h *SettlementsHandler) Create(c *gin.Context) {
 
 	expense := models.ExpenseDetails{
 		Expense: models.Expense{
-			GroupID:      req.GroupID,
+			GroupID:      groupID,
 			AddedBy:      &userID,
 			Title:        req.Title,
 			Amount:       absAmount,
@@ -208,7 +205,7 @@ func expenseToSettlement(expense models.ExpenseDetails) models.Settlement {
 // @Router /v1/settlements/{id} [get]
 func (h *SettlementsHandler) Get(c *gin.Context) {
 	expense := middleware.MustGetExpense(c)
-	utils.SendJSON(c, http.StatusOK, expenseToSettlement(expense))
+	utils.SendData(c, expenseToSettlement(expense))
 }
 
 // Update godoc

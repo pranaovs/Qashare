@@ -13,7 +13,6 @@ func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, jwtConf
 	handler := handlers.NewExpensesHandler(pool, appConfig)
 	router.Use(middleware.RequireAuth(jwtConfig))
 
-	router.POST("/", handler.Create)
 	router.GET("/:id", middleware.VerifyExpenseAccess(pool), handler.Get)
 	router.PUT("/:id", middleware.VerifyExpenseAdmin(pool), handler.Update)
 	router.PATCH("/:id", middleware.VerifyExpenseAdmin(pool), handler.Patch)

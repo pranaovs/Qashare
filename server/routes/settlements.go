@@ -13,7 +13,6 @@ func RegisterSettlementsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, jwtC
 	handler := handlers.NewSettlementsHandler(pool, appConfig)
 	router.Use(middleware.RequireAuth(jwtConfig))
 
-	router.POST("/", handler.Create)
 	router.GET("/:id", middleware.VerifySettlementAccess(pool), handler.Get)
 	router.PUT("/:id", middleware.VerifySettlementAdmin(pool), handler.Update)
 	router.PATCH("/:id", middleware.VerifySettlementAdmin(pool), handler.Patch)

@@ -33,6 +33,7 @@ func NewExpensesHandler(pool *pgxpool.Pool, appConfig config.AppConfig) *Expense
 // @Accept json
 // @Produce json
 // @Security BearerAuth
+// @Param id path string true "Group ID"
 // @Param request body models.ExpenseDetails true "Expense details with splits"
 // @Success 201 {object} models.ExpenseDetails "Expense successfully created with splits"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body, missing required fields, or no splits provided | INVALID_SPLIT: Split totals do not match expense amount or split validation failed"
@@ -40,9 +41,10 @@ func NewExpensesHandler(pool *pgxpool.Pool, appConfig config.AppConfig) *Expense
 // @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the specified group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /v1/expenses/ [post]
+// @Router /v1/groups/{id}/expenses [post]
 func (h *ExpensesHandler) Create(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
+	groupID := middleware.MustGetGroupID(c)
 
 	var expense models.ExpenseDetails
 	if err := c.ShouldBindJSON(&expense); err != nil {
@@ -52,6 +54,7 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 
 	expense.AddedBy = &userID
 	expense.IsSettlement = false
+	expense.GroupID = groupID
 
 	// Verify user is a member of the group
 	isMember, err := db.MemberOfGroup(c.Request.Context(), h.pool, userID, expense.GroupID)
