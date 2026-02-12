@@ -2398,9 +2398,6 @@ const docTemplate = `{
                 "is_incomplete_split": {
                     "type": "boolean"
                 },
-                "is_settlement": {
-                    "type": "boolean"
-                },
                 "latitude": {
                     "type": "number"
                 },
