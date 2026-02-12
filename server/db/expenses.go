@@ -327,6 +327,7 @@ func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID string) ([]mod
 		longitude
 	FROM expenses
 	WHERE group_id = $1
+		AND is_settlement = false
 	ORDER BY created_at DESC`
 
 	rows, err := pool.Query(ctx, expensesQuery, groupID)
@@ -408,6 +409,7 @@ func GetUserSpending(ctx context.Context, pool *pgxpool.Pool, userID, groupID st
 		JOIN expense_splits es ON e.expense_id = es.expense_id
 		WHERE e.group_id = $1
 			AND es.user_id = $2
+			AND e.is_settlement = false
 		ORDER BY e.created_at DESC
 	`
 
