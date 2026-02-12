@@ -26,4 +26,7 @@ var (
 	ErrExpenseNotFound = New(http.StatusNotFound, "EXPENSE_NOT_FOUND", "The requested expense does not exist.", nil)
 	ErrInvalidAmount   = New(http.StatusBadRequest, "INVALID_AMOUNT", "The expense amount is invalid.", nil)
 	ErrInvalidSplit    = New(http.StatusBadRequest, "INVALID_SPLIT", "The expense splits are invalid or do not sum up correctly.", nil)
+
+	// Generic errors
+	ErrInternalServer = New(http.StatusInternalServerError, "INTERNAL_ERROR", "Something went wrong on our end.", nil)
 )

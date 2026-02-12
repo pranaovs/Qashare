@@ -156,7 +156,6 @@ definitions:
   models.Settlement:
     properties:
       amount:
-        description: 'positive: user owes you, negative: you owe user'
         type: number
       created_at:
         type: integer

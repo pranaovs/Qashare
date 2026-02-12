@@ -1,8 +1,6 @@
 package middleware
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/db"
@@ -19,18 +17,18 @@ func RequireGroupMember(pool *pgxpool.Pool) gin.HandlerFunc {
 		groupID, ok := c.Params.Get("id")
 
 		if !ok {
-			utils.SendAbort(c, http.StatusBadRequest, "Group ID not provided")
+			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("group ID not provided"))
 			return
 		}
 
 		ok, err := db.MemberOfGroup(c.Request.Context(), pool, userID, groupID)
 		if err != nil {
-			utils.SendAbort(c, http.StatusInternalServerError, "failed to verify membership")
+			utils.SendAbort(c, apierrors.ErrInternalServer)
 			return
 		}
 
 		if !ok {
-			utils.SendAbort(c, http.StatusForbidden, "user is not a member of the group")
+			utils.SendAbort(c, apierrors.ErrUsersNotRelated)
 			return
 		}
 
@@ -45,22 +43,22 @@ func RequireGroupAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		groupID, ok := c.Params.Get("id")
 		if !ok {
-			utils.SendAbort(c, http.StatusBadRequest, "Group ID not provided")
+			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("group ID not provided"))
 			return
 		}
 
 		creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, groupID)
 		if err != nil {
 			if db.IsNotFound(err) {
-				utils.SendAbort(c, apierrors.ErrGroupNotFound.HTTPCode, apierrors.ErrGroupNotFound.Message)
+				utils.SendAbort(c, apierrors.ErrGroupNotFound)
 				return
 			}
-			utils.SendAbort(c, http.StatusInternalServerError, "failed to get group creator")
+			utils.SendAbort(c, apierrors.ErrInternalServer)
 			return
 		}
 
 		if creatorID != userID {
-			utils.SendAbort(c, http.StatusForbidden, "not the group admin")
+			utils.SendAbort(c, apierrors.ErrNoPermissions.Msg("not the group admin"))
 			return
 		}
 
@@ -75,22 +73,22 @@ func RequireGroupOwner(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		groupID, ok := c.Params.Get("id")
 		if !ok {
-			utils.SendAbort(c, http.StatusBadRequest, "Group ID not provided")
+			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("group ID not provided"))
 			return
 		}
 
 		creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, groupID)
 		if err != nil {
 			if db.IsNotFound(err) {
-				utils.SendAbort(c, apierrors.ErrGroupNotFound.HTTPCode, apierrors.ErrGroupNotFound.Message)
+				utils.SendAbort(c, apierrors.ErrGroupNotFound)
 				return
 			}
-			utils.SendAbort(c, http.StatusInternalServerError, "failed to get group creator")
+			utils.SendAbort(c, apierrors.ErrInternalServer)
 			return
 		}
 
 		if creatorID != userID {
-			utils.SendAbort(c, http.StatusForbidden, "not the group owner")
+			utils.SendAbort(c, apierrors.ErrNoPermissions.Msg("not the group owner"))
 			return
 		}
 

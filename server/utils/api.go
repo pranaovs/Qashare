@@ -28,7 +28,7 @@ func SendError(c *gin.Context, err error) {
 	}
 
 	// Handle unexpected/unknown errors (Panic recovery or generic errors)
-	LogError(c.Request.Context(), "[ERROR] Internal Server Error: %v", err)
+	LogError(c.Request.Context(), "internal server error", err)
 
 	c.JSON(http.StatusInternalServerError, gin.H{
 		"code":    "INTERNAL_ERROR",
@@ -36,11 +36,13 @@ func SendError(c *gin.Context, err error) {
 	})
 }
 
-// SendAbort is a unified helper function that aborts the request
-// and sends a JSON response with the specified HTTP status code and error message.
-// This replaces the pattern of calling c.JSON() followed by c.Abort() separately.
-func SendAbort(c *gin.Context, statusCode int, message string) {
-	c.AbortWithStatusJSON(statusCode, gin.H{"error": message})
+// SendAbort aborts the request and sends a JSON error response using the same
+// {"code", "message"} format as SendError for consistent error responses.
+func SendAbort(c *gin.Context, appErr *apierrors.AppError) {
+	c.AbortWithStatusJSON(appErr.HTTPCode, gin.H{
+		"code":    appErr.MachineCode,
+		"message": appErr.Message,
+	})
 }
 
 // SendJSON is a helper function that sends a JSON response with the specified

@@ -172,8 +172,9 @@ func (h *SettlementsHandler) Create(c *gin.Context) {
 }
 
 // expenseToSettlement converts an ExpenseDetails to a Settlement response.
-// Amount sign is relative to the given userID: positive means userID paid the other user,
-// negative means the other user paid userID.
+// Amount sign is relative to the given userID:
+//   - Positive: userID was the payer (is_paid=true) — userID paid/is owed by the other user
+//   - Negative: userID was the receiver (is_paid=false) — the other user paid/is owed by userID
 func expenseToSettlement(expense models.ExpenseDetails, userID string) models.Settlement {
 	if len(expense.Splits) < 2 {
 		return models.Settlement{
@@ -246,6 +247,7 @@ func (h *SettlementsHandler) Get(c *gin.Context) {
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/settlements/{id} [put]
 func (h *SettlementsHandler) Update(c *gin.Context) {
+	userID := middleware.MustGetUserID(c)
 	groupID := middleware.MustGetGroupID(c)
 	expense := middleware.MustGetExpense(c)
 
@@ -267,7 +269,7 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 	}
 	addedByID := *expense.AddedBy
 
-	if req.UserID == addedByID {
+	if req.UserID == addedByID || req.UserID == userID {
 		utils.SendError(c, apierrors.ErrBadRequest.Msg("cannot settle with yourself"))
 		return
 	}
@@ -286,14 +288,14 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 
 	absAmount := math.Abs(req.Amount)
 
-	// Sign is relative to AddedBy (the original creator):
-	//   Positive: AddedBy pays req.UserID
-	//   Negative: req.UserID pays AddedBy
-	payerID := addedByID
+	// Sign is relative to the authenticated user (matching Create):
+	//   Positive: authenticated user pays req.UserID
+	//   Negative: req.UserID pays authenticated user
+	payerID := userID
 	receiverID := req.UserID
 	if req.Amount < 0 {
 		payerID = req.UserID
-		receiverID = addedByID
+		receiverID = userID
 	}
 
 	updated := models.ExpenseDetails{
@@ -319,7 +321,7 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, expenseToSettlement(updated, *expense.AddedBy))
+	utils.SendJSON(c, http.StatusOK, expenseToSettlement(updated, userID))
 }
 
 // Patch godoc
@@ -339,6 +341,7 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/settlements/{id} [patch]
 func (h *SettlementsHandler) Patch(c *gin.Context) {
+	userID := middleware.MustGetUserID(c)
 	groupID := middleware.MustGetGroupID(c)
 	expense := middleware.MustGetExpense(c)
 
@@ -455,7 +458,7 @@ func (h *SettlementsHandler) Patch(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, expenseToSettlement(expense, addedByID))
+	utils.SendJSON(c, http.StatusOK, expenseToSettlement(expense, userID))
 }
 
 // Delete godoc

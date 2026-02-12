@@ -72,15 +72,21 @@ type ExpenseSplit struct {
 	IsPaid    bool    `json:"is_paid" db:"is_paid"` // "paid" or "owes"
 }
 
-// Settlement represents the a balance settlement between two users, not stored in DB, used for responses
-// It is stored as an Expense with IsSettlement=true in the DB
-// If Amount is positive, it means UserID owes you, if negative, it means you owe UserID
+// Settlement represents a balance or transaction between two users, used for responses.
+// Settlement data is stored as an Expense with IsSettlement=true in the DB.
+//
+// Amount sign is relative to the authenticated user:
+//   - Positive: you are owed by / paid UserID (net credit)
+//   - Negative: you owe / were paid by UserID (net debt)
+//
+// In the GetSettle endpoint (balance computation), this is the net amount.
+// In settlement history and CRUD, this reflects the payment direction.
 type Settlement struct {
 	Title     string  `json:"title"`
 	CreatedAt int64   `json:"created_at"`
 	GroupID   string  `json:"group_id,omitempty"`
 	UserID    string  `json:"user_id"`
-	Amount    float64 `json:"amount"` // positive: user owes you, negative: you owe user
+	Amount    float64 `json:"amount"`
 }
 
 // UserExpense extends Expense with user-specific amount

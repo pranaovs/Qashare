@@ -2513,7 +2513,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "amount": {
-                    "description": "positive: user owes you, negative: you owe user",
                     "type": "number"
                 },
                 "created_at": {

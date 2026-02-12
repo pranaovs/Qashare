@@ -1,8 +1,6 @@
 package middleware
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/db"
@@ -25,7 +23,7 @@ func VerifyExpenseAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		expenseID := c.Param("id")
 		if expenseID == "" {
-			utils.SendAbort(c, http.StatusBadRequest, "Expense ID not provided")
+			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("expense ID not provided"))
 			return
 		}
 
@@ -33,28 +31,28 @@ func VerifyExpenseAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 		expense, err := db.GetExpense(c.Request.Context(), pool, expenseID)
 		if err != nil {
 			if db.IsNotFound(err) {
-				utils.SendAbort(c, apierrors.ErrExpenseNotFound.HTTPCode, apierrors.ErrExpenseNotFound.Message)
+				utils.SendAbort(c, apierrors.ErrExpenseNotFound)
 				return
 			}
-			utils.SendAbort(c, http.StatusInternalServerError, "internal server error")
+			utils.SendAbort(c, apierrors.ErrInternalServer)
 			return
 		}
 
 		// Settlements must be accessed through the /settlements endpoints
 		if expense.IsSettlement {
-			utils.SendAbort(c, apierrors.ErrExpenseNotFound.HTTPCode, apierrors.ErrExpenseNotFound.Message)
+			utils.SendAbort(c, apierrors.ErrExpenseNotFound)
 			return
 		}
 
 		// Check if user is a member of the expense's group
 		isMember, err := db.MemberOfGroup(c.Request.Context(), pool, userID, expense.GroupID)
 		if err != nil {
-			utils.SendAbort(c, http.StatusInternalServerError, "failed to verify membership")
+			utils.SendAbort(c, apierrors.ErrInternalServer)
 			return
 		}
 
 		if !isMember {
-			utils.SendAbort(c, http.StatusForbidden, "access denied")
+			utils.SendAbort(c, apierrors.ErrNoPermissions)
 			return
 		}
 
@@ -75,7 +73,7 @@ func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		expenseID := c.Param("id")
 		if expenseID == "" {
-			utils.SendAbort(c, http.StatusBadRequest, "Expense ID not provided")
+			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("expense ID not provided"))
 			return
 		}
 
@@ -83,32 +81,32 @@ func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 		expense, err := db.GetExpense(c.Request.Context(), pool, expenseID)
 		if err != nil {
 			if db.IsNotFound(err) {
-				utils.SendAbort(c, apierrors.ErrExpenseNotFound.HTTPCode, apierrors.ErrExpenseNotFound.Message)
+				utils.SendAbort(c, apierrors.ErrExpenseNotFound)
 				return
 			}
-			utils.SendAbort(c, http.StatusInternalServerError, "internal server error")
+			utils.SendAbort(c, apierrors.ErrInternalServer)
 			return
 		}
 
 		// Settlements must be accessed through the /settlements endpoints
 		if expense.IsSettlement {
-			utils.SendAbort(c, apierrors.ErrExpenseNotFound.HTTPCode, apierrors.ErrExpenseNotFound.Message)
+			utils.SendAbort(c, apierrors.ErrExpenseNotFound)
 			return
 		}
 
 		creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, expense.GroupID)
 		if err != nil {
 			if db.IsNotFound(err) {
-				utils.SendAbort(c, apierrors.ErrGroupNotFound.HTTPCode, apierrors.ErrGroupNotFound.Message)
+				utils.SendAbort(c, apierrors.ErrGroupNotFound)
 				return
 			}
-			utils.SendAbort(c, http.StatusInternalServerError, "failed to get group creator")
+			utils.SendAbort(c, apierrors.ErrInternalServer)
 			return
 		}
 
 		// If the user is not the group creator or the expense creator, deny access
 		if creatorID != userID && (expense.AddedBy == nil || *expense.AddedBy != userID) {
-			utils.SendAbort(c, http.StatusForbidden, "access denied")
+			utils.SendAbort(c, apierrors.ErrNoPermissions)
 			return
 		}
 
@@ -128,34 +126,34 @@ func VerifySettlementAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		settlementID := c.Param("id")
 		if settlementID == "" {
-			utils.SendAbort(c, http.StatusBadRequest, "Settlement ID not provided")
+			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("settlement ID not provided"))
 			return
 		}
 
 		expense, err := db.GetExpense(c.Request.Context(), pool, settlementID)
 		if err != nil {
 			if db.IsNotFound(err) {
-				utils.SendAbort(c, apierrors.ErrExpenseNotFound.HTTPCode, "settlement not found")
+				utils.SendAbort(c, apierrors.ErrExpenseNotFound.Msg("settlement not found"))
 				return
 			}
-			utils.SendAbort(c, http.StatusInternalServerError, "internal server error")
+			utils.SendAbort(c, apierrors.ErrInternalServer)
 			return
 		}
 
 		if !expense.IsSettlement {
-			utils.SendAbort(c, http.StatusNotFound, "settlement not found")
+			utils.SendAbort(c, apierrors.ErrExpenseNotFound.Msg("settlement not found"))
 			return
 		}
 
 		// Check if user is a member of the settlement's group
 		isMember, err := db.MemberOfGroup(c.Request.Context(), pool, userID, expense.GroupID)
 		if err != nil {
-			utils.SendAbort(c, http.StatusInternalServerError, "failed to verify membership")
+			utils.SendAbort(c, apierrors.ErrInternalServer)
 			return
 		}
 
 		if !isMember {
-			utils.SendAbort(c, http.StatusForbidden, "access denied")
+			utils.SendAbort(c, apierrors.ErrNoPermissions)
 			return
 		}
 
@@ -177,22 +175,22 @@ func VerifySettlementAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		settlementID := c.Param("id")
 		if settlementID == "" {
-			utils.SendAbort(c, http.StatusBadRequest, "Settlement ID not provided")
+			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("settlement ID not provided"))
 			return
 		}
 
 		expense, err := db.GetExpense(c.Request.Context(), pool, settlementID)
 		if err != nil {
 			if db.IsNotFound(err) {
-				utils.SendAbort(c, apierrors.ErrExpenseNotFound.HTTPCode, "settlement not found")
+				utils.SendAbort(c, apierrors.ErrExpenseNotFound.Msg("settlement not found"))
 				return
 			}
-			utils.SendAbort(c, http.StatusInternalServerError, "internal server error")
+			utils.SendAbort(c, apierrors.ErrInternalServer)
 			return
 		}
 
 		if !expense.IsSettlement {
-			utils.SendAbort(c, http.StatusNotFound, "settlement not found")
+			utils.SendAbort(c, apierrors.ErrExpenseNotFound.Msg("settlement not found"))
 			return
 		}
 
@@ -214,7 +212,7 @@ func VerifySettlementAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 				// Treat not-found / missing creator as "not admin" instead of 500,
 				// consistent with other admin middleware.
 				if !db.IsNotFound(err) {
-					utils.SendAbort(c, http.StatusInternalServerError, "failed to get group creator")
+					utils.SendAbort(c, apierrors.ErrInternalServer)
 					return
 				}
 			} else if creatorID == userID {
@@ -223,7 +221,7 @@ func VerifySettlementAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 
 		if !isPayerOrAdmin {
-			utils.SendAbort(c, http.StatusForbidden, "access denied")
+			utils.SendAbort(c, apierrors.ErrNoPermissions)
 			return
 		}
 

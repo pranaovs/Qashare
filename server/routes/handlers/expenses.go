@@ -77,6 +77,10 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	splitUserIDs := make([]string, 0, len(expense.Splits))
 	var paidTotal, owedTotal float64
 	for _, s := range expense.Splits {
+		if s.Amount <= 0 {
+			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("split amounts must be positive"))
+			return
+		}
 		splitUserIDs = append(splitUserIDs, s.UserID)
 		if s.IsPaid {
 			paidTotal += s.Amount
@@ -178,6 +182,10 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 	splitUserIDs := make([]string, 0, len(payload.Splits))
 	var paidTotal, owedTotal float64
 	for _, s := range payload.Splits {
+		if s.Amount <= 0 {
+			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("split amounts must be positive"))
+			return
+		}
 		splitUserIDs = append(splitUserIDs, s.UserID)
 		if s.IsPaid {
 			paidTotal += s.Amount
@@ -299,6 +307,14 @@ func (h *ExpensesHandler) Patch(c *gin.Context) {
 	}
 
 	// Validate split totals AFTER applying patch
+	if len(expense.Splits) > 0 {
+		for _, s := range expense.Splits {
+			if s.Amount <= 0 {
+				utils.SendError(c, apierrors.ErrInvalidSplit.Msg("split amounts must be positive"))
+				return
+			}
+		}
+	}
 	if len(expense.Splits) > 0 && !expense.IsIncompleteAmount && !expense.IsIncompleteSplit {
 		var paidTotal, owedTotal float64
 		for _, s := range expense.Splits {

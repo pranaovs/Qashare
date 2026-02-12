@@ -213,8 +213,8 @@ func RemoveGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID 
 	return nil
 }
 
-// RemoveGroupMembers removes multiple users from a group in a single batch operation.
-// Uses batch operations for better performance when removing many members at once.
+// RemoveGroupMembers removes multiple users from a group in a single atomic batch operation.
+// Uses a transaction so that either all removals succeed or none do.
 // Returns ErrNotFound if any user is not a member of the group.
 // Returns ErrInvalidInput if no user IDs are provided.
 func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, userIDs []string) error {
@@ -222,36 +222,34 @@ func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string,
 		return ErrInvalidInput.Msg("no user IDs provided")
 	}
 
-	// Build batch queries for all users
-	batch := &pgx.Batch{}
-	deleteQuery := `DELETE FROM group_members
-		WHERE user_id = $1 AND group_id = $2`
+	return WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
+		batch := &pgx.Batch{}
+		deleteQuery := `DELETE FROM group_members
+			WHERE user_id = $1 AND group_id = $2`
 
-	for _, userID := range userIDs {
-		batch.Queue(deleteQuery, userID, groupID)
-	}
-
-	// Execute batch
-	br := pool.SendBatch(ctx, batch)
-
-	defer func() {
-		if err := br.Close(); err != nil {
-			slog.Error("Error closing batch", "error", err)
+		for _, userID := range userIDs {
+			batch.Queue(deleteQuery, userID, groupID)
 		}
-	}()
 
-	// Check results for each query
-	for _, userID := range userIDs {
-		result, err := br.Exec()
-		if err != nil {
-			return err
-		}
-		if result.RowsAffected() == 0 {
-			return ErrNotFound.Msgf("user %s is not a member of the group", userID)
-		}
-	}
+		br := tx.SendBatch(ctx, batch)
+		defer func() {
+			if err := br.Close(); err != nil {
+				slog.Error("Error closing batch", "error", err)
+			}
+		}()
 
-	return nil
+		for _, userID := range userIDs {
+			result, err := br.Exec()
+			if err != nil {
+				return err
+			}
+			if result.RowsAffected() == 0 {
+				return ErrNotFound.Msgf("user %s is not a member of the group", userID)
+			}
+		}
+
+		return nil
+	})
 }
 
 // UpdateGroup updates an existing group's editable fields (name and description).
