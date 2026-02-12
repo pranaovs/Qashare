@@ -11,11 +11,12 @@ import (
 
 func RegisterMeRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, jwtConfig config.JWTConfig) {
 	handler := handlers.NewMeHandler(pool)
+	router.Use(middleware.RequireAuth(jwtConfig))
 
-	router.GET("/", middleware.RequireAuth(jwtConfig), handler.Me)
-	router.PUT("/", middleware.RequireAuth(jwtConfig), handler.Update)
-	router.PATCH("/", middleware.RequireAuth(jwtConfig), handler.Patch)
-	router.DELETE("/", middleware.RequireAuth(jwtConfig), handler.Delete)
-	router.GET("/groups", middleware.RequireAuth(jwtConfig), handler.GetGroups)
-	router.GET("/admin", middleware.RequireAuth(jwtConfig), handler.GetOwner)
+	router.GET("/", handler.Me)
+	router.PUT("/", handler.Update)
+	router.PATCH("/", handler.Patch)
+	router.DELETE("/", handler.Delete)
+	router.GET("/groups", handler.GetGroups)
+	router.GET("/admin", handler.GetOwner)
 }

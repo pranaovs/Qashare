@@ -11,10 +11,11 @@ import (
 
 func RegisterExpensesRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, jwtConfig config.JWTConfig, appConfig config.AppConfig) {
 	handler := handlers.NewExpensesHandler(pool, appConfig)
+	router.Use(middleware.RequireAuth(jwtConfig))
 
-	router.POST("/", middleware.RequireAuth(jwtConfig), handler.Create)
-	router.GET("/:id", middleware.RequireAuth(jwtConfig), middleware.VerifyExpenseAccess(pool), handler.Get)
-	router.PUT("/:id", middleware.RequireAuth(jwtConfig), middleware.VerifyExpenseAdmin(pool), handler.Update)
-	router.PATCH("/:id", middleware.RequireAuth(jwtConfig), middleware.VerifyExpenseAdmin(pool), handler.Patch)
-	router.DELETE("/:id", middleware.RequireAuth(jwtConfig), middleware.VerifyExpenseAdmin(pool), handler.Delete)
+	router.POST("/", handler.Create)
+	router.GET("/:id", middleware.VerifyExpenseAccess(pool), handler.Get)
+	router.PUT("/:id", middleware.VerifyExpenseAdmin(pool), handler.Update)
+	router.PATCH("/:id", middleware.VerifyExpenseAdmin(pool), handler.Patch)
+	router.DELETE("/:id", middleware.VerifyExpenseAdmin(pool), handler.Delete)
 }
