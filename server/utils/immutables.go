@@ -59,8 +59,18 @@ func stripImmutableFieldsRecursive(rv reflect.Value) {
 // RestoreImmutableFields copies all immutable:"true" fields from original into target.
 // Both must be pointers to the same struct type. Recursively handles anonymous embedded structs.
 func RestoreImmutableFields[T any](target, original *T) {
+	// Guard against nil pointers to avoid reflect panics.
+	if target == nil || original == nil {
+		return
+	}
+
 	targetVal := reflect.ValueOf(target).Elem()
 	originalVal := reflect.ValueOf(original).Elem()
+
+	// Only operate on struct types; no-op for anything else to avoid panics.
+	if targetVal.Kind() != reflect.Struct || originalVal.Kind() != reflect.Struct {
+		return
+	}
 	restoreImmutableFieldsRecursive(targetVal, originalVal)
 }
 
