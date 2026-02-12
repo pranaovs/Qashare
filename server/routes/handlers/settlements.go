@@ -327,6 +327,10 @@ func (h *SettlementsHandler) Patch(c *gin.Context) {
 		return
 	}
 
+	if expense.AddedBy == nil {
+		utils.SendError(c, apierrors.ErrExpenseNotFound)
+		return
+	}
 	addedByID := *expense.AddedBy
 
 	// Apply title patch
