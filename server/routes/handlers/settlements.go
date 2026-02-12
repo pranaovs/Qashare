@@ -119,7 +119,7 @@ func (h *SettlementsHandler) Create(c *gin.Context) {
 	}
 
 	// Verify other user is a member of the group
-	isMember, err := db.MemberOfGroup(c.Request.Context(), h.pool, req.UserID, req.GroupID)
+	isMember, err := db.MemberOfGroup(c.Request.Context(), h.pool, req.UserID, groupID)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrInvalidInput: apierrors.ErrBadRequest,
