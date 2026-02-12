@@ -199,10 +199,13 @@ func VerifySettlementAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 		if !isPayerOrAdmin {
 			creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, groupID)
 			if err != nil {
-				utils.SendAbort(c, http.StatusInternalServerError, "failed to get group creator")
-				return
-			}
-			if creatorID == userID {
+				// Treat not-found / missing creator as "not admin" instead of 500,
+				// consistent with other admin middleware.
+				if !db.IsNotFound(err) {
+					utils.SendAbort(c, http.StatusInternalServerError, "failed to get group creator")
+					return
+				}
+			} else if creatorID == userID {
 				isPayerOrAdmin = true
 			}
 		}
