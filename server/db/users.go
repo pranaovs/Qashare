@@ -162,12 +162,15 @@ func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (mo
 // GetUserCredentials retrieves the user ID and password hash for authentication.
 // This function is specifically designed for login verification.
 // Only returns the minimal information needed for authentication.
-// Returns ErrNotFound if no user with the email exists.
+// Returns ErrNotFound if no user with the email exists or if the user has no password (guest).
 func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (string, string, error) {
-	var userID, passwordHash string
-	query := `SELECT user_id, password_hash FROM users WHERE email = $1`
+	var userID string
+	var passwordHash *string
+	var guest bool
 
-	err := pool.QueryRow(ctx, query, email).Scan(&userID, &passwordHash)
+	query := `SELECT user_id, password_hash, is_guest FROM users WHERE email = $1`
+
+	err := pool.QueryRow(ctx, query, email).Scan(&userID, &passwordHash, &guest)
 	if err == pgx.ErrNoRows {
 		return "", "", ErrNotFound.Msgf("user with email %s not found", email)
 	}
@@ -175,7 +178,12 @@ func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (
 		return "", "", err
 	}
 
-	return userID, passwordHash, nil
+	// Treat guest users as not found for login purposes
+	if guest || passwordHash == nil {
+		return "", "", ErrNotFound.Msgf("user with email %s not found", email)
+	}
+
+	return userID, *passwordHash, nil
 }
 
 // GetUser retrieves a user by their unique user ID.
