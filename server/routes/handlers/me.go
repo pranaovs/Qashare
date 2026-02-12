@@ -141,8 +141,18 @@ func (h *MeHandler) Update(c *gin.Context) {
 	}
 	payload.Email = validatedEmail
 
-	// Set immutable fields from authenticated context (no DB fetch needed)
-	payload.UserID = userID
+	// Fetch current user to restore immutable fields in the response
+	current, err := db.GetUser(c.Request.Context(), h.pool, userID)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound:     apierrors.ErrUserNotFound,
+			db.ErrInvalidInput: apierrors.ErrBadRequest,
+		}))
+		return
+	}
+
+	// Restore immutable fields from the current user
+	utils.RestoreImmutableFields(&payload, &current)
 
 	err = db.UpdateUser(c.Request.Context(), h.pool, &payload)
 	if err != nil {

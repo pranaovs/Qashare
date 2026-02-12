@@ -27,6 +27,8 @@ definitions:
         type: boolean
       is_incomplete_split:
         type: boolean
+      is_settlement:
+        type: boolean
       latitude:
         description: pointer because nullable in db
         type: number
@@ -54,6 +56,8 @@ definitions:
       is_incomplete_amount:
         type: boolean
       is_incomplete_split:
+        type: boolean
+      is_settlement:
         type: boolean
       latitude:
         description: pointer because nullable in db
@@ -152,8 +156,22 @@ definitions:
   models.Settlement:
     properties:
       amount:
-        description: 'positive: user owes you, negative: you owe user'
         type: number
+      created_at:
+        type: integer
+      group_id:
+        type: string
+      title:
+        type: string
+      user_id:
+        type: string
+    type: object
+  models.SettlementPatch:
+    properties:
+      amount:
+        type: number
+      title:
+        type: string
       user_id:
         type: string
     type: object
@@ -170,27 +188,7 @@ definitions:
       user_id:
         type: string
     type: object
-  models.UserPatch:
-    properties:
-      email:
-        type: string
-      name:
-        type: string
-    type: object
-  models.UserSpendings:
-    properties:
-      expenses:
-        items:
-          $ref: '#/definitions/models.UserSpendingsExpense'
-        type: array
-      net_spending:
-        type: number
-      total_owed:
-        type: number
-      total_paid:
-        type: number
-    type: object
-  models.UserSpendingsExpense:
+  models.UserExpense:
     properties:
       added_by:
         type: string
@@ -209,6 +207,8 @@ definitions:
         type: boolean
       is_incomplete_split:
         type: boolean
+      is_settlement:
+        type: boolean
       latitude:
         description: pointer because nullable in db
         type: number
@@ -220,6 +220,13 @@ definitions:
       user_amount:
         description: Amount user paid/owes for this expense
         type: number
+    type: object
+  models.UserPatch:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
     type: object
 info:
   contact:
@@ -409,56 +416,6 @@ paths:
       summary: Register a new user
       tags:
       - auth
-  /v1/expenses/:
-    post:
-      consumes:
-      - application/json
-      description: Create a new expense with splits for a group. The logged in user
-        will be set as the AddedBy user.
-      parameters:
-      - description: Expense details with splits
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/models.ExpenseDetails'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Expense successfully created with splits
-          schema:
-            $ref: '#/definitions/models.ExpenseDetails'
-        "400":
-          description: 'BAD_REQUEST: Invalid request body, missing required fields,
-            or no splits provided | INVALID_SPLIT: Split totals do not match expense
-            amount or split validation failed'
-          schema:
-            $ref: '#/definitions/apierrors.AppError'
-        "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
-          schema:
-            $ref: '#/definitions/apierrors.AppError'
-        "403":
-          description: 'USERS_NOT_RELATED: The authenticated user is not a member
-            of the specified group | USER_NOT_IN_GROUP: One or more users in the splits
-            are not members of the group'
-          schema:
-            $ref: '#/definitions/apierrors.AppError'
-        "404":
-          description: 'GROUP_NOT_FOUND: The specified group does not exist'
-          schema:
-            $ref: '#/definitions/apierrors.AppError'
-        "500":
-          description: Internal server error - unexpected database error
-          schema:
-            $ref: '#/definitions/apierrors.AppError'
-      security:
-      - BearerAuth: []
-      summary: Create a new expense
-      tags:
-      - expenses
   /v1/expenses/{id}:
     delete:
       description: Delete an expense (requires being group admin or expense creator)
@@ -873,6 +830,61 @@ paths:
       summary: Update a group (full replacement)
       tags:
       - groups
+  /v1/groups/{id}/expense:
+    post:
+      consumes:
+      - application/json
+      description: Create a new expense with splits for a group. The logged in user
+        will be set as the AddedBy user.
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Expense details with splits
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.ExpenseDetails'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Expense successfully created with splits
+          schema:
+            $ref: '#/definitions/models.ExpenseDetails'
+        "400":
+          description: 'BAD_REQUEST: Invalid request body, missing required fields,
+            or no splits provided | INVALID_SPLIT: Split totals do not match expense
+            amount or split validation failed'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'USERS_NOT_RELATED: The authenticated user is not a member
+            of the specified group | USER_NOT_IN_GROUP: One or more users in the splits
+            are not members of the group'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'GROUP_NOT_FOUND: The specified group does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Create a new expense
+      tags:
+      - expenses
   /v1/groups/{id}/expenses:
     get:
       description: Get all expenses of a group
@@ -913,7 +925,7 @@ paths:
       - BearerAuth: []
       summary: List group expenses
       tags:
-      - groups
+      - expenses
   /v1/groups/{id}/members:
     delete:
       consumes:
@@ -1027,7 +1039,7 @@ paths:
       summary: Add members to group
       tags:
       - groups
-  /v1/groups/{id}/settlements:
+  /v1/groups/{id}/settle:
     get:
       description: Get the payment balances between the authenticated user and all
         other members in a group. Positive amount means other user owes you, negative
@@ -1070,10 +1082,63 @@ paths:
       summary: Get payment settlements for a group
       tags:
       - settlements
-  /v1/groups/{id}/spendings:
+    post:
+      consumes:
+      - application/json
+      description: Settle a payment with another user in a group by specifying the
+        user_id and amount. Positive amount means you are paying them, negative means
+        they are paying you. The settlement is stored as an expense with is_settlement=true.
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Settle payment request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Settlement'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created settlement expense with splits
+          schema:
+            $ref: '#/definitions/models.Settlement'
+        "400":
+          description: 'BAD_REQUEST: Cannot settle with yourself or missing group_id
+            | INVALID_AMOUNT: Settlement amount cannot be zero'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'USERS_NOT_RELATED: The authenticated user or the other user
+            is not a member of the specified group'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'GROUP_NOT_FOUND: The specified group does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Settle a payment with another user in a group
+      tags:
+      - settlements
+  /v1/groups/{id}/settlements:
     get:
-      description: Get spending summary for the authenticated user in a specific group,
-        including total paid, total owed, net spending, and list of expenses
+      description: Get all settlement transactions where the authenticated user is
+        a participant (payer or receiver)
       parameters:
       - description: Group ID
         in: path
@@ -1084,9 +1149,53 @@ paths:
       - application/json
       responses:
         "200":
-          description: Returns user spending summary with expenses list
+          description: List of settlement history entries
           schema:
-            $ref: '#/definitions/models.UserSpendings'
+            items:
+              $ref: '#/definitions/models.Settlement'
+            type: array
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'USERS_NOT_RELATED: The authenticated user is not a member
+            of the specified group'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'GROUP_NOT_FOUND: The specified group does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Get settlement history for the current user in the group
+      tags:
+      - settlements
+  /v1/groups/{id}/spendings:
+    get:
+      description: Get all expenses where the authenticated user owes money in a specific
+        group, with the user's owed amount per expense
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of expenses with user-specific amounts
+          schema:
+            items:
+              $ref: '#/definitions/models.UserExpense'
+            type: array
         "401":
           description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
             expired'
@@ -1107,7 +1216,7 @@ paths:
             $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
-      summary: Get user spending in group
+      summary: Get user expenses in group
       tags:
       - groups
   /v1/groups/admin:
@@ -1374,6 +1483,189 @@ paths:
       summary: List groups user owns
       tags:
       - me
+  /v1/settlements/{id}:
+    delete:
+      description: Delete a settlement (requires being the payer or group admin)
+      parameters:
+      - description: Settlement ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'Access denied: user is not the payer or group admin'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: Settlement not found or expense is not a settlement
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Delete a settlement
+      tags:
+      - settlements
+    get:
+      description: Get detailed information about a settlement including splits
+      parameters:
+      - description: Settlement ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns settlement details
+          schema:
+            $ref: '#/definitions/models.Settlement'
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'Access denied: user is not a member of the group'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: Settlement not found or expense is not a settlement
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Get settlement details
+      tags:
+      - settlements
+    patch:
+      consumes:
+      - application/json
+      description: Update specific fields of a settlement (requires being the payer
+        or group admin). Only provided fields are updated.
+      parameters:
+      - description: Settlement ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Partial settlement details (all fields optional)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.SettlementPatch'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns updated settlement
+          schema:
+            $ref: '#/definitions/models.Settlement'
+        "400":
+          description: 'BAD_REQUEST: Invalid request body or cannot settle with yourself
+            | INVALID_AMOUNT: Settlement amount cannot be zero'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'Access denied: user is not the payer or group admin | USERS_NOT_RELATED:
+            The other user is not a member of the group'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: Settlement not found or expense is not a settlement
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Partially update a settlement
+      tags:
+      - settlements
+    put:
+      consumes:
+      - application/json
+      description: Replace a settlement with new values (requires being the payer
+        or group admin). The user_id specifies the other party and amount specifies
+        the settlement amount. Positive amount means you are paying them, negative
+        means they are paying you.
+      parameters:
+      - description: Settlement ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated settlement details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Settlement'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns updated settlement
+          schema:
+            $ref: '#/definitions/models.Settlement'
+        "400":
+          description: 'BAD_REQUEST: Invalid request body or cannot settle with yourself
+            | INVALID_AMOUNT: Settlement amount cannot be zero'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'Access denied: user is not the payer or group admin | USERS_NOT_RELATED:
+            The other user is not a member of the group'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: Settlement not found or expense is not a settlement
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Update a settlement
+      tags:
+      - settlements
   /v1/users/{id}:
     get:
       description: Get user information by user ID (users must be related through

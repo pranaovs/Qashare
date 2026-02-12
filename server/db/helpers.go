@@ -89,9 +89,25 @@ type BatchQuery struct {
 	Args []any
 }
 
+// allowedTables is a whitelist of table names that can be used in dynamic queries.
+// This prevents SQL injection through the table parameter.
+var allowedTables = map[string]bool{
+	"users":          true,
+	"groups":         true,
+	"group_members":  true,
+	"expenses":       true,
+	"expense_splits": true,
+	"guests":         true,
+	"migrations":     true,
+}
+
 // RecordExists checks if a record exists in a table with the given condition
 // Example: exists, err := RecordExists(ctx, pool, "users", "email = $1", email)
 func RecordExists(ctx context.Context, pool *pgxpool.Pool, table, condition string, args ...any) (bool, error) {
+	if !allowedTables[table] {
+		return false, fmt.Errorf("disallowed table name: %s", table)
+	}
+
 	query := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE %s)", table, condition)
 
 	var exists bool
@@ -106,6 +122,10 @@ func RecordExists(ctx context.Context, pool *pgxpool.Pool, table, condition stri
 // CountRecords returns the count of records in a table matching the condition
 // Example: count, err := CountRecords(ctx, pool, "users", "is_guest = $1", true)
 func CountRecords(ctx context.Context, pool *pgxpool.Pool, table, condition string, args ...any) (int64, error) {
+	if !allowedTables[table] {
+		return 0, fmt.Errorf("disallowed table name: %s", table)
+	}
+
 	query := fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE %s", table, condition)
 
 	var count int64

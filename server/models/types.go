@@ -53,6 +53,7 @@ type Expense struct {
 	Amount             float64  `json:"amount" db:"amount"`
 	IsIncompleteAmount bool     `json:"is_incomplete_amount" db:"is_incomplete_amount"`
 	IsIncompleteSplit  bool     `json:"is_incomplete_split" db:"is_incomplete_split"`
+	IsSettlement       bool     `json:"is_settlement" db:"is_settlement" immutable:"true"`
 	Latitude           *float64 `json:"latitude,omitempty" db:"latitude"`   // pointer because nullable in db
 	Longitude          *float64 `json:"longitude,omitempty" db:"longitude"` // pointer because nullable in db
 }
@@ -71,22 +72,25 @@ type ExpenseSplit struct {
 	IsPaid    bool    `json:"is_paid" db:"is_paid"` // "paid" or "owes"
 }
 
-// Settlement represents the balance between two users (positive = owed, negative = owes)
+// Settlement represents a balance or transaction between two users, used for responses.
+// Settlement data is stored as an Expense with IsSettlement=true in the DB.
+//
+// Amount sign is relative to the authenticated user:
+//   - Positive: you are owed by / paid UserID (net credit)
+//   - Negative: you owe / were paid by UserID (net debt)
+//
+// In the GetSettle endpoint (balance computation), this is the net amount.
+// In settlement history and CRUD, this reflects the payment direction.
 type Settlement struct {
-	UserID string  `json:"user_id"`
-	Amount float64 `json:"amount"` // positive: user owes you, negative: you owe user
+	Title     string  `json:"title"`
+	CreatedAt int64   `json:"created_at"`
+	GroupID   string  `json:"group_id,omitempty"`
+	UserID    string  `json:"user_id"`
+	Amount    float64 `json:"amount"`
 }
 
-// UserSpendings represents a user's spending summary in a group
-type UserSpendings struct {
-	TotalPaid   float64                `json:"total_paid"`
-	TotalOwed   float64                `json:"total_owed"`
-	NetSpending float64                `json:"net_spending"`
-	Expenses    []UserSpendingsExpense `json:"expenses"`
-}
-
-// UserSpendingsExpense extends Expense with user-specific amount
-type UserSpendingsExpense struct {
+// UserExpense extends Expense with user-specific amount
+type UserExpense struct {
 	Expense
 	UserAmount float64 `json:"user_amount"` // Amount user paid/owes for this expense
 }

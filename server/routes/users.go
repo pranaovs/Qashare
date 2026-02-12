@@ -11,8 +11,9 @@ import (
 
 func RegisterUsersRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, jwtConfig config.JWTConfig) {
 	handler := handlers.NewUsersHandler(pool)
+	router.Use(middleware.RequireAuth(jwtConfig))
 
-	router.GET("/:id", middleware.RequireAuth(jwtConfig), handler.Get)
-	router.GET("/search/email/:email", middleware.RequireAuth(jwtConfig), handler.SearchByEmail)
-	router.POST("/guest", middleware.RequireAuth(jwtConfig), handler.RegisterGuest)
+	router.GET("/:id", handler.Get)
+	router.GET("/search/email/:email", handler.SearchByEmail)
+	router.POST("/guest", handler.RegisterGuest)
 }

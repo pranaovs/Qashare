@@ -273,75 +273,6 @@
                 }
             }
         },
-        "/v1/expenses/": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Create a new expense with splits for a group. The logged in user will be set as the AddedBy user.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "expenses"
-                ],
-                "summary": "Create a new expense",
-                "parameters": [
-                    {
-                        "description": "Expense details with splits",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.ExpenseDetails"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Expense successfully created with splits",
-                        "schema": {
-                            "$ref": "#/definitions/models.ExpenseDetails"
-                        }
-                    },
-                    "400": {
-                        "description": "BAD_REQUEST: Invalid request body, missing required fields, or no splits provided | INVALID_SPLIT: Split totals do not match expense amount or split validation failed",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    },
-                    "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    },
-                    "403": {
-                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the specified group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    },
-                    "404": {
-                        "description": "GROUP_NOT_FOUND: The specified group does not exist",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error - unexpected database error",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    }
-                }
-            }
-        },
         "/v1/expenses/{id}": {
             "get": {
                 "security": [
@@ -1019,6 +950,82 @@
                 }
             }
         },
+        "/v1/groups/{id}/expense": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create a new expense with splits for a group. The logged in user will be set as the AddedBy user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "expenses"
+                ],
+                "summary": "Create a new expense",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Expense details with splits",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.ExpenseDetails"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Expense successfully created with splits",
+                        "schema": {
+                            "$ref": "#/definitions/models.ExpenseDetails"
+                        }
+                    },
+                    "400": {
+                        "description": "BAD_REQUEST: Invalid request body, missing required fields, or no splits provided | INVALID_SPLIT: Split totals do not match expense amount or split validation failed",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the specified group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "GROUP_NOT_FOUND: The specified group does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error - unexpected database error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/groups/{id}/expenses": {
             "get": {
                 "security": [
@@ -1031,7 +1038,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "expenses"
                 ],
                 "summary": "List group expenses",
                 "parameters": [
@@ -1242,7 +1249,7 @@
                 }
             }
         },
-        "/v1/groups/{id}/settlements": {
+        "/v1/groups/{id}/settle": {
             "get": {
                 "security": [
                     {
@@ -1301,23 +1308,97 @@
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Settle a payment with another user in a group by specifying the user_id and amount. Positive amount means you are paying them, negative means they are paying you. The settlement is stored as an expense with is_settlement=true.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "settlements"
+                ],
+                "summary": "Settle a payment with another user in a group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Settle payment request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Settlement"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created settlement expense with splits",
+                        "schema": {
+                            "$ref": "#/definitions/models.Settlement"
+                        }
+                    },
+                    "400": {
+                        "description": "BAD_REQUEST: Cannot settle with yourself or missing group_id | INVALID_AMOUNT: Settlement amount cannot be zero",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "USERS_NOT_RELATED: The authenticated user or the other user is not a member of the specified group",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "GROUP_NOT_FOUND: The specified group does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
             }
         },
-        "/v1/groups/{id}/spendings": {
+        "/v1/groups/{id}/settlements": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get spending summary for the authenticated user in a specific group, including total paid, total owed, net spending, and list of expenses",
+                "description": "Get all settlement transactions where the authenticated user is a participant (payer or receiver)",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "groups"
+                    "settlements"
                 ],
-                "summary": "Get user spending in group",
+                "summary": "Get settlement history for the current user in the group",
                 "parameters": [
                     {
                         "type": "string",
@@ -1329,9 +1410,73 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Returns user spending summary with expenses list",
+                        "description": "List of settlement history entries",
                         "schema": {
-                            "$ref": "#/definitions/models.UserSpendings"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Settlement"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the specified group",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "GROUP_NOT_FOUND: The specified group does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/groups/{id}/spendings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all expenses where the authenticated user owes money in a specific group, with the user's owed amount per expense",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "groups"
+                ],
+                "summary": "Get user expenses in group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of expenses with user-specific amounts",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.UserExpense"
+                            }
                         }
                     },
                     "401": {
@@ -1668,6 +1813,271 @@
                 }
             }
         },
+        "/v1/settlements/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get detailed information about a settlement including splits",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "settlements"
+                ],
+                "summary": "Get settlement details",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Settlement ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns settlement details",
+                        "schema": {
+                            "$ref": "#/definitions/models.Settlement"
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Access denied: user is not a member of the group",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "Settlement not found or expense is not a settlement",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Replace a settlement with new values (requires being the payer or group admin). The user_id specifies the other party and amount specifies the settlement amount. Positive amount means you are paying them, negative means they are paying you.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "settlements"
+                ],
+                "summary": "Update a settlement",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Settlement ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated settlement details",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Settlement"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns updated settlement",
+                        "schema": {
+                            "$ref": "#/definitions/models.Settlement"
+                        }
+                    },
+                    "400": {
+                        "description": "BAD_REQUEST: Invalid request body or cannot settle with yourself | INVALID_AMOUNT: Settlement amount cannot be zero",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Access denied: user is not the payer or group admin | USERS_NOT_RELATED: The other user is not a member of the group",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "Settlement not found or expense is not a settlement",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete a settlement (requires being the payer or group admin)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "settlements"
+                ],
+                "summary": "Delete a settlement",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Settlement ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns success message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Access denied: user is not the payer or group admin",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "Settlement not found or expense is not a settlement",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update specific fields of a settlement (requires being the payer or group admin). Only provided fields are updated.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "settlements"
+                ],
+                "summary": "Partially update a settlement",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Settlement ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Partial settlement details (all fields optional)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SettlementPatch"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns updated settlement",
+                        "schema": {
+                            "$ref": "#/definitions/models.Settlement"
+                        }
+                    },
+                    "400": {
+                        "description": "BAD_REQUEST: Invalid request body or cannot settle with yourself | INVALID_AMOUNT: Settlement amount cannot be zero",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "Access denied: user is not the payer or group admin | USERS_NOT_RELATED: The other user is not a member of the group",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "Settlement not found or expense is not a settlement",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/users/guest": {
             "post": {
                 "security": [
@@ -1901,6 +2311,9 @@
                 "is_incomplete_split": {
                     "type": "boolean"
                 },
+                "is_settlement": {
+                    "type": "boolean"
+                },
                 "latitude": {
                     "description": "pointer because nullable in db",
                     "type": "number"
@@ -1940,6 +2353,9 @@
                     "type": "boolean"
                 },
                 "is_incomplete_split": {
+                    "type": "boolean"
+                },
+                "is_settlement": {
                     "type": "boolean"
                 },
                 "latitude": {
@@ -2089,8 +2505,30 @@
             "type": "object",
             "properties": {
                 "amount": {
-                    "description": "positive: user owes you, negative: you owe user",
                     "type": "number"
+                },
+                "created_at": {
+                    "type": "integer"
+                },
+                "group_id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.SettlementPatch": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "title": {
+                    "type": "string"
                 },
                 "user_id": {
                     "type": "string"
@@ -2117,38 +2555,7 @@
                 }
             }
         },
-        "models.UserPatch": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.UserSpendings": {
-            "type": "object",
-            "properties": {
-                "expenses": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.UserSpendingsExpense"
-                    }
-                },
-                "net_spending": {
-                    "type": "number"
-                },
-                "total_owed": {
-                    "type": "number"
-                },
-                "total_paid": {
-                    "type": "number"
-                }
-            }
-        },
-        "models.UserSpendingsExpense": {
+        "models.UserExpense": {
             "type": "object",
             "properties": {
                 "added_by": {
@@ -2176,6 +2583,9 @@
                 "is_incomplete_split": {
                     "type": "boolean"
                 },
+                "is_settlement": {
+                    "type": "boolean"
+                },
                 "latitude": {
                     "description": "pointer because nullable in db",
                     "type": "number"
@@ -2190,6 +2600,17 @@
                 "user_amount": {
                     "description": "Amount user paid/owes for this expense",
                     "type": "number"
+                }
+            }
+        },
+        "models.UserPatch": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         }

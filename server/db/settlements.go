@@ -8,7 +8,7 @@ import (
 	"github.com/pranaovs/qashare/models"
 )
 
-// GetSettlements calculates the net balance between the current user and all other group members.
+// GetSettlement calculates the net balance between the current user and all other group members.
 // It analyzes all expenses in a group and determines who owes whom, then optimizes the settlements
 // using a debt minimization algorithm.
 //
@@ -19,7 +19,7 @@ import (
 //   - Negative: Current user pays to UserID
 //
 // Uses greedy algorithm to minimize number of transactions while settling all debts.
-func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID string, splitTolerance float64) ([]models.Settlement, error) {
+func GetSettlement(ctx context.Context, pool *pgxpool.Pool, userID, groupID string, splitTolerance float64) ([]models.Settlement, error) {
 	// Validate input
 	if groupID == "" {
 		return nil, ErrInvalidInput.Msg("group id missing")
@@ -171,4 +171,86 @@ func optimizeSettlements(balances map[string]float64, userID string, tolerance f
 	}
 
 	return settlements
+}
+
+// GetSettlements retrieves all settlement expenses in a group where the
+// specified user is a participant (either payer or receiver).
+// Returns a slice of ExpenseDetails ordered by creation time descending.
+func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID string) ([]models.ExpenseDetails, error) {
+	if groupID == "" {
+		return nil, ErrInvalidInput.Msg("group id missing")
+	}
+	if userID == "" {
+		return nil, ErrInvalidInput.Msg("user id missing")
+	}
+
+	query := `
+		SELECT e.expense_id, e.group_id, e.added_by, e.title, e.description,
+			extract(epoch from e.created_at)::bigint, e.amount,
+			e.is_incomplete_amount, e.is_incomplete_split, e.is_settlement,
+			e.latitude, e.longitude,
+			es.user_id, es.amount, es.is_paid
+		FROM expenses e
+		JOIN expense_splits es ON e.expense_id = es.expense_id
+		WHERE e.group_id = $1
+			AND e.is_settlement = true
+			AND e.expense_id IN (
+				SELECT expense_id FROM expense_splits WHERE user_id = $2
+			)
+		ORDER BY e.created_at DESC, es.is_paid DESC, es.user_id`
+
+	rows, err := pool.Query(ctx, query, groupID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	expenseMap := make(map[string]*models.ExpenseDetails)
+	var order []string
+
+	for rows.Next() {
+		var exp models.Expense
+		var splitUserID *string
+		var splitAmount *float64
+		var splitIsPaid *bool
+
+		err = rows.Scan(
+			&exp.ExpenseID, &exp.GroupID, &exp.AddedBy, &exp.Title,
+			&exp.Description, &exp.CreatedAt, &exp.Amount,
+			&exp.IsIncompleteAmount, &exp.IsIncompleteSplit, &exp.IsSettlement,
+			&exp.Latitude, &exp.Longitude,
+			&splitUserID, &splitAmount, &splitIsPaid,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, exists := expenseMap[exp.ExpenseID]; !exists {
+			expenseMap[exp.ExpenseID] = &models.ExpenseDetails{
+				Expense: exp,
+				Splits:  make([]models.ExpenseSplit, 0),
+			}
+			order = append(order, exp.ExpenseID)
+		}
+
+		if splitUserID != nil {
+			expenseMap[exp.ExpenseID].Splits = append(expenseMap[exp.ExpenseID].Splits, models.ExpenseSplit{
+				ExpenseID: exp.ExpenseID,
+				UserID:    *splitUserID,
+				Amount:    *splitAmount,
+				IsPaid:    *splitIsPaid,
+			})
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	results := make([]models.ExpenseDetails, 0, len(order))
+	for _, id := range order {
+		results = append(results, *expenseMap[id])
+	}
+
+	return results, nil
 }

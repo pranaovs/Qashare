@@ -56,6 +56,46 @@ func stripImmutableFieldsRecursive(rv reflect.Value) {
 	}
 }
 
+// RestoreImmutableFields copies all immutable:"true" fields from original into target.
+// Both must be pointers to the same struct type. Recursively handles anonymous embedded structs.
+func RestoreImmutableFields[T any](target, original *T) {
+	// Guard against nil pointers to avoid reflect panics.
+	if target == nil || original == nil {
+		return
+	}
+
+	targetVal := reflect.ValueOf(target).Elem()
+	originalVal := reflect.ValueOf(original).Elem()
+
+	// Only operate on struct types; no-op for anything else to avoid panics.
+	if targetVal.Kind() != reflect.Struct || originalVal.Kind() != reflect.Struct {
+		return
+	}
+	restoreImmutableFieldsRecursive(targetVal, originalVal)
+}
+
+func restoreImmutableFieldsRecursive(target, original reflect.Value) {
+	rt := target.Type()
+	for i := 0; i < target.NumField(); i++ {
+		field := rt.Field(i)
+		targetField := target.Field(i)
+		originalField := original.Field(i)
+
+		if !targetField.CanSet() {
+			continue
+		}
+
+		if field.Anonymous && targetField.Kind() == reflect.Struct {
+			restoreImmutableFieldsRecursive(targetField, originalField)
+			continue
+		}
+
+		if field.Tag.Get("immutable") == "true" {
+			targetField.Set(originalField)
+		}
+	}
+}
+
 // ValidateNoImmutableFields returns error if any immutable field is non-zero.
 // Used in PUT handler to ensure client didn't attempt to change immutable fields.
 // It recursively checks anonymous embedded structs.

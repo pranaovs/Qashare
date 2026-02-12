@@ -162,12 +162,15 @@ func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (mo
 // GetUserCredentials retrieves the user ID and password hash for authentication.
 // This function is specifically designed for login verification.
 // Only returns the minimal information needed for authentication.
-// Returns ErrNotFound if no user with the email exists.
+// Returns ErrNotFound if no user with the email exists or if the user has no password (guest).
 func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (string, string, error) {
-	var userID, passwordHash string
-	query := `SELECT user_id, password_hash FROM users WHERE email = $1`
+	var userID string
+	var passwordHash *string
+	var guest bool
 
-	err := pool.QueryRow(ctx, query, email).Scan(&userID, &passwordHash)
+	query := `SELECT user_id, password_hash, is_guest FROM users WHERE email = $1`
+
+	err := pool.QueryRow(ctx, query, email).Scan(&userID, &passwordHash, &guest)
 	if err == pgx.ErrNoRows {
 		return "", "", ErrNotFound.Msgf("user with email %s not found", email)
 	}
@@ -175,14 +178,19 @@ func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (
 		return "", "", err
 	}
 
-	return userID, passwordHash, nil
+	// Treat guest users as not found for login purposes
+	if guest || passwordHash == nil {
+		return "", "", ErrNotFound.Msgf("user with email %s not found", email)
+	}
+
+	return userID, *passwordHash, nil
 }
 
 // GetUser retrieves a user by their unique user ID.
 // Returns ErrNotFound if no user with the ID exists.
 func GetUser(ctx context.Context, pool *pgxpool.Pool, userID string) (models.User, error) {
 	var user models.User
-	query := `SELECT user_id, user_name, email, is_guest, extract(epoch from created_at)::bigint
+	query := `SELECT user_id, user_name, email, COALESCE(is_guest, false), extract(epoch from created_at)::bigint
 		FROM users
 		WHERE user_id = $1`
 
@@ -306,6 +314,41 @@ func UserExists(ctx context.Context, pool *pgxpool.Pool, userID string) error {
 
 	if !exists {
 		return ErrNotFound.Msgf("user with id %s not found", userID)
+	}
+
+	return nil
+}
+
+// UsersExist checks if all users with the given IDs exist in the database.
+// Returns nil if all users exist, or ErrNotFound with the first missing user ID if any are missing.
+func UsersExist(ctx context.Context, pool *pgxpool.Pool, userIDs []string) error {
+	if len(userIDs) == 0 {
+		return nil
+	}
+
+	query := `SELECT user_id FROM users WHERE user_id = ANY($1::uuid[])`
+	rows, err := pool.Query(ctx, query, userIDs)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	found := make(map[string]bool, len(userIDs))
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return err
+		}
+		found[id] = true
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	for _, id := range userIDs {
+		if !found[id] {
+			return ErrNotFound.Msgf("user with id %s not found", id)
+		}
 	}
 
 	return nil

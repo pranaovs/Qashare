@@ -37,3 +37,11 @@ type ExpenseDetailsPatch struct {
 	ExpensePatch
 	Splits *[]ExpenseSplit `json:"splits,omitempty"`
 }
+
+// SettlementPatch represents a partial update to a Settlement.
+// Only non-nil fields will be applied to the target.
+type SettlementPatch struct {
+	Title  *string  `json:"title,omitempty"`
+	UserID *string  `json:"user_id,omitempty"`
+	Amount *float64 `json:"amount,omitempty"`
+}

@@ -56,7 +56,7 @@ func (h *prettyHandler) Enabled(_ context.Context, level slog.Level) bool {
 }
 
 func (h *prettyHandler) Handle(_ context.Context, r slog.Record) error {
-	// Time: HH:MM:SS
+	// Time: YYYY/MM/DD - HH:MM:SS
 	timeStr := r.Time.Format("2006/01/02 - 15:04:05")
 
 	// Level with color
