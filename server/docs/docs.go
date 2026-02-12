@@ -1884,7 +1884,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Replace a settlement with new values (requires being the payer or group admin). The user_id specifies the other party and amount specifies the settlement amount. Positive amount means you are paying them, negative means they are paying you.",
+                "description": "Replace a settlement with new values (requires being the payer). The user_id specifies the other party and amount specifies the settlement amount. Positive amount means you are paying them, negative means they are paying you.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1933,7 +1933,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Access denied: user is not the payer or group admin | USERS_NOT_RELATED: The other user is not a member of the group",
+                        "description": "Access denied: user is not the payer | USERS_NOT_RELATED: The other user is not a member of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1958,7 +1958,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete a settlement (requires being the payer or group admin)",
+                "description": "Delete a settlement (requires being the payer)",
                 "produces": [
                     "application/json"
                 ],
@@ -1992,7 +1992,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Access denied: user is not the payer or group admin",
+                        "description": "Access denied: user is not the payer",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -2017,7 +2017,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update specific fields of a settlement (requires being the payer or group admin). Only provided fields are updated.",
+                "description": "Update specific fields of a settlement (requires being the payer). Only provided fields are updated.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2066,7 +2066,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Access denied: user is not the payer or group admin | USERS_NOT_RELATED: The other user is not a member of the group",
+                        "description": "Access denied: user is not the payer | USERS_NOT_RELATED: The other user is not a member of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }

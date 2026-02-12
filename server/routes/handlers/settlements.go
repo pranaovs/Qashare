@@ -232,7 +232,7 @@ func (h *SettlementsHandler) Get(c *gin.Context) {
 
 // Update godoc
 // @Summary Update a settlement
-// @Description Replace a settlement with new values (requires being the payer or group admin). The user_id specifies the other party and amount specifies the settlement amount. Positive amount means you are paying them, negative means they are paying you.
+// @Description Replace a settlement with new values (requires being the payer). The user_id specifies the other party and amount specifies the settlement amount. Positive amount means you are paying them, negative means they are paying you.
 // @Tags settlements
 // @Accept json
 // @Produce json
@@ -242,7 +242,7 @@ func (h *SettlementsHandler) Get(c *gin.Context) {
 // @Success 200 {object} models.Settlement "Returns updated settlement"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or cannot settle with yourself | INVALID_AMOUNT: Settlement amount cannot be zero"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "Access denied: user is not the payer or group admin | USERS_NOT_RELATED: The other user is not a member of the group"
+// @Failure 403 {object} apierrors.AppError "Access denied: user is not the payer | USERS_NOT_RELATED: The other user is not a member of the group"
 // @Failure 404 {object} apierrors.AppError "Settlement not found or expense is not a settlement"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/settlements/{id} [put]
@@ -262,14 +262,7 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 		return
 	}
 
-	if expense.AddedBy == nil {
-		// The original creator of this expense no longer exists; for now, forbid updating.
-		utils.SendError(c, apierrors.ErrExpenseNotFound)
-		return
-	}
-	addedByID := *expense.AddedBy
-
-	if req.UserID == addedByID || req.UserID == userID {
+	if req.UserID == userID {
 		utils.SendError(c, apierrors.ErrBadRequest.Msg("cannot settle with yourself"))
 		return
 	}
@@ -326,7 +319,7 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 
 // Patch godoc
 // @Summary Partially update a settlement
-// @Description Update specific fields of a settlement (requires being the payer or group admin). Only provided fields are updated.
+// @Description Update specific fields of a settlement (requires being the payer). Only provided fields are updated.
 // @Tags settlements
 // @Accept json
 // @Produce json
@@ -336,7 +329,7 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 // @Success 200 {object} models.Settlement "Returns updated settlement"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or cannot settle with yourself | INVALID_AMOUNT: Settlement amount cannot be zero"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "Access denied: user is not the payer or group admin | USERS_NOT_RELATED: The other user is not a member of the group"
+// @Failure 403 {object} apierrors.AppError "Access denied: user is not the payer | USERS_NOT_RELATED: The other user is not a member of the group"
 // @Failure 404 {object} apierrors.AppError "Settlement not found or expense is not a settlement"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/settlements/{id} [patch]
@@ -350,12 +343,6 @@ func (h *SettlementsHandler) Patch(c *gin.Context) {
 		utils.SendError(c, apierrors.ErrBadRequest)
 		return
 	}
-
-	if expense.AddedBy == nil {
-		utils.SendError(c, apierrors.ErrExpenseNotFound)
-		return
-	}
-	addedByID := *expense.AddedBy
 
 	// Apply title patch
 	if patch.Title != nil {
@@ -383,36 +370,36 @@ func (h *SettlementsHandler) Patch(c *gin.Context) {
 	newPayerID := currentPayerID
 	newReceiverID := currentReceiverID
 	if patch.UserID != nil {
-		// Replace the non-AddedBy participant
-		if currentPayerID == addedByID {
+		// Replace the non-authenticated-user participant
+		if currentPayerID == userID {
 			newReceiverID = *patch.UserID
 		} else {
 			newPayerID = *patch.UserID
 		}
 
-		// If amount also provided, sign determines direction relative to AddedBy
+		// If amount also provided, sign determines direction relative to authenticated user
 		if patch.Amount != nil && *patch.Amount < 0 {
 			newPayerID = *patch.UserID
-			newReceiverID = addedByID
+			newReceiverID = userID
 		} else if patch.Amount != nil && *patch.Amount > 0 {
-			newPayerID = addedByID
+			newPayerID = userID
 			newReceiverID = *patch.UserID
 		}
 	} else if patch.Amount != nil && *patch.Amount < 0 {
-		// Amount-only with negative sign: set direction to "other pays AddedBy"
+		// Amount-only with negative sign: set direction to "other pays authenticated user"
 		otherUserID := currentReceiverID
-		if currentReceiverID == addedByID {
+		if currentReceiverID == userID {
 			otherUserID = currentPayerID
 		}
 		newPayerID = otherUserID
-		newReceiverID = addedByID
+		newReceiverID = userID
 	} else if patch.Amount != nil && *patch.Amount > 0 {
-		// Amount-only with positive sign: set direction to "AddedBy pays other"
+		// Amount-only with positive sign: set direction to "authenticated user pays other"
 		otherUserID := currentReceiverID
-		if currentReceiverID == addedByID {
+		if currentReceiverID == userID {
 			otherUserID = currentPayerID
 		}
-		newPayerID = addedByID
+		newPayerID = userID
 		newReceiverID = otherUserID
 	}
 
@@ -427,9 +414,9 @@ func (h *SettlementsHandler) Patch(c *gin.Context) {
 		return
 	}
 
-	// Verify the other user (non-AddedBy participant) is a group member
+	// Verify the other user (non-authenticated-user participant) is a group member
 	otherUserID := newReceiverID
-	if newReceiverID == addedByID {
+	if newReceiverID == userID {
 		otherUserID = newPayerID
 	}
 	isMember, err := db.MemberOfGroup(c.Request.Context(), h.pool, otherUserID, groupID)
@@ -463,14 +450,14 @@ func (h *SettlementsHandler) Patch(c *gin.Context) {
 
 // Delete godoc
 // @Summary Delete a settlement
-// @Description Delete a settlement (requires being the payer or group admin)
+// @Description Delete a settlement (requires being the payer)
 // @Tags settlements
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Settlement ID"
 // @Success 200 {object} map[string]string "Returns success message"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "Access denied: user is not the payer or group admin"
+// @Failure 403 {object} apierrors.AppError "Access denied: user is not the payer"
 // @Failure 404 {object} apierrors.AppError "Settlement not found or expense is not a settlement"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/settlements/{id} [delete]

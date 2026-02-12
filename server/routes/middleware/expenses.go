@@ -65,7 +65,7 @@ func VerifyExpenseAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 }
 
 // VerifyExpenseAdmin checks if the authenticated user has admin access to the expense specified in the URL parameter "id".
-// A user has admin access if they are the creator of the expense's group or the creator of the expense itself.
+// A user has admin access if they are the creator of the expense itself.
 // Sets expenseID and the expense object itself in context to avoid double-fetching.
 func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -94,18 +94,8 @@ func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
-		creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, expense.GroupID)
-		if err != nil {
-			if db.IsNotFound(err) {
-				utils.SendAbort(c, apierrors.ErrGroupNotFound)
-				return
-			}
-			utils.SendAbort(c, apierrors.ErrInternalServer)
-			return
-		}
-
-		// If the user is not the group creator or the expense creator, deny access
-		if creatorID != userID && (expense.AddedBy == nil || *expense.AddedBy != userID) {
+		// If the user is not the expense creator, deny access
+		if expense.AddedBy == nil || *expense.AddedBy != userID {
 			utils.SendAbort(c, apierrors.ErrNoPermissions)
 			return
 		}
@@ -165,7 +155,7 @@ func VerifySettlementAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 }
 
 // VerifySettlementAdmin checks if the authenticated user has admin access to the settlement specified in the URL parameter "id".
-// A user has admin access if they are the payer of the settlement (is_paid=true split) or the group admin.
+// A user has admin access if they are the payer of the settlement (is_paid=true split).
 // The expense must be a settlement (is_settlement=true).
 // Derives groupID from the expense itself (no group context required).
 // Sets expenseID, expense, and groupID in context to avoid double-fetching.
@@ -196,31 +186,17 @@ func VerifySettlementAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		groupID := expense.GroupID
 
-		// Check authorization: user must be the payer (is_paid=true) or group admin
-		isPayerOrAdmin := false
+		// Check authorization: user must be the payer (is_paid=true)
+		isPayer := false
 
 		for _, split := range expense.Splits {
 			if split.IsPaid && split.UserID == userID {
-				isPayerOrAdmin = true
+				isPayer = true
 				break
 			}
 		}
 
-		if !isPayerOrAdmin {
-			creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, groupID)
-			if err != nil {
-				// Treat not-found / missing creator as "not admin" instead of 500,
-				// consistent with other admin middleware.
-				if !db.IsNotFound(err) {
-					utils.SendAbort(c, apierrors.ErrInternalServer)
-					return
-				}
-			} else if creatorID == userID {
-				isPayerOrAdmin = true
-			}
-		}
-
-		if !isPayerOrAdmin {
+		if !isPayer {
 			utils.SendAbort(c, apierrors.ErrNoPermissions)
 			return
 		}
