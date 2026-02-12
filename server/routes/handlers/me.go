@@ -237,7 +237,7 @@ func (h *MeHandler) Patch(c *gin.Context) {
 
 // Delete godoc
 // @Summary Delete current user account
-// @Description Delete the authenticated user's account and all associated data.
+// @Description Anonymize the authenticated user's account. The user's name is replaced with "Deleted User" and their email and password are cleared. Group memberships and expense history are preserved.
 // @Tags me
 // @Produce json
 // @Security BearerAuth

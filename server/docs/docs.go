@@ -1484,7 +1484,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete the authenticated user's account and all associated data.",
+                "description": "Anonymize the authenticated user's account. The user's name is replaced with \"Deleted User\" and their email and password are cleared. Group memberships and expense history are preserved.",
                 "produces": [
                     "application/json"
                 ],

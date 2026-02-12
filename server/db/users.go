@@ -405,31 +405,36 @@ func UpdateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 	return nil
 }
 
-// DeleteUser deletes a user and all associated data from the database.
-// This operation is atomic and uses a transaction.
-// Note: The database will handle cascading deletes for group_members, expenses, etc. if configured.
+// DeleteUser anonymizes a user instead of hard-deleting, so that FK references
+// in group_members, expense_splits, and settlements remain valid.
+// The user's name becomes "Deleted User (xxxx)" (last 4 chars of UUID),
+// email gets a unique placeholder, and password_hash is set to NULL (blocking login).
 // Returns ErrNotFound if no user with the ID exists.
 func DeleteUser(ctx context.Context, pool *pgxpool.Pool, userID string) error {
-	// Use WithTransaction helper for consistent transaction management
 	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
-		// Delete the user (memberships, expenses, etc. will be cascade deleted)
-		deleteQuery := `DELETE FROM users WHERE user_id = $1`
+		// Extract last 4 characters of UUID for display
+		suffix := userID
+		if len(suffix) > 4 {
+			suffix = suffix[len(suffix)-4:]
+		}
+		anonName := "Deleted User (" + suffix + ")"
+		anonEmail := "deleted_" + userID + "@deleted"
 
-		result, err := tx.Exec(ctx, deleteQuery, userID)
+		query := `UPDATE users
+			SET user_name = $2, email = $3, password_hash = NULL
+			WHERE user_id = $1`
+
+		result, err := tx.Exec(ctx, query, userID, anonName, anonEmail)
 		if err != nil {
 			return err
 		}
-
-		// Check if user was found
 		if result.RowsAffected() == 0 {
 			return ErrNotFound.Msgf("user with id %s not found", userID)
 		}
 
-		return nil
-	})
-	if err != nil {
+		// Clean up guest tracking record if it exists
+		_, err = tx.Exec(ctx, `DELETE FROM guests WHERE user_id = $1`, userID)
 		return err
-	}
-
-	return nil
+	})
+	return err
 }
