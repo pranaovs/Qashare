@@ -20,54 +20,54 @@ import (
 // Takes a User model with Name, Email, and PasswordHash populated, and adds UserID and CreatedAt.
 // Returns ErrDuplicateKey if a non-guest user with the email already exists.
 func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) error {
-	// Check if user already exists with this email
-	existingUser, err := GetUserFromEmail(ctx, pool, user.Email)
-
-	var query string
-
-	// Promote guest user if found
-	if err == nil && !existingUser.Guest {
-		// Non-guest user already exists
-		return ErrDuplicateKey.Msgf("user with email %s already exists", user.Email)
-	} else if err != nil && !IsNotFound(err) {
-		return err
-	}
-
 	user.Guest = false
 
-	err = WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
-		if existingUser.Guest {
-			// Update the existing guest user to become a regular user
-			query = `UPDATE users
+	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
+		// Check for existing user inside the transaction with FOR UPDATE to prevent races
+		var existingUserID string
+		var isGuest bool
+		err := tx.QueryRow(ctx,
+			`SELECT user_id, COALESCE(is_guest, false) FROM users WHERE email = $1 FOR UPDATE`,
+			user.Email,
+		).Scan(&existingUserID, &isGuest)
+
+		if err == nil {
+			// User exists
+			if !isGuest {
+				return ErrDuplicateKey.Msgf("user with email %s already exists", user.Email)
+			}
+
+			// Promote guest user to regular user
+			query := `UPDATE users
 				SET user_name = $1, password_hash = $2, is_guest = $3, created_at = NOW()
-				WHERE email = $4
+				WHERE user_id = $4
 				RETURNING user_id, extract(epoch from created_at)::bigint`
 
-			err = tx.QueryRow(ctx, query, user.Name, user.PasswordHash, user.Guest, user.Email).Scan(&user.UserID, &user.CreatedAt)
+			err = tx.QueryRow(ctx, query, user.Name, user.PasswordHash, user.Guest, existingUserID).Scan(&user.UserID, &user.CreatedAt)
 			if err != nil {
 				return err
 			}
 
 			// Delete the guest entry since user is now promoted
-			deleteQuery := `DELETE FROM guests WHERE user_id = $1`
-			_, err = tx.Exec(ctx, deleteQuery, user.UserID)
+			_, err = tx.Exec(ctx, `DELETE FROM guests WHERE user_id = $1`, user.UserID)
 			if err != nil {
 				return err
 			}
-		} else {
-			// Insert new user (no existing user found)
-			query = `INSERT INTO users (user_name, email, password_hash, is_guest)
+		} else if err == pgx.ErrNoRows {
+			// No existing user — insert new
+			query := `INSERT INTO users (user_name, email, password_hash, is_guest)
 				VALUES ($1, $2, $3, $4)
 				RETURNING user_id, extract(epoch from created_at)::bigint`
 
 			err = tx.QueryRow(ctx, query, user.Name, user.Email, user.PasswordHash, user.Guest).Scan(&user.UserID, &user.CreatedAt)
 			if err != nil {
-				// Check for duplicate key violation (race condition)
 				if IsDuplicateKey(err) {
 					return ErrDuplicateKey.Msgf("user with email %s already exists", user.Email)
 				}
 				return err
 			}
+		} else {
+			return err
 		}
 
 		return nil
