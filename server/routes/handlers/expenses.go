@@ -51,6 +51,7 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	}
 
 	expense.AddedBy = &userID
+	expense.IsSettlement = false
 
 	// Verify user is a member of the group
 	isMember, err := db.MemberOfGroup(c.Request.Context(), h.pool, userID, expense.GroupID)
@@ -200,11 +201,8 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 		}
 	}
 
-	// Set immutable fields from middleware-fetched expense (no extra DB fetch needed)
-	payload.ExpenseID = expense.ExpenseID
-	payload.GroupID = expense.GroupID
-	payload.AddedBy = expense.AddedBy
-	payload.CreatedAt = expense.CreatedAt
+	// Restore immutable fields from middleware-fetched expense (no extra DB fetch needed)
+	utils.RestoreImmutableFields(&payload.Expense, &expense.Expense)
 
 	if err := db.UpdateExpense(c.Request.Context(), h.pool, &payload); err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
