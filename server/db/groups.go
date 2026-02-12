@@ -148,34 +148,33 @@ func AddGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, us
 		return ErrInvalidInput.Msg("no user IDs provided")
 	}
 
-	// Build batch queries for all users
-	batch := &pgx.Batch{}
-	insertQuery := `INSERT INTO group_members (user_id, group_id, joined_at)
-		VALUES ($1, $2, $3)
-		ON CONFLICT (user_id, group_id) DO NOTHING`
+	return WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
+		batch := &pgx.Batch{}
+		insertQuery := `INSERT INTO group_members (user_id, group_id, joined_at)
+			VALUES ($1, $2, $3)
+			ON CONFLICT (user_id, group_id) DO NOTHING`
 
-	now := time.Now()
-	for _, userID := range userIDs {
-		batch.Queue(insertQuery, userID, groupID, now)
-	}
-
-	// Execute batch
-	br := pool.SendBatch(ctx, batch)
-	defer func() {
-		if err := br.Close(); err != nil {
-			slog.Error("Error closing batch", "error", err)
+		now := time.Now()
+		for _, userID := range userIDs {
+			batch.Queue(insertQuery, userID, groupID, now)
 		}
-	}()
 
-	// Check results for each query
-	for range userIDs {
-		_, err := br.Exec()
-		if err != nil {
-			return err
+		br := tx.SendBatch(ctx, batch)
+		defer func() {
+			if err := br.Close(); err != nil {
+				slog.Error("Error closing batch", "error", err)
+			}
+		}()
+
+		for range userIDs {
+			_, err := br.Exec()
+			if err != nil {
+				return err
+			}
 		}
-	}
 
-	return nil
+		return nil
+	})
 }
 
 // AddGroupMember adds a single user to a group.
