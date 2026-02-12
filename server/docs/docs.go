@@ -344,7 +344,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update an existing expense (requires being group admin or expense creator). Immutable fields will be ignored if included in the request body.",
+                "description": "Update an existing expense (requires being the expense creator). Immutable fields will be ignored if included in the request body.",
                 "consumes": [
                     "application/json"
                 ],
@@ -393,7 +393,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "NO_PERMISSIONS: User is not the group admin or expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group",
+                        "description": "NO_PERMISSIONS: User is not the expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -418,7 +418,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Delete an expense (requires being group admin or expense creator)",
+                "description": "Delete an expense (requires being the expense creator or group admin)",
                 "produces": [
                     "application/json"
                 ],
@@ -452,7 +452,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "NO_PERMISSIONS: User is not the group admin or expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group",
+                        "description": "NO_PERMISSIONS: User is not the expense creator or group admin",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -477,7 +477,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update specific fields of an expense (requires being group admin or expense creator). Only provided fields are updated, others remain unchanged. Immutable fields are automatically protected.",
+                "description": "Update specific fields of an expense (requires being the expense creator). Only provided fields are updated, others remain unchanged. Immutable fields are automatically protected.",
                 "consumes": [
                     "application/json"
                 ],
@@ -526,7 +526,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "NO_PERMISSIONS: User is not the group admin or expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group",
+                        "description": "NO_PERMISSIONS: User is not the expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }

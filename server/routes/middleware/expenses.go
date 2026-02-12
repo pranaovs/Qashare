@@ -107,6 +107,65 @@ func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 	}
 }
 
+// VerifyExpenseDeleteAccess checks if the authenticated user can delete the expense specified in the URL parameter "id".
+// A user can delete an expense if they are the expense creator OR the group admin (group creator).
+// Sets expenseID, groupID, and the expense object itself in context to avoid double-fetching.
+func VerifyExpenseDeleteAccess(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userID := MustGetUserID(c)
+
+		expenseID := c.Param("id")
+		if expenseID == "" {
+			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("expense ID not provided"))
+			return
+		}
+
+		expense, err := db.GetExpense(c.Request.Context(), pool, expenseID)
+		if err != nil {
+			if db.IsNotFound(err) {
+				utils.SendAbort(c, apierrors.ErrExpenseNotFound)
+				return
+			}
+			utils.SendAbort(c, apierrors.ErrInternalServer)
+			return
+		}
+
+		// Settlements must be accessed through the /settlements endpoints
+		if expense.IsSettlement {
+			utils.SendAbort(c, apierrors.ErrExpenseNotFound)
+			return
+		}
+
+		// Allow if user is the expense creator
+		isCreator := expense.AddedBy != nil && *expense.AddedBy == userID
+
+		// Allow if user is the group admin (group creator)
+		isGroupAdmin := false
+		if !isCreator {
+			creatorID, err := db.GetGroupCreator(c.Request.Context(), pool, expense.GroupID)
+			if err != nil {
+				if db.IsNotFound(err) {
+					utils.SendAbort(c, apierrors.ErrGroupNotFound)
+					return
+				}
+				utils.SendAbort(c, apierrors.ErrInternalServer)
+				return
+			}
+			isGroupAdmin = creatorID == userID
+		}
+
+		if !isCreator && !isGroupAdmin {
+			utils.SendAbort(c, apierrors.ErrNoPermissions)
+			return
+		}
+
+		c.Set(ExpenseKey, expense)
+		c.Set(ExpenseIDKey, expenseID)
+		c.Set(GroupIDKey, expense.GroupID)
+		c.Next()
+	}
+}
+
 // VerifySettlementAccess checks if the authenticated user has access to the settlement specified in the URL parameter "id".
 // User has access if they are a member of the settlement's group and the expense is a settlement.
 // Sets expenseID, groupID, and the expense object itself in context to avoid double-fetching.

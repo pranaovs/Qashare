@@ -144,7 +144,7 @@ func (h *ExpensesHandler) Get(c *gin.Context) {
 
 // Update godoc
 // @Summary Update an expense
-// @Description Update an existing expense (requires being group admin or expense creator). Immutable fields will be ignored if included in the request body.
+// @Description Update an existing expense (requires being the expense creator). Immutable fields will be ignored if included in the request body.
 // @Tags expenses
 // @Accept json
 // @Produce json
@@ -154,7 +154,7 @@ func (h *ExpensesHandler) Get(c *gin.Context) {
 // @Success 200 {object} models.ExpenseDetails "Returns updated expense with all fields"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or missing required fields | INVALID_SPLIT: No splits provided or split totals do not match expense amount"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin or expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group"
+// @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group"
 // @Failure 404 {object} apierrors.AppError "EXPENSE_NOT_FOUND: The specified expense does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/expenses/{id} [put]
@@ -230,14 +230,14 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 
 // Delete godoc
 // @Summary Delete an expense
-// @Description Delete an expense (requires being group admin or expense creator)
+// @Description Delete an expense (requires being the expense creator or group admin)
 // @Tags expenses
 // @Produce json
 // @Security BearerAuth
 // @Param id path string true "Expense ID"
 // @Success 200 {object} map[string]string "Returns success message"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin or expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group"
+// @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the expense creator or group admin"
 // @Failure 404 {object} apierrors.AppError "EXPENSE_NOT_FOUND: The specified expense does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/expenses/{id} [delete]
@@ -256,7 +256,7 @@ func (h *ExpensesHandler) Delete(c *gin.Context) {
 
 // Patch godoc
 // @Summary Partially update an expense
-// @Description Update specific fields of an expense (requires being group admin or expense creator). Only provided fields are updated, others remain unchanged. Immutable fields are automatically protected.
+// @Description Update specific fields of an expense (requires being the expense creator). Only provided fields are updated, others remain unchanged. Immutable fields are automatically protected.
 // @Tags expenses
 // @Accept json
 // @Produce json
@@ -266,7 +266,7 @@ func (h *ExpensesHandler) Delete(c *gin.Context) {
 // @Success 200 {object} models.ExpenseDetails "Returns updated expense with all fields"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or validation failed | INVALID_SPLIT: Split totals do not match expense amount"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin or expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group"
+// @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group"
 // @Failure 404 {object} apierrors.AppError "EXPENSE_NOT_FOUND: The specified expense does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/expenses/{id} [patch]
