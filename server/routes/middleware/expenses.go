@@ -40,6 +40,12 @@ func VerifyExpenseAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
+		// Settlements must be accessed through the /settlements endpoints
+		if expense.IsSettlement {
+			utils.SendAbort(c, apierrors.ErrExpenseNotFound.HTTPCode, apierrors.ErrExpenseNotFound.Message)
+			return
+		}
+
 		// Check if user is a member of the expense's group
 		isMember, err := db.MemberOfGroup(c.Request.Context(), pool, userID, expense.GroupID)
 		if err != nil {
@@ -81,6 +87,12 @@ func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 				return
 			}
 			utils.SendAbort(c, http.StatusInternalServerError, "internal server error")
+			return
+		}
+
+		// Settlements must be accessed through the /settlements endpoints
+		if expense.IsSettlement {
+			utils.SendAbort(c, apierrors.ErrExpenseNotFound.HTTPCode, apierrors.ErrExpenseNotFound.Message)
 			return
 		}
 
