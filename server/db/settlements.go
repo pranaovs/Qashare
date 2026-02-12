@@ -137,7 +137,7 @@ func optimizeSettlements(balances map[string]float64, userID string, tolerance f
 	})
 
 	// Greedy matching: pair largest debtors with largest creditors
-	var settlements []models.Settlement
+	settlements := make([]models.Settlement, 0)
 
 	for len(debtors) > 0 && len(creditors) > 0 {
 		debtor := debtors[0]

@@ -249,7 +249,7 @@ func OwnerOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]mo
 	defer rows.Close()
 
 	// Scan results into groups slice
-	var groups []models.Group
+	groups := make([]models.Group, 0)
 	for rows.Next() {
 		var g models.Group
 		err := rows.Scan(&g.GroupID, &g.Name, &g.Description, &g.CreatedBy, &g.CreatedAt)
@@ -285,7 +285,7 @@ func MemberOfGroups(ctx context.Context, pool *pgxpool.Pool, userID string) ([]m
 	defer rows.Close()
 
 	// Scan results into groups slice
-	var groups []models.Group
+	groups := make([]models.Group, 0)
 	for rows.Next() {
 		var g models.Group
 		err := rows.Scan(&g.GroupID, &g.Name, &g.Description, &g.CreatedBy, &g.CreatedAt)

@@ -336,7 +336,7 @@ func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID string) ([]mod
 	}
 	defer rows.Close()
 
-	var expenses []models.Expense
+	expenses := make([]models.Expense, 0)
 	for rows.Next() {
 		var expense models.Expense
 		err = rows.Scan(
@@ -407,7 +407,7 @@ func GetUserSpending(ctx context.Context, pool *pgxpool.Pool, userID, groupID st
 	}
 	defer rows.Close()
 
-	var expenses []models.UserExpense
+	expenses := make([]models.UserExpense, 0)
 	for rows.Next() {
 		var expense models.UserExpense
 
