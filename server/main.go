@@ -113,7 +113,9 @@ func initDatabase(dbConfig config.DatabaseConfig) (*pgxpool.Pool, error) {
 
 	// Verify migration integrity (optional, can be disabled via env var)
 	if dbConfig.VerifyMigrations {
-		if err := db.VerifyMigrationIntegrity(ctx, pool, dbConfig.MigrationsDir); err != nil {
+		verifyCtx, verifyCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer verifyCancel()
+		if err := db.VerifyMigrationIntegrity(verifyCtx, pool, dbConfig.MigrationsDir); err != nil {
 			slog.Warn("Migration integrity check failed", "error", err)
 			// Non-fatal warning - allow startup but log the issue
 		}
