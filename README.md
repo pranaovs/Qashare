@@ -166,7 +166,7 @@ The Swagger UI provides:
 - [x] Payment settlement
     - [ ] Frontend integration
     - [x] Settlements in db
-    - [ ] Settlement verification
+    - [x] Settlement verification (only payer can modify)
 - [x] Bill splitting algorithms
 - [ ] Group management features
 - [x] User spending reports
