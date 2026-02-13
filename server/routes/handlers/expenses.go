@@ -240,6 +240,11 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 	// Restore immutable fields from middleware-fetched expense (no extra DB fetch needed)
 	utils.RestoreImmutableFields(&payload.Expense, &expense.Expense)
 
+	// Preserve existing transacted_at when client omits it (zero = not provided)
+	if payload.TransactedAt == 0 {
+		payload.TransactedAt = expense.TransactedAt
+	}
+
 	if err := db.UpdateExpense(c.Request.Context(), h.pool, &payload); err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrExpenseNotFound,

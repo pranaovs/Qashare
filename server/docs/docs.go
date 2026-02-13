@@ -2330,6 +2330,9 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                },
+                "transacted_at": {
+                    "type": "integer"
                 }
             }
         },
@@ -2380,6 +2383,9 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                },
+                "transacted_at": {
+                    "type": "integer"
                 }
             }
         },
@@ -2412,6 +2418,9 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                },
+                "transacted_at": {
+                    "type": "integer"
                 }
             }
         },
@@ -2522,6 +2531,9 @@ const docTemplate = `{
                 "title": {
                     "type": "string"
                 },
+                "transacted_at": {
+                    "type": "integer"
+                },
                 "user_id": {
                     "type": "string"
                 }
@@ -2535,6 +2547,9 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                },
+                "transacted_at": {
+                    "type": "integer"
                 },
                 "user_id": {
                     "type": "string"
@@ -2602,6 +2617,9 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                },
+                "transacted_at": {
+                    "type": "integer"
                 },
                 "user_amount": {
                     "description": "Amount user paid/owes for this expense",

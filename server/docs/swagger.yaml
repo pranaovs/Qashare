@@ -37,6 +37,8 @@ definitions:
         type: number
       title:
         type: string
+      transacted_at:
+        type: integer
     type: object
   models.ExpenseDetails:
     properties:
@@ -71,6 +73,8 @@ definitions:
         type: array
       title:
         type: string
+      transacted_at:
+        type: integer
     type: object
   models.ExpenseDetailsPatch:
     properties:
@@ -92,6 +96,8 @@ definitions:
         type: array
       title:
         type: string
+      transacted_at:
+        type: integer
     type: object
   models.ExpenseSplit:
     properties:
@@ -163,6 +169,8 @@ definitions:
         type: string
       title:
         type: string
+      transacted_at:
+        type: integer
       user_id:
         type: string
     type: object
@@ -172,6 +180,8 @@ definitions:
         type: number
       title:
         type: string
+      transacted_at:
+        type: integer
       user_id:
         type: string
     type: object
@@ -217,6 +227,8 @@ definitions:
         type: number
       title:
         type: string
+      transacted_at:
+        type: integer
       user_amount:
         description: Amount user paid/owes for this expense
         type: number

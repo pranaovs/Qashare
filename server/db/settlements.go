@@ -194,7 +194,9 @@ func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID uui
 
 	query := `
 		SELECT e.expense_id, e.group_id, e.added_by, e.title, e.description,
-			extract(epoch from e.created_at)::bigint, e.amount,
+			extract(epoch from e.created_at)::bigint,
+			extract(epoch from e.transacted_at)::bigint,
+			e.amount,
 			e.is_incomplete_amount, e.is_incomplete_split, e.is_settlement,
 			e.latitude, e.longitude,
 			es.user_id, es.amount, es.is_paid
@@ -224,7 +226,7 @@ func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID uui
 
 		err = rows.Scan(
 			&exp.ExpenseID, &exp.GroupID, &exp.AddedBy, &exp.Title,
-			&exp.Description, &exp.CreatedAt, &exp.Amount,
+			&exp.Description, &exp.CreatedAt, &exp.TransactedAt, &exp.Amount,
 			&exp.IsIncompleteAmount, &exp.IsIncompleteSplit, &exp.IsSettlement,
 			&exp.Latitude, &exp.Longitude,
 			&splitUserID, &splitAmount, &splitIsPaid,

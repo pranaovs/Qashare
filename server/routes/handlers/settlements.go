@@ -153,6 +153,7 @@ func (h *SettlementsHandler) Create(c *gin.Context) {
 			GroupID:      groupID,
 			AddedBy:      userID,
 			Title:        req.Title,
+			TransactedAt: req.TransactedAt,
 			Amount:       absAmount,
 			IsSettlement: true,
 		},
@@ -179,9 +180,10 @@ func (h *SettlementsHandler) Create(c *gin.Context) {
 func expenseToSettlement(expense models.ExpenseDetails, userID uuid.UUID) models.Settlement {
 	if len(expense.Splits) < 2 {
 		return models.Settlement{
-			Title:     expense.Title,
-			CreatedAt: expense.CreatedAt,
-			GroupID:   expense.GroupID,
+			Title:        expense.Title,
+			CreatedAt:    expense.CreatedAt,
+			TransactedAt: expense.TransactedAt,
+			GroupID:      expense.GroupID,
 		}
 	}
 
@@ -204,11 +206,12 @@ func expenseToSettlement(expense models.ExpenseDetails, userID uuid.UUID) models
 	}
 
 	return models.Settlement{
-		Title:     expense.Title,
-		CreatedAt: expense.CreatedAt,
-		GroupID:   expense.GroupID,
-		UserID:    otherUserID,
-		Amount:    amount,
+		Title:        expense.Title,
+		CreatedAt:    expense.CreatedAt,
+		TransactedAt: expense.TransactedAt,
+		GroupID:      expense.GroupID,
+		UserID:       otherUserID,
+		Amount:       amount,
 	}
 }
 
@@ -292,11 +295,18 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 		receiverID = userID
 	}
 
+	// Preserve existing transacted_at when client omits it (zero = not provided)
+	transactedAt := req.TransactedAt
+	if transactedAt == 0 {
+		transactedAt = expense.TransactedAt
+	}
+
 	updated := models.ExpenseDetails{
 		Expense: models.Expense{
 			GroupID:      groupID,
 			AddedBy:      expense.AddedBy,
 			Title:        req.Title,
+			TransactedAt: transactedAt,
 			Amount:       absAmount,
 			IsSettlement: true,
 		},
@@ -348,6 +358,11 @@ func (h *SettlementsHandler) Patch(c *gin.Context) {
 	// Apply title patch
 	if patch.Title != nil {
 		expense.Title = *patch.Title
+	}
+
+	// Apply transacted_at patch
+	if patch.TransactedAt != nil {
+		expense.TransactedAt = *patch.TransactedAt
 	}
 
 	// Read current payer/receiver from existing splits

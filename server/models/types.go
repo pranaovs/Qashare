@@ -52,6 +52,7 @@ type Expense struct {
 	Title              string    `json:"title" db:"title"`
 	Description        *string   `json:"description" db:"description"` // pointer because nullable in db
 	CreatedAt          int64     `json:"created_at" db:"created_at" immutable:"true"`
+	TransactedAt       int64     `json:"transacted_at" db:"transacted_at"`
 	Amount             float64   `json:"amount" db:"amount"`
 	IsIncompleteAmount bool      `json:"is_incomplete_amount" db:"is_incomplete_amount"`
 	IsIncompleteSplit  bool      `json:"is_incomplete_split" db:"is_incomplete_split"`

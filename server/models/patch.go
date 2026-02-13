@@ -26,6 +26,7 @@ type GroupPatch struct {
 type ExpensePatch struct {
 	Title              *string  `json:"title,omitempty"`
 	Description        *string  `json:"description,omitempty"`
+	TransactedAt       *int64   `json:"transacted_at,omitempty"`
 	Amount             *float64 `json:"amount,omitempty"`
 	IsIncompleteAmount *bool    `json:"is_incomplete_amount,omitempty"`
 	IsIncompleteSplit  *bool    `json:"is_incomplete_split,omitempty"`
@@ -43,7 +44,8 @@ type ExpenseDetailsPatch struct {
 // SettlementPatch represents a partial update to a Settlement.
 // Only non-nil fields will be applied to the target.
 type SettlementPatch struct {
-	Title  *string    `json:"title,omitempty"`
-	UserID *uuid.UUID `json:"user_id,omitempty"`
-	Amount *float64   `json:"amount,omitempty"`
+	Title        *string    `json:"title,omitempty"`
+	TransactedAt *int64     `json:"transacted_at,omitempty"`
+	UserID       *uuid.UUID `json:"user_id,omitempty"`
+	Amount       *float64   `json:"amount,omitempty"`
 }
