@@ -161,7 +161,7 @@ The Swagger UI provides:
 - [x] Create frontend (not the vibe-coded slop)
 - [x] Payment settlement
     - [ ] Frontend integration
-    - [ ] Settlements in db
+    - [x] Settlements in db
     - [ ] Settlement verification
 - [x] Bill splitting algorithms
 - [ ] Group management features
