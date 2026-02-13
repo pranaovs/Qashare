@@ -111,7 +111,7 @@ To set up the project locally, follow these instructions for both the client and
 
 #### Running the Server with Docker
 
-[![Container CI](https://github.com/pranaovs/Qashare/actions/workflows/container-ci.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/container-ci.yml)
+[![Container Build](https://github.com/pranaovs/Qashare/actions/workflows/container-release.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/container-release.yml)
 
 1. Download and edit the [`docker-compose.yml`](https://github.com/pranaovs/Qashare/blob/main/server/docker-compose.yml) file to set your environment variables.
 
