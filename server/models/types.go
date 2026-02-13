@@ -17,7 +17,7 @@ type User struct {
 type Group struct {
 	GroupID     uuid.UUID `json:"group_id" db:"group_id" immutable:"true"`
 	Name        string    `json:"name" db:"group_name"`
-	Description string    `json:"description,omitempty" db:"description"`
+	Description string    `json:"description" db:"description"`
 	CreatedBy   uuid.UUID `json:"created_by" db:"created_by" immutable:"true"`
 	CreatedAt   int64     `json:"created_at" db:"created_at" immutable:"true"`
 }
@@ -50,14 +50,14 @@ type Expense struct {
 	GroupID            uuid.UUID `json:"group_id" db:"group_id" immutable:"true"`
 	AddedBy            uuid.UUID `json:"added_by" db:"added_by" immutable:"true"`
 	Title              string    `json:"title" db:"title"`
-	Description        *string   `json:"description,omitempty" db:"description"` // pointer because nullable in db
+	Description        *string   `json:"description" db:"description"` // pointer because nullable in db
 	CreatedAt          int64     `json:"created_at" db:"created_at" immutable:"true"`
 	Amount             float64   `json:"amount" db:"amount"`
 	IsIncompleteAmount bool      `json:"is_incomplete_amount" db:"is_incomplete_amount"`
 	IsIncompleteSplit  bool      `json:"is_incomplete_split" db:"is_incomplete_split"`
 	IsSettlement       bool      `json:"is_settlement" db:"is_settlement" immutable:"true"`
-	Latitude           *float64  `json:"latitude,omitempty" db:"latitude"`   // pointer because nullable in db
-	Longitude          *float64  `json:"longitude,omitempty" db:"longitude"` // pointer because nullable in db
+	Latitude           *float64  `json:"latitude" db:"latitude"`   // pointer because nullable in db
+	Longitude          *float64  `json:"longitude" db:"longitude"` // pointer because nullable in db
 }
 
 // ExpenseDetails represents detailed information about an expense including its splits
@@ -86,7 +86,7 @@ type ExpenseSplit struct {
 type Settlement struct {
 	Title     string    `json:"title"`
 	CreatedAt int64     `json:"created_at"`
-	GroupID   uuid.UUID `json:"group_id,omitempty"`
+	GroupID   uuid.UUID `json:"group_id"`
 	UserID    uuid.UUID `json:"user_id"`
 	Amount    float64   `json:"amount"`
 }
