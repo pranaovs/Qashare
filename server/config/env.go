@@ -30,6 +30,20 @@ func getEnvInt(key string, defaultValue int) int {
 	return val
 }
 
+func getEnvInt32(key string, defaultValue int32) int32 {
+	valStr := os.Getenv(key)
+	if valStr == "" {
+		return defaultValue
+	}
+
+	val, err := strconv.ParseInt(valStr, 10, 32)
+	if err != nil {
+		slog.Warn("Invalid integer config value, using default", "key", key, "value", valStr, "default", defaultValue)
+		return defaultValue
+	}
+	return int32(val)
+}
+
 func getEnvBool(key string, defaultValue bool) bool {
 	val := os.Getenv(key)
 	if val == "" {

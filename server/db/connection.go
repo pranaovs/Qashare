@@ -97,8 +97,8 @@ func createPool(ctx context.Context, dbConfig config.DatabaseConfig) (*pgxpool.P
 	}
 
 	// Apply configuration
-	poolConfig.MaxConns = int32(dbConfig.MaxConnections)
-	poolConfig.MinConns = int32(dbConfig.MinConnections)
+	poolConfig.MaxConns = dbConfig.MaxConnections
+	poolConfig.MinConns = dbConfig.MinConnections
 	poolConfig.MaxConnLifetime = dbConfig.MaxConnLifetime
 	poolConfig.MaxConnIdleTime = dbConfig.MaxConnIdleTime
 	poolConfig.HealthCheckPeriod = dbConfig.HealthCheckPeriod

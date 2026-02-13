@@ -24,8 +24,8 @@ type DatabaseConfig struct {
 	URL               string
 	MigrationsDir     string
 	VerifyMigrations  bool
-	MaxConnections    int
-	MinConnections    int
+	MaxConnections    int32
+	MinConnections    int32
 	MaxConnLifetime   time.Duration
 	MaxConnIdleTime   time.Duration
 	HealthCheckPeriod time.Duration
