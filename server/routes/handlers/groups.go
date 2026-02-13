@@ -44,7 +44,7 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 	var err error
 
 	userID := middleware.MustGetUserID(c)
-	group.CreatedBy = &userID
+	group.CreatedBy = userID
 
 	var request struct {
 		Name        string `json:"name" binding:"required"`

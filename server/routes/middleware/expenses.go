@@ -108,7 +108,7 @@ func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 
 		// If the user is not the expense creator, deny access
-		if expense.AddedBy == nil || *expense.AddedBy != userID {
+		if expense.AddedBy != userID {
 			utils.SendAbort(c, apierrors.ErrNoPermissions)
 			return
 		}
@@ -156,7 +156,7 @@ func VerifyExpenseDeleteAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 
 		// Allow if user is the expense creator
-		isCreator := expense.AddedBy != nil && *expense.AddedBy == userID
+		isCreator := expense.AddedBy == userID
 
 		// Allow if user is the group admin (group creator)
 		isGroupAdmin := false

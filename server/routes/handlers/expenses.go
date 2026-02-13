@@ -77,7 +77,7 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 		return
 	}
 
-	expense.AddedBy = &userID
+	expense.AddedBy = userID
 	expense.IsSettlement = false
 	expense.GroupID = groupID
 

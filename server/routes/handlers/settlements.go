@@ -151,7 +151,7 @@ func (h *SettlementsHandler) Create(c *gin.Context) {
 	expense := models.ExpenseDetails{
 		Expense: models.Expense{
 			GroupID:      groupID,
-			AddedBy:      &userID,
+			AddedBy:      userID,
 			Title:        req.Title,
 			Amount:       absAmount,
 			IsSettlement: true,

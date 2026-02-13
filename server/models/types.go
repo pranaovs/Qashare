@@ -18,7 +18,7 @@ type Group struct {
 	GroupID     uuid.UUID  `json:"group_id" db:"group_id" immutable:"true"`
 	Name        string     `json:"name" db:"group_name"`
 	Description string     `json:"description,omitempty" db:"description"`
-	CreatedBy   *uuid.UUID `json:"created_by" db:"created_by" immutable:"true"`
+	CreatedBy   uuid.UUID  `json:"created_by" db:"created_by" immutable:"true"`
 	CreatedAt   int64      `json:"created_at" db:"created_at" immutable:"true"`
 }
 
@@ -48,7 +48,7 @@ type GroupUser struct {
 type Expense struct {
 	ExpenseID          uuid.UUID  `json:"expense_id" db:"expense_id" immutable:"true"`
 	GroupID            uuid.UUID  `json:"group_id" db:"group_id" immutable:"true"`
-	AddedBy            *uuid.UUID `json:"added_by" db:"added_by" immutable:"true"`
+	AddedBy            uuid.UUID  `json:"added_by" db:"added_by" immutable:"true"`
 	Title              string     `json:"title" db:"title"`
 	Description        *string    `json:"description,omitempty" db:"description"` // pointer because nullable in db
 	CreatedAt          int64      `json:"created_at" db:"created_at" immutable:"true"`
