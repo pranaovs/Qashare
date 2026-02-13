@@ -1,4 +1,4 @@
-name: Swagger Check
+name: Swagger Docs Check
 
 on:
   push:

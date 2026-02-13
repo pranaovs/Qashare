@@ -1,0 +1,82 @@
+name: Go Server CI
+
+on:
+  push:
+    paths:
+      - "server/**"
+      - ".github/workflows/go-ci.yml"
+  pull_request:
+    paths:
+      - "server/**"
+      - ".github/workflows/go-ci.yml"
+
+jobs:
+  format:
+    name: Format Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      - name: Check Go formatting
+        working-directory: server
+        run: |
+          test -z "$(gofmt -l .)"
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: true
+          cache-dependency-path: server/go.sum
+
+      - name: Install dependencies
+        working-directory: server
+        run: go mod download
+
+      - name: Run tests
+        working-directory: server
+        run: go test -v ./...
+
+  build:
+    name: Build Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          cache: true
+          cache-dependency-path: server/go.sum
+
+      - name: Install dependencies
+        working-directory: server
+        run: go mod download
+
+      - name: Build
+        working-directory: server
+        run: go build ./...
