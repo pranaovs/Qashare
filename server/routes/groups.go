@@ -20,6 +20,7 @@ func RegisterGroupsRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, jwtConfig
 	router.GET("/me", handler.ListUser)
 	router.GET("/admin", handler.ListAdmin)
 
+	// Group management
 	router.POST("/", handler.Create)
 	router.GET("/:id", middleware.RequireGroupMember(pool), handler.Get)
 	router.PUT("/:id", middleware.RequireGroupAdmin(pool), handler.Update)

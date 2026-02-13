@@ -390,29 +390,6 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 	})
 }
 
-// GetExpenses godoc
-// @Summary List group expenses
-// @Description Get all expenses of a group
-// @Tags expenses
-// @Produce json
-// @Security BearerAuth
-// @Param id path string true "Group ID"
-// @Success 200 {array} models.Expense "Returns list of all expenses in the group"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the group"
-// @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
-// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /v1/groups/{id}/expenses [get]
-func (h *GroupsHandler) GetExpenses(c *gin.Context) {
-	groupID := middleware.MustGetGroupID(c)
-	expenses, err := db.GetExpenses(c.Request.Context(), h.pool, groupID)
-	if err != nil {
-		utils.SendError(c, err) // Shouln't send any error as everything is validated in the middleware
-		return
-	}
-	utils.SendData(c, expenses)
-}
-
 // GetSpendings godoc
 // @Summary Get user expenses in group
 // @Description Get all expenses where the authenticated user owes money in a specific group, with the user's owed amount per expense

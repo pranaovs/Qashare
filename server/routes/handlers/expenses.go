@@ -26,6 +26,29 @@ func NewExpensesHandler(pool *pgxpool.Pool, appConfig config.AppConfig) *Expense
 	return &ExpensesHandler{pool: pool, appConfig: appConfig}
 }
 
+// GetExpenses godoc
+// @Summary List group expenses
+// @Description Get all expenses of a group
+// @Tags expenses
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Group ID"
+// @Success 200 {array} models.Expense "Returns list of all expenses in the group"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the group"
+// @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
+// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
+// @Router /v1/groups/{id}/expenses [get]
+func (h *GroupsHandler) GetExpenses(c *gin.Context) {
+	groupID := middleware.MustGetGroupID(c)
+	expenses, err := db.GetExpenses(c.Request.Context(), h.pool, groupID)
+	if err != nil {
+		utils.SendError(c, err) // Shouln't send any error as everything is validated in the middleware
+		return
+	}
+	utils.SendData(c, expenses)
+}
+
 // Create godoc
 // @Summary Create a new expense
 // @Description Create a new expense with splits for a group. The logged in user will be set as the AddedBy user.
