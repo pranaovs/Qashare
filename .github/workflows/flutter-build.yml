@@ -13,6 +13,8 @@ on:
 jobs:
   flutter-build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
