@@ -52,7 +52,7 @@ type Expense struct {
 	Title              string    `json:"title" db:"title"`
 	Description        *string   `json:"description" db:"description"` // pointer because nullable in db
 	CreatedAt          int64     `json:"created_at" db:"created_at" immutable:"true"`
-	TransactedAt       int64     `json:"transacted_at" db:"transacted_at"`
+	TransactedAt       *int64    `json:"transacted_at" db:"transacted_at"`
 	Amount             float64   `json:"amount" db:"amount"`
 	IsIncompleteAmount bool      `json:"is_incomplete_amount" db:"is_incomplete_amount"`
 	IsIncompleteSplit  bool      `json:"is_incomplete_split" db:"is_incomplete_split"`
@@ -87,8 +87,8 @@ type ExpenseSplit struct {
 type Settlement struct {
 	Title        string    `json:"title"`
 	CreatedAt    int64     `json:"created_at"`
-	TransactedAt int64     `json:"transacted_at"`
 	GroupID      uuid.UUID `json:"group_id"`
+	TransactedAt *int64    `json:"transacted_at"`
 	UserID       uuid.UUID `json:"user_id"`
 	Amount       float64   `json:"amount"`
 }

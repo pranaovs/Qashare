@@ -295,9 +295,9 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 		receiverID = userID
 	}
 
-	// Preserve existing transacted_at when client omits it (zero = not provided)
+	// Preserve existing transacted_at when client omits it (nil = not provided)
 	transactedAt := req.TransactedAt
-	if transactedAt == 0 {
+	if transactedAt == nil {
 		transactedAt = expense.TransactedAt
 	}
 
@@ -362,7 +362,7 @@ func (h *SettlementsHandler) Patch(c *gin.Context) {
 
 	// Apply transacted_at patch
 	if patch.TransactedAt != nil {
-		expense.TransactedAt = *patch.TransactedAt
+		expense.TransactedAt = patch.TransactedAt
 	}
 
 	// Read current payer/receiver from existing splits

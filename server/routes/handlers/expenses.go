@@ -240,8 +240,8 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 	// Restore immutable fields from middleware-fetched expense (no extra DB fetch needed)
 	utils.RestoreImmutableFields(&payload.Expense, &expense.Expense)
 
-	// Preserve existing transacted_at when client omits it (zero = not provided)
-	if payload.TransactedAt == 0 {
+	// Preserve existing transacted_at when client omits it (nil = not provided)
+	if payload.TransactedAt == nil {
 		payload.TransactedAt = expense.TransactedAt
 	}
 

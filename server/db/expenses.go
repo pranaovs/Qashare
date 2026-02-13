@@ -49,7 +49,7 @@ func CreateExpense(
 			transacted_at
 		)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-			CASE WHEN $11::bigint = 0 THEN now() ELSE to_timestamp($11::bigint) END)
+			COALESCE(to_timestamp($11::bigint), now()))
 		RETURNING expense_id, extract(epoch from created_at)::bigint,
 			extract(epoch from transacted_at)::bigint`
 
@@ -136,7 +136,7 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.Expe
 				is_settlement = $7,
 				latitude = $8,
 				longitude = $9,
-				transacted_at = to_timestamp($10::bigint)
+				transacted_at = COALESCE(to_timestamp($10::bigint), transacted_at)
 			WHERE expense_id = $1`
 
 		result, err := tx.Exec(
