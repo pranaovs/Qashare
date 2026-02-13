@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/models"
 )
@@ -19,7 +20,7 @@ import (
 //   - Negative: Current user pays to UserID
 //
 // Uses greedy algorithm to minimize number of transactions while settling all debts.
-func GetSettlement(ctx context.Context, pool *pgxpool.Pool, userID, groupID string, splitTolerance float64) ([]models.Settlement, error) {
+func GetSettlement(ctx context.Context, pool *pgxpool.Pool, userID, groupID uuid.UUID, splitTolerance float64) ([]models.Settlement, error) {
 	// Validate input
 	if groupID == "" {
 		return nil, ErrInvalidInput.Msg("group id missing")
@@ -73,10 +74,10 @@ func GetSettlement(ctx context.Context, pool *pgxpool.Pool, userID, groupID stri
 	defer rows.Close()
 
 	// Net balances are already accumulated in NUMERIC by PostgreSQL
-	balances := make(map[string]float64)
+	balances := make(map[uuid.UUID]float64)
 
 	for rows.Next() {
-		var userID string
+		var userID uuid.UUID
 		var balance float64
 
 		err = rows.Scan(&userID, &balance)
@@ -99,30 +100,30 @@ func GetSettlement(ctx context.Context, pool *pgxpool.Pool, userID, groupID stri
 
 // optimizeSettlements uses greedy algorithm to minimize transactions
 // Returns settlements for the given user
-func optimizeSettlements(balances map[string]float64, userID string, tolerance float64) []models.Settlement {
+func optimizeSettlements(balances map[uuid.UUID]float64, userID uuid.UUID, tolerance float64) []models.Settlement {
 	if len(balances) == 0 {
 		return []models.Settlement{}
 	}
 
 	// Separate users into creditors (positive) and debtors (negative)
 	var creditors []struct {
-		userID string
+		userID uuid.UUID
 		amount float64
 	}
 	var debtors []struct {
-		userID string
+		userID uuid.UUID
 		amount float64
 	}
 
 	for uid, balance := range balances {
 		if balance > tolerance {
 			creditors = append(creditors, struct {
-				userID string
+				userID uuid.UUID
 				amount float64
 			}{uid, balance})
 		} else if balance < -tolerance {
 			debtors = append(debtors, struct {
-				userID string
+				userID uuid.UUID
 				amount float64
 			}{uid, -balance})
 		}
@@ -183,7 +184,7 @@ func optimizeSettlements(balances map[string]float64, userID string, tolerance f
 // GetSettlements retrieves all settlement expenses in a group where the
 // specified user is a participant (either payer or receiver).
 // Returns a slice of ExpenseDetails ordered by creation time descending.
-func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID string) ([]models.ExpenseDetails, error) {
+func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID uuid.UUID) ([]models.ExpenseDetails, error) {
 	if groupID == "" {
 		return nil, ErrInvalidInput.Msg("group id missing")
 	}
@@ -212,12 +213,12 @@ func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID str
 	}
 	defer rows.Close()
 
-	expenseMap := make(map[string]*models.ExpenseDetails)
-	var order []string
+	expenseMap := make(map[uuid.UUID]*models.ExpenseDetails)
+	var order []uuid.UUID
 
 	for rows.Next() {
 		var exp models.Expense
-		var splitUserID *string
+		var splitUserID *uuid.UUID
 		var splitAmount *float64
 		var splitIsPaid *bool
 

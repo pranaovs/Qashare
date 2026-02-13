@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/models"
 
 	"github.com/jackc/pgx/v5"
@@ -53,16 +54,16 @@ func CreateGroup(ctx context.Context, pool *pgxpool.Pool, group *models.Group) e
 // GetGroupCreator retrieves the user ID of the group creator.
 // This is a lightweight query that only returns the creator ID, useful for authorization checks.
 // Returns ErrNotFound if no group with the ID exists.
-func GetGroupCreator(ctx context.Context, pool *pgxpool.Pool, groupID string) (string, error) {
-	var creatorID string
+func GetGroupCreator(ctx context.Context, pool *pgxpool.Pool, groupID uuid.UUID) (uuid.UUID, error) {
+	var creatorID uuid.UUID
 	query := `SELECT created_by FROM groups WHERE group_id = $1`
 
 	err := pool.QueryRow(ctx, query, groupID).Scan(&creatorID)
 	if err == pgx.ErrNoRows {
-		return "", ErrNotFound.Msgf("group with id %s not found", groupID)
+		return uuid.Nil, ErrNotFound.Msgf("group with id %s not found", groupID)
 	}
 	if err != nil {
-		return "", err
+		return uuid.Nil, err
 	}
 
 	return creatorID, nil
@@ -71,7 +72,7 @@ func GetGroupCreator(ctx context.Context, pool *pgxpool.Pool, groupID string) (s
 // GetGroup retrieves complete group information including all members in a single query.
 // Returns a models.GroupDetails struct with full details and a list of all group members.
 // Returns ErrNotFound if no group with the ID exists.
-func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.GroupDetails, error) {
+func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID uuid.UUID) (models.GroupDetails, error) {
 	var group models.GroupDetails
 
 	query := `SELECT g.group_id, g.group_name, g.description, g.created_by,
@@ -93,7 +94,7 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.G
 	group.Members = make([]models.GroupUser, 0)
 	first := true
 	for rows.Next() {
-		var memberUserID *string
+		var memberUserID *uuid.UUID
 		var memberName *string
 		var memberEmail *string
 		var memberGuest *bool
@@ -143,7 +144,7 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) (models.G
 // Uses batch operations for better performance when adding many members at once.
 // Ignores duplicate memberships (ON CONFLICT DO NOTHING).
 // Returns ErrInvalidInput if no user IDs are provided.
-func AddGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, userIDs []string) error {
+func AddGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID uuid.UUID, userIDs []uuid.UUID) error {
 	if len(userIDs) == 0 {
 		return ErrInvalidInput.Msg("no user IDs provided")
 	}
@@ -180,7 +181,7 @@ func AddGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, us
 // AddGroupMember adds a single user to a group.
 // This is a convenience function for adding one member at a time.
 // Ignores duplicate memberships (ON CONFLICT DO NOTHING).
-func AddGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID string) error {
+func AddGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID uuid.UUID) error {
 	query := `INSERT INTO group_members (user_id, group_id, joined_at)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (user_id, group_id) DO NOTHING`
@@ -195,7 +196,7 @@ func AddGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID str
 
 // RemoveGroupMember removes a single user from a group.
 // Note: The database will handle cascading deletes for related expenses if configured.
-func RemoveGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID string) error {
+func RemoveGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID uuid.UUID) error {
 	query := `DELETE FROM group_members
 		WHERE user_id = $1 AND group_id = $2`
 
@@ -216,7 +217,7 @@ func RemoveGroupMember(ctx context.Context, pool *pgxpool.Pool, groupID, userID 
 // Uses a transaction so that either all removals succeed or none do.
 // Returns ErrNotFound if any user is not a member of the group.
 // Returns ErrInvalidInput if no user IDs are provided.
-func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID string, userIDs []string) error {
+func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID uuid.UUID, userIDs []uuid.UUID) error {
 	if len(userIDs) == 0 {
 		return ErrInvalidInput.Msg("no user IDs provided")
 	}
@@ -292,7 +293,7 @@ func UpdateGroup(ctx context.Context, pool *pgxpool.Pool, group *models.Group) e
 // This operation is atomic - the group, members, and expenses are deleted together.
 // Note: The database will handle cascading deletes for group_members and expenses if configured.
 // Returns ErrNotFound if no group with the ID exists.
-func DeleteGroup(ctx context.Context, pool *pgxpool.Pool, groupID string) error {
+func DeleteGroup(ctx context.Context, pool *pgxpool.Pool, groupID uuid.UUID) error {
 	// Use WithTransaction helper for consistent transaction management
 	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
 		// Delete the group (members and expenses will be cascade deleted)
