@@ -1,4 +1,4 @@
-name: Backend PR Check
+name: Container Build Check
 on:
   pull_request:
     paths:

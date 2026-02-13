@@ -1,0 +1,102 @@
+name: Flutter Client CI
+
+on:
+  push:
+    paths:
+      - "client/**"
+      - ".github/workflows/flutter-ci.yml"
+  pull_request:
+    paths:
+      - "client/**"
+      - ".github/workflows/flutter-ci.yml"
+
+jobs:
+  format:
+    name: Format Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Check Dart formatting
+        working-directory: client
+        run: dart format . --set-exit-if-changed
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('client/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Install dependencies
+        working-directory: client
+        run: flutter pub get
+
+      - name: Run tests
+        working-directory: client
+        run: flutter test
+
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('client/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
+      - name: Install dependencies
+        working-directory: client
+        run: flutter pub get
+
+      - name: Build APK
+        working-directory: client
+        run: flutter build apk --debug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: qashare-debug-${{ github.sha }}
+          path: client/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 30
