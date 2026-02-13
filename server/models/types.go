@@ -15,11 +15,11 @@ type User struct {
 
 // Group represents a group
 type Group struct {
-	GroupID     uuid.UUID  `json:"group_id" db:"group_id" immutable:"true"`
-	Name        string     `json:"name" db:"group_name"`
-	Description string     `json:"description,omitempty" db:"description"`
-	CreatedBy   uuid.UUID  `json:"created_by" db:"created_by" immutable:"true"`
-	CreatedAt   int64      `json:"created_at" db:"created_at" immutable:"true"`
+	GroupID     uuid.UUID `json:"group_id" db:"group_id" immutable:"true"`
+	Name        string    `json:"name" db:"group_name"`
+	Description string    `json:"description,omitempty" db:"description"`
+	CreatedBy   uuid.UUID `json:"created_by" db:"created_by" immutable:"true"`
+	CreatedAt   int64     `json:"created_at" db:"created_at" immutable:"true"`
 }
 
 // GroupDetails represents detailed information about a group including its members
@@ -46,18 +46,18 @@ type GroupUser struct {
 
 // Expense represents an expense in a group(ID)
 type Expense struct {
-	ExpenseID          uuid.UUID  `json:"expense_id" db:"expense_id" immutable:"true"`
-	GroupID            uuid.UUID  `json:"group_id" db:"group_id" immutable:"true"`
-	AddedBy            uuid.UUID  `json:"added_by" db:"added_by" immutable:"true"`
-	Title              string     `json:"title" db:"title"`
-	Description        *string    `json:"description,omitempty" db:"description"` // pointer because nullable in db
-	CreatedAt          int64      `json:"created_at" db:"created_at" immutable:"true"`
-	Amount             float64    `json:"amount" db:"amount"`
-	IsIncompleteAmount bool       `json:"is_incomplete_amount" db:"is_incomplete_amount"`
-	IsIncompleteSplit  bool       `json:"is_incomplete_split" db:"is_incomplete_split"`
-	IsSettlement       bool       `json:"is_settlement" db:"is_settlement" immutable:"true"`
-	Latitude           *float64   `json:"latitude,omitempty" db:"latitude"`   // pointer because nullable in db
-	Longitude          *float64   `json:"longitude,omitempty" db:"longitude"` // pointer because nullable in db
+	ExpenseID          uuid.UUID `json:"expense_id" db:"expense_id" immutable:"true"`
+	GroupID            uuid.UUID `json:"group_id" db:"group_id" immutable:"true"`
+	AddedBy            uuid.UUID `json:"added_by" db:"added_by" immutable:"true"`
+	Title              string    `json:"title" db:"title"`
+	Description        *string   `json:"description,omitempty" db:"description"` // pointer because nullable in db
+	CreatedAt          int64     `json:"created_at" db:"created_at" immutable:"true"`
+	Amount             float64   `json:"amount" db:"amount"`
+	IsIncompleteAmount bool      `json:"is_incomplete_amount" db:"is_incomplete_amount"`
+	IsIncompleteSplit  bool      `json:"is_incomplete_split" db:"is_incomplete_split"`
+	IsSettlement       bool      `json:"is_settlement" db:"is_settlement" immutable:"true"`
+	Latitude           *float64  `json:"latitude,omitempty" db:"latitude"`   // pointer because nullable in db
+	Longitude          *float64  `json:"longitude,omitempty" db:"longitude"` // pointer because nullable in db
 }
 
 // ExpenseDetails represents detailed information about an expense including its splits
