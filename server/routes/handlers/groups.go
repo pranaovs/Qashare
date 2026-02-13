@@ -323,14 +323,9 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 	// Admin permission is already verified by RequireGroupAdmin middleware
 
 	// Parse string UUIDs to uuid.UUID
-	userIDs := make([]uuid.UUID, len(req.UserIDs))
-	for i, idStr := range req.UserIDs {
-		id, err := uuid.Parse(idStr)
-		if err != nil {
-			utils.SendError(c, apierrors.ErrBadRequest.Msgf("invalid UUID format: %s", idStr))
-			return
-		}
-		userIDs[i] = id
+	userIDs := parseUserIDs(c, req.UserIDs)
+	if userIDs == nil {
+		return
 	}
 
 	if err := db.UsersExist(c.Request.Context(), h.pool, userIDs); err != nil {
@@ -385,14 +380,9 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 	groupID := middleware.MustGetGroupID(c)
 
 	// Parse string UUIDs to uuid.UUID
-	userIDs := make([]uuid.UUID, len(req.UserIDs))
-	for i, idStr := range req.UserIDs {
-		id, err := uuid.Parse(idStr)
-		if err != nil {
-			utils.SendError(c, apierrors.ErrBadRequest.Msgf("invalid UUID format: %s", idStr))
-			return
-		}
-		userIDs[i] = id
+	userIDs := parseUserIDs(c, req.UserIDs)
+	if userIDs == nil {
+		return
 	}
 
 	if slices.Contains(userIDs, userID) {
@@ -487,4 +477,19 @@ func (h *GroupsHandler) Delete(c *gin.Context) {
 	}
 
 	utils.SendOK(c, "group deleted")
+}
+
+// parseUserIDs is a helper function to parse a slice of string UUIDs into uuid.UUID.
+// Returns the parsed UUIDs or sends an error response and returns nil if parsing fails.
+func parseUserIDs(c *gin.Context, userIDStrs []string) []uuid.UUID {
+	userIDs := make([]uuid.UUID, len(userIDStrs))
+	for i, idStr := range userIDStrs {
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			utils.SendError(c, apierrors.ErrBadRequest.Msgf("invalid UUID format: %s", idStr))
+			return nil
+		}
+		userIDs[i] = id
+	}
+	return userIDs
 }
