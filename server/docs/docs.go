@@ -958,7 +958,66 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/groups/{id}/expense": {
+        "/v1/groups/{id}/expenses": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all expenses of a group",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "expenses"
+                ],
+                "summary": "List group expenses",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns list of all expenses in the group",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Expense"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the group",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "GROUP_NOT_FOUND: The specified group does not exist",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error - unexpected database error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -1015,67 +1074,6 @@ const docTemplate = `{
                     },
                     "403": {
                         "description": "USERS_NOT_RELATED: The authenticated user is not a member of the specified group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    },
-                    "404": {
-                        "description": "GROUP_NOT_FOUND: The specified group does not exist",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error - unexpected database error",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/groups/{id}/expenses": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get all expenses of a group",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "expenses"
-                ],
-                "summary": "List group expenses",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Group ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Returns list of all expenses in the group",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Expense"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    },
-                    "403": {
-                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }

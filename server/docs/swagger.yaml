@@ -828,7 +828,47 @@ paths:
       summary: Update a group (full replacement)
       tags:
       - groups
-  /v1/groups/{id}/expense:
+  /v1/groups/{id}/expenses:
+    get:
+      description: Get all expenses of a group
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns list of all expenses in the group
+          schema:
+            items:
+              $ref: '#/definitions/models.Expense'
+            type: array
+        "401":
+          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
+            expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'USERS_NOT_RELATED: The authenticated user is not a member
+            of the group'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'GROUP_NOT_FOUND: The specified group does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: List group expenses
+      tags:
+      - expenses
     post:
       consumes:
       - application/json
@@ -881,47 +921,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Create a new expense
-      tags:
-      - expenses
-  /v1/groups/{id}/expenses:
-    get:
-      description: Get all expenses of a group
-      parameters:
-      - description: Group ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Returns list of all expenses in the group
-          schema:
-            items:
-              $ref: '#/definitions/models.Expense'
-            type: array
-        "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
-          schema:
-            $ref: '#/definitions/apierrors.AppError'
-        "403":
-          description: 'USERS_NOT_RELATED: The authenticated user is not a member
-            of the group'
-          schema:
-            $ref: '#/definitions/apierrors.AppError'
-        "404":
-          description: 'GROUP_NOT_FOUND: The specified group does not exist'
-          schema:
-            $ref: '#/definitions/apierrors.AppError'
-        "500":
-          description: Internal server error - unexpected database error
-          schema:
-            $ref: '#/definitions/apierrors.AppError'
-      security:
-      - BearerAuth: []
-      summary: List group expenses
       tags:
       - expenses
   /v1/groups/{id}/members:
