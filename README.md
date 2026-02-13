@@ -10,8 +10,10 @@
 [![Forks][forks-badge]][forks-url]
 [![Discussions][discussions-badge]][discussions-url]
 [![Issues][issues-badge]][issues-url]
+[![Container Build][container-build-badge]][container-build-url]
 ![Last Commit Badge][last-commit-badge]
 [![AGPL-3.0 License][license-badge]][license-url]
+
 
   </p>
     <p align="center">
@@ -61,14 +63,14 @@ To set up the project locally, follow these instructions for both the client and
 
 #### Server (Backend)
 
-[![Container Build](https://github.com/pranaovs/Qashare/actions/workflows/container-release.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/container-release.yml)
+[![Go CI](https://github.com/pranaovs/Qashare/actions/workflows/go-ci.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/go-ci.yml)
 
 - Go >= 1.25.3 (test for lower)
 - PostgreSQL database
 
 #### Client (Flutter App)
 
-[![Flutter Build](https://github.com/pranaovs/Qashare/actions/workflows/flutter-build.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/flutter-build.yml)
+[![Flutter CI](https://github.com/pranaovs/Qashare/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/flutter-ci.yml)
 
 - Flutter SDK >= 3.9.2 (test for lower)
 - Dart SDK (included with Flutter)
@@ -109,6 +111,8 @@ To set up the project locally, follow these instructions for both the client and
 
 #### Running the Server with Docker
 
+[![Container CI](https://github.com/pranaovs/Qashare/actions/workflows/container-ci.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/container-ci.yml)
+
 1. Download and edit the [`docker-compose.yml`](https://github.com/pranaovs/Qashare/blob/main/server/docker-compose.yml) file to set your environment variables.
 
 2. Run Docker Compose
@@ -139,7 +143,7 @@ To set up the project locally, follow these instructions for both the client and
 
 ## API Documentation
 
-[![Swagger Check](https://github.com/pranaovs/Qashare/actions/workflows/swagger-check.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/swagger-check.yml)
+[![Swagger Synced](https://github.com/pranaovs/Qashare/actions/workflows/swagger-check.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/swagger-check.yml)
 
 The Qashare API is documented using Swagger/OpenAPI. You can access the Swagger UI by navigating to:
 <https://qashare.pranaovs.me/swagger/index.html>
@@ -226,3 +230,5 @@ Repo Link: [https://github.com/pranaovs/qashare](https://github.com/pranaovs/qas
 [go-url]: https://go.dev/
 [postgresql-badge]: https://img.shields.io/badge/PostgreSQL-316192?logo=postgresql&logoColor=white
 [postgresql-url]: https://www.postgresql.org/
+[container-build-badge]: https://github.com/pranaovs/Qashare/actions/workflows/container-release.yml/badge.svg
+[container-build-url]:https://github.com/pranaovs/Qashare/pkgs/container/qashare
