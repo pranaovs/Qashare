@@ -1,4 +1,4 @@
-name: Swagger Docs Check
+name: Swagger CI
 
 on:
   push:
@@ -11,6 +11,7 @@ on:
 
 jobs:
   check-swagger:
+    name: Check docs sync
     runs-on: ubuntu-latest
     permissions:
       contents: read
