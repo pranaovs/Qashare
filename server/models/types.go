@@ -85,11 +85,12 @@ type ExpenseSplit struct {
 // In the GetSettle endpoint (balance computation), this is the net amount.
 // In settlement history and CRUD, this reflects the payment direction.
 type Settlement struct {
-	Title     string    `json:"title"`
-	CreatedAt int64     `json:"created_at"`
-	GroupID   uuid.UUID `json:"group_id"`
-	UserID    uuid.UUID `json:"user_id"`
-	Amount    float64   `json:"amount"`
+	Title        string    `json:"title"`
+	CreatedAt    int64     `json:"created_at"`
+	TransactedAt int64     `json:"transacted_at"`
+	GroupID      uuid.UUID `json:"group_id"`
+	UserID       uuid.UUID `json:"user_id"`
+	Amount       float64   `json:"amount"`
 }
 
 // UserExpense extends Expense with user-specific amount
