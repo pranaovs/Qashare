@@ -355,6 +355,7 @@ func sortExpenseSplits(splits []models.ExpenseSplit) {
 		if splits[i].IsPaid != splits[j].IsPaid {
 			return splits[i].IsPaid // true (paid) before false (owed)
 		}
+		// Compare UUIDs directly using byte comparison for better performance than String()
 		return bytes.Compare(splits[i].UserID[:], splits[j].UserID[:]) < 0
 	})
 }
