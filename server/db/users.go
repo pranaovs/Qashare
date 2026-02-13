@@ -25,7 +25,7 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 
 	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
 		// Check for existing user inside the transaction with FOR UPDATE to prevent races
-		var existingUserID string
+		var existingUserID uuid.UUID
 		var isGuest bool
 		err := tx.QueryRow(ctx,
 			`SELECT user_id, COALESCE(is_guest, false) FROM users WHERE email = $1 FOR UPDATE`,
