@@ -5,6 +5,8 @@
 // Use utils.Patch(target, patch) to apply these patches.
 package models
 
+import "github.com/google/uuid"
+
 // UserPatch represents a partial update to a User.
 // Only non-nil fields will be applied to the target.
 type UserPatch struct {
@@ -41,7 +43,7 @@ type ExpenseDetailsPatch struct {
 // SettlementPatch represents a partial update to a Settlement.
 // Only non-nil fields will be applied to the target.
 type SettlementPatch struct {
-	Title  *string  `json:"title,omitempty"`
-	UserID *string  `json:"user_id,omitempty"`
-	Amount *float64 `json:"amount,omitempty"`
+	Title  *string    `json:"title,omitempty"`
+	UserID *uuid.UUID `json:"user_id,omitempty"`
+	Amount *float64   `json:"amount,omitempty"`
 }

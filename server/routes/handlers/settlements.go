@@ -4,6 +4,7 @@ import (
 	"math"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/apperrors"
 	"github.com/pranaovs/qashare/config"
 	"github.com/pranaovs/qashare/db"
@@ -175,7 +176,7 @@ func (h *SettlementsHandler) Create(c *gin.Context) {
 // Amount sign is relative to the given userID:
 //   - Positive: userID was the payer (is_paid=true) — userID paid/is owed by the other user
 //   - Negative: userID was the receiver (is_paid=false) — the other user paid/is owed by userID
-func expenseToSettlement(expense models.ExpenseDetails, userID string) models.Settlement {
+func expenseToSettlement(expense models.ExpenseDetails, userID uuid.UUID) models.Settlement {
 	if len(expense.Splits) < 2 {
 		return models.Settlement{
 			Title:     expense.Title,
@@ -184,7 +185,7 @@ func expenseToSettlement(expense models.ExpenseDetails, userID string) models.Se
 		}
 	}
 
-	var otherUserID string
+	var otherUserID uuid.UUID
 	var absAmount float64
 	var userIsPayer bool
 
@@ -350,7 +351,7 @@ func (h *SettlementsHandler) Patch(c *gin.Context) {
 	}
 
 	// Read current payer/receiver from existing splits
-	var currentPayerID, currentReceiverID string
+	var currentPayerID, currentReceiverID uuid.UUID
 	var currentAmount float64
 	for _, split := range expense.Splits {
 		if split.IsPaid {

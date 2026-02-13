@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/apperrors"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/routes/apierrors"
@@ -36,7 +37,13 @@ func NewUsersHandler(pool *pgxpool.Pool) *UsersHandler {
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/users/{id} [get]
 func (h *UsersHandler) Get(c *gin.Context) {
-	qUserID := c.Param("id")
+	qUserIDStr := c.Param("id")
+
+	qUserID, err := uuid.Parse(qUserIDStr)
+	if err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest.Msgf("invalid UUID format: %s", qUserIDStr))
+		return
+	}
 
 	userID := middleware.MustGetUserID(c)
 

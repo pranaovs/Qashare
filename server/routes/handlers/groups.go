@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"slices"
 
+	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/apperrors"
 	"github.com/pranaovs/qashare/config"
 	"github.com/pranaovs/qashare/db"
@@ -42,7 +43,8 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 	group := models.Group{}
 	var err error
 
-	group.CreatedBy = middleware.MustGetUserID(c)
+	userID := middleware.MustGetUserID(c)
+	group.CreatedBy = &userID
 
 	var request struct {
 		Name        string `json:"name" binding:"required"`
@@ -320,14 +322,20 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 
 	// Admin permission is already verified by RequireGroupAdmin middleware
 
-	if err := db.UsersExist(c.Request.Context(), h.pool, req.UserIDs); err != nil {
+	// Parse string UUIDs to uuid.UUID
+	userIDs := parseUserIDs(c, req.UserIDs)
+	if userIDs == nil {
+		return
+	}
+
+	if err := db.UsersExist(c.Request.Context(), h.pool, userIDs); err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrUserNotFound,
 		}))
 		return
 	}
 
-	err := db.AddGroupMembers(c.Request.Context(), h.pool, groupID, req.UserIDs)
+	err := db.AddGroupMembers(c.Request.Context(), h.pool, groupID, userIDs)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound:            apierrors.ErrGroupNotFound,
@@ -371,12 +379,18 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	groupID := middleware.MustGetGroupID(c)
 
-	if slices.Contains(req.UserIDs, userID) {
+	// Parse string UUIDs to uuid.UUID
+	userIDs := parseUserIDs(c, req.UserIDs)
+	if userIDs == nil {
+		return
+	}
+
+	if slices.Contains(userIDs, userID) {
 		utils.SendError(c, apierrors.ErrBadRequest.Msg("cannot remove self from group"))
 		return
 	}
 
-	err := db.RemoveGroupMembers(c.Request.Context(), h.pool, groupID, req.UserIDs)
+	err := db.RemoveGroupMembers(c.Request.Context(), h.pool, groupID, userIDs)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrUserNotInGroup,
@@ -440,4 +454,19 @@ func (h *GroupsHandler) Delete(c *gin.Context) {
 	}
 
 	utils.SendOK(c, "group deleted")
+}
+
+// parseUserIDs is a helper function to parse a slice of string UUIDs into uuid.UUID.
+// Returns the parsed UUIDs or sends an error response and returns nil if parsing fails.
+func parseUserIDs(c *gin.Context, userIDStrs []string) []uuid.UUID {
+	userIDs := make([]uuid.UUID, len(userIDStrs))
+	for i, idStr := range userIDStrs {
+		id, err := uuid.Parse(idStr)
+		if err != nil {
+			utils.SendError(c, apierrors.ErrBadRequest.Msgf("invalid UUID format: %s", idStr))
+			return nil
+		}
+		userIDs[i] = id
+	}
+	return userIDs
 }

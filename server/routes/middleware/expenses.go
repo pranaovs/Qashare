@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/models"
@@ -21,9 +22,15 @@ func VerifyExpenseAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := MustGetUserID(c)
 
-		expenseID := c.Param("id")
-		if expenseID == "" {
+		expenseIDStr := c.Param("id")
+		if expenseIDStr == "" {
 			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("expense ID not provided"))
+			return
+		}
+
+		expenseID, err := db.ParseUUID(expenseIDStr)
+		if err != nil {
+			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("invalid expense ID format"))
 			return
 		}
 
@@ -71,9 +78,15 @@ func VerifyExpenseAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := MustGetUserID(c)
 
-		expenseID := c.Param("id")
-		if expenseID == "" {
+		expenseIDStr := c.Param("id")
+		if expenseIDStr == "" {
 			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("expense ID not provided"))
+			return
+		}
+
+		expenseID, err := db.ParseUUID(expenseIDStr)
+		if err != nil {
+			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("invalid expense ID format"))
 			return
 		}
 
@@ -114,9 +127,15 @@ func VerifyExpenseDeleteAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := MustGetUserID(c)
 
-		expenseID := c.Param("id")
-		if expenseID == "" {
+		expenseIDStr := c.Param("id")
+		if expenseIDStr == "" {
 			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("expense ID not provided"))
+			return
+		}
+
+		expenseID, err := db.ParseUUID(expenseIDStr)
+		if err != nil {
+			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("invalid expense ID format"))
 			return
 		}
 
@@ -173,9 +192,15 @@ func VerifySettlementAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := MustGetUserID(c)
 
-		settlementID := c.Param("id")
-		if settlementID == "" {
+		settlementIDStr := c.Param("id")
+		if settlementIDStr == "" {
 			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("settlement ID not provided"))
+			return
+		}
+
+		settlementID, err := db.ParseUUID(settlementIDStr)
+		if err != nil {
+			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("invalid settlement ID format"))
 			return
 		}
 
@@ -222,9 +247,15 @@ func VerifySettlementAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID := MustGetUserID(c)
 
-		settlementID := c.Param("id")
-		if settlementID == "" {
+		settlementIDStr := c.Param("id")
+		if settlementIDStr == "" {
 			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("settlement ID not provided"))
+			return
+		}
+
+		settlementID, err := db.ParseUUID(settlementIDStr)
+		if err != nil {
+			utils.SendAbort(c, apierrors.ErrBadRequest.Msg("invalid settlement ID format"))
 			return
 		}
 
@@ -267,21 +298,21 @@ func VerifySettlementAdmin(pool *pgxpool.Pool) gin.HandlerFunc {
 	}
 }
 
-func GetExpenseID(c *gin.Context) (string, bool) {
+func GetExpenseID(c *gin.Context) (uuid.UUID, bool) {
 	expenseIDInterface, exists := c.Get(ExpenseIDKey)
 	if exists {
-		id, ok := expenseIDInterface.(string)
+		id, ok := expenseIDInterface.(uuid.UUID)
 		if ok {
 			return id, true
 		}
 	}
 
-	return "", false
+	return uuid.UUID{}, false
 }
 
 // MustGetExpenseID retrieves the expense ID from the context (set by VerifyExpenseAccess). Intended for use in handlers.
 // Panics if not found, indicating a server-side misconfiguration.
-func MustGetExpenseID(c *gin.Context) string {
+func MustGetExpenseID(c *gin.Context) uuid.UUID {
 	expenseID, ok := GetExpenseID(c)
 	if !ok {
 		panic("MustGetExpenseID: expense ID not found in context. Did you forget to add the VerifyExpenseAccess middleware?")
