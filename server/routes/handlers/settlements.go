@@ -236,7 +236,7 @@ func (h *SettlementsHandler) Get(c *gin.Context) {
 
 // Update godoc
 // @Summary Update a settlement
-// @Description Replace a settlement with new values (requires being the payer). The user_id specifies the other party and amount specifies the settlement amount. Positive amount means you are paying them, negative means they are paying you.
+// @Description Replace a settlement with new values (requires being the payer). The user_id and settlement direction (payer/receiver) are immutable and cannot be changed. Amount must preserve the original sign convention.
 // @Tags settlements
 // @Accept json
 // @Produce json
@@ -266,34 +266,40 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 		return
 	}
 
-	if req.UserID == userID {
-		utils.SendError(c, apierrors.ErrBadRequest.Msg("cannot settle with yourself"))
+	// Extract current participants from existing splits
+	var currentPayerID, currentReceiverID uuid.UUID
+	for _, split := range expense.Splits {
+		if split.IsPaid {
+			currentPayerID = split.UserID
+		} else {
+			currentReceiverID = split.UserID
+		}
+	}
+
+	// Determine the existing other user (non-authenticated participant)
+	existingOtherUserID := currentReceiverID
+	if currentReceiverID == userID {
+		existingOtherUserID = currentPayerID
+	}
+
+	// UserID is immutable: reject if client tries to change the other party
+	if req.UserID != existingOtherUserID {
+		utils.SendError(c, apierrors.ErrBadRequest.Msg("settlement user_id cannot be changed"))
 		return
 	}
 
-	isMember, err := db.MemberOfGroup(c.Request.Context(), h.pool, req.UserID, groupID)
-	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrInvalidInput: apierrors.ErrBadRequest,
-		}))
-		return
-	}
-	if !isMember {
-		utils.SendError(c, apierrors.ErrUsersNotRelated.Msg("the other user is not a member of the group"))
+	// Direction is immutable: reject if amount sign would flip payer/receiver
+	currentDirectionPositive := currentPayerID == userID
+	if (req.Amount > 0) != currentDirectionPositive {
+		utils.SendError(c, apierrors.ErrBadRequest.Msg("settlement direction cannot be changed"))
 		return
 	}
 
 	absAmount := math.Abs(req.Amount)
 
-	// Sign is relative to the authenticated user (matching Create):
-	//   Positive: authenticated user pays req.UserID
-	//   Negative: req.UserID pays authenticated user
-	payerID := userID
-	receiverID := req.UserID
-	if req.Amount < 0 {
-		payerID = req.UserID
-		receiverID = userID
-	}
+	// Preserve existing direction (payer/receiver are immutable)
+	payerID := currentPayerID
+	receiverID := currentReceiverID
 
 	// Preserve existing transacted_at when client omits it (nil = not provided)
 	transactedAt := req.TransactedAt
@@ -330,7 +336,7 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 
 // Patch godoc
 // @Summary Partially update a settlement
-// @Description Update specific fields of a settlement (requires being the payer). Only provided fields are updated.
+// @Description Update specific fields of a settlement (requires being the payer). Only provided fields are updated. The user_id and settlement direction (payer/receiver) are immutable and cannot be changed. If amount is provided, its sign must preserve the original direction.
 // @Tags settlements
 // @Accept json
 // @Produce json
@@ -346,7 +352,6 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 // @Router /v1/settlements/{id} [patch]
 func (h *SettlementsHandler) Patch(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
-	groupID := middleware.MustGetGroupID(c)
 	expense := middleware.MustGetExpense(c)
 
 	var patch models.SettlementPatch
@@ -377,75 +382,27 @@ func (h *SettlementsHandler) Patch(c *gin.Context) {
 		}
 	}
 
-	// Apply patch
+	// Apply amount patch (direction is preserved, only absolute value changes)
 	newAmount := currentAmount
 	if patch.Amount != nil {
+		if *patch.Amount == 0 {
+			utils.SendError(c, apierrors.ErrInvalidAmount.Msg("settlement amount cannot be zero"))
+			return
+		}
+
+		// Direction is immutable: reject if amount sign would flip payer/receiver
+		currentDirectionPositive := currentPayerID == userID
+		if (*patch.Amount > 0) != currentDirectionPositive {
+			utils.SendError(c, apierrors.ErrBadRequest.Msg("settlement direction cannot be changed"))
+			return
+		}
+
 		newAmount = math.Abs(*patch.Amount)
 	}
 
+	// Preserve existing direction (payer/receiver and user_id are immutable)
 	newPayerID := currentPayerID
 	newReceiverID := currentReceiverID
-	if patch.UserID != nil {
-		// Replace the non-authenticated-user participant
-		if currentPayerID == userID {
-			newReceiverID = *patch.UserID
-		} else {
-			newPayerID = *patch.UserID
-		}
-
-		// If amount also provided, sign determines direction relative to authenticated user
-		if patch.Amount != nil && *patch.Amount < 0 {
-			newPayerID = *patch.UserID
-			newReceiverID = userID
-		} else if patch.Amount != nil && *patch.Amount > 0 {
-			newPayerID = userID
-			newReceiverID = *patch.UserID
-		}
-	} else if patch.Amount != nil && *patch.Amount < 0 {
-		// Amount-only with negative sign: set direction to "other pays authenticated user"
-		otherUserID := currentReceiverID
-		if currentReceiverID == userID {
-			otherUserID = currentPayerID
-		}
-		newPayerID = otherUserID
-		newReceiverID = userID
-	} else if patch.Amount != nil && *patch.Amount > 0 {
-		// Amount-only with positive sign: set direction to "authenticated user pays other"
-		otherUserID := currentReceiverID
-		if currentReceiverID == userID {
-			otherUserID = currentPayerID
-		}
-		newPayerID = userID
-		newReceiverID = otherUserID
-	}
-
-	// Validate
-	if newAmount == 0 {
-		utils.SendError(c, apierrors.ErrInvalidAmount.Msg("settlement amount cannot be zero"))
-		return
-	}
-
-	if newPayerID == newReceiverID {
-		utils.SendError(c, apierrors.ErrBadRequest.Msg("cannot settle with yourself"))
-		return
-	}
-
-	// Verify the other user (non-authenticated-user participant) is a group member
-	otherUserID := newReceiverID
-	if newReceiverID == userID {
-		otherUserID = newPayerID
-	}
-	isMember, err := db.MemberOfGroup(c.Request.Context(), h.pool, otherUserID, groupID)
-	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrInvalidInput: apierrors.ErrBadRequest,
-		}))
-		return
-	}
-	if !isMember {
-		utils.SendError(c, apierrors.ErrUsersNotRelated.Msg("the other user is not a member of the group"))
-		return
-	}
 
 	expense.Amount = newAmount
 	expense.Splits = []models.ExpenseSplit{

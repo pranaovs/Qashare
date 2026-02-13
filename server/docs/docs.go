@@ -1882,7 +1882,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Replace a settlement with new values (requires being the payer). The user_id specifies the other party and amount specifies the settlement amount. Positive amount means you are paying them, negative means they are paying you.",
+                "description": "Replace a settlement with new values (requires being the payer). The user_id and settlement direction (payer/receiver) are immutable and cannot be changed. Amount must preserve the original sign convention.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2015,7 +2015,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Update specific fields of a settlement (requires being the payer). Only provided fields are updated.",
+                "description": "Update specific fields of a settlement (requires being the payer). Only provided fields are updated. The user_id and settlement direction (payer/receiver) are immutable and cannot be changed. If amount is provided, its sign must preserve the original direction.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2535,6 +2535,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "user_id": {
+                    "description": "The other user involved in the settlement",
                     "type": "string"
                 }
             }
@@ -2550,9 +2551,6 @@ const docTemplate = `{
                 },
                 "transacted_at": {
                     "type": "integer"
-                },
-                "user_id": {
-                    "type": "string"
                 }
             }
         },

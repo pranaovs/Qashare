@@ -86,10 +86,10 @@ type ExpenseSplit struct {
 // In settlement history and CRUD, this reflects the payment direction.
 type Settlement struct {
 	Title        string    `json:"title"`
-	CreatedAt    int64     `json:"created_at"`
-	GroupID      uuid.UUID `json:"group_id"`
+	CreatedAt    int64     `json:"created_at" immutable:"true"`
+	GroupID      uuid.UUID `json:"group_id" immutable:"true"`
 	TransactedAt *int64    `json:"transacted_at"`
-	UserID       uuid.UUID `json:"user_id"`
+	UserID       uuid.UUID `json:"user_id" immutable:"true"` // The other user involved in the settlement
 	Amount       float64   `json:"amount"`
 }
 
