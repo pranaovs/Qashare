@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"math"
 	"net/http"
 	"sort"
@@ -354,6 +355,6 @@ func sortExpenseSplits(splits []models.ExpenseSplit) {
 		if splits[i].IsPaid != splits[j].IsPaid {
 			return splits[i].IsPaid // true (paid) before false (owed)
 		}
-		return splits[i].UserID.String() < splits[j].UserID.String()
+		return bytes.Compare(splits[i].UserID[:], splits[j].UserID[:]) < 0
 	})
 }
