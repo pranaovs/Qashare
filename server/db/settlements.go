@@ -22,10 +22,10 @@ import (
 // Uses greedy algorithm to minimize number of transactions while settling all debts.
 func GetSettlement(ctx context.Context, pool *pgxpool.Pool, userID, groupID uuid.UUID, splitTolerance float64) ([]models.Settlement, error) {
 	// Validate input
-	if groupID == "" {
+	if groupID == uuid.Nil {
 		return nil, ErrInvalidInput.Msg("group id missing")
 	}
-	if userID == "" {
+	if userID == uuid.Nil {
 		return nil, ErrInvalidInput.Msg("user id missing")
 	}
 
@@ -185,10 +185,10 @@ func optimizeSettlements(balances map[uuid.UUID]float64, userID uuid.UUID, toler
 // specified user is a participant (either payer or receiver).
 // Returns a slice of ExpenseDetails ordered by creation time descending.
 func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID uuid.UUID) ([]models.ExpenseDetails, error) {
-	if groupID == "" {
+	if groupID == uuid.Nil {
 		return nil, ErrInvalidInput.Msg("group id missing")
 	}
-	if userID == "" {
+	if userID == uuid.Nil {
 		return nil, ErrInvalidInput.Msg("user id missing")
 	}
 

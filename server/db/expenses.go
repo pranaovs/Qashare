@@ -110,7 +110,7 @@ func CreateExpense(
 // Returns an error if validation fails or the operation fails.
 func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.ExpenseDetails) error {
 	// Validate input
-	if expense.ExpenseID == "" {
+	if expense.ExpenseID == uuid.Nil {
 		return ErrNotFound.Msg("expense not found")
 	}
 	if expense.Title == "" {
@@ -309,7 +309,7 @@ func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID uuid.UUID) ([]
 	// TODO: Add pagination support for large datasets
 
 	// Validate input
-	if groupID == "" {
+	if groupID == uuid.Nil {
 		return nil, ErrInvalidInput.Msg("group id missing")
 	}
 
@@ -371,10 +371,10 @@ func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID uuid.UUID) ([]
 // Each returned UserExpense includes the expense details and the user's owed amount.
 func GetUserSpending(ctx context.Context, pool *pgxpool.Pool, userID, groupID uuid.UUID) ([]models.UserExpense, error) {
 	// Validate input
-	if userID == "" {
+	if userID == uuid.Nil {
 		return nil, ErrInvalidInput.Msg("user id missing")
 	}
-	if groupID == "" {
+	if groupID == uuid.Nil {
 		return nil, ErrInvalidInput.Msg("group id missing")
 	}
 

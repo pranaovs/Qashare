@@ -257,7 +257,7 @@ func RemoveGroupMembers(ctx context.Context, pool *pgxpool.Pool, groupID uuid.UU
 // Returns an error if validation fails or the operation fails.
 func UpdateGroup(ctx context.Context, pool *pgxpool.Pool, group *models.Group) error {
 	// Validate input
-	if group.GroupID == "" {
+	if group.GroupID == uuid.Nil {
 		return ErrInvalidInput.Msg("group ID is required")
 	}
 	if group.Name == "" {

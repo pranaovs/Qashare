@@ -5,6 +5,8 @@
 // Use utils.Patch(target, patch) to apply these patches.
 package models
 
+import "github.com/google/uuid"
+
 // UserPatch represents a partial update to a User.
 // Only non-nil fields will be applied to the target.
 type UserPatch struct {

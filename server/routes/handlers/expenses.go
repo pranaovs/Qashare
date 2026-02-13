@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sort"
 
+	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/apperrors"
 	"github.com/pranaovs/qashare/config"
 	"github.com/pranaovs/qashare/db"
@@ -74,7 +75,7 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 		return
 	}
 
-	splitUserIDs := make([]string, 0, len(expense.Splits))
+	splitUserIDs := make([]uuid.UUID, 0, len(expense.Splits))
 	var paidTotal, owedTotal float64
 	for _, s := range expense.Splits {
 		if s.Amount <= 0 {
@@ -179,7 +180,7 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 		return
 	}
 
-	splitUserIDs := make([]string, 0, len(payload.Splits))
+	splitUserIDs := make([]uuid.UUID, 0, len(payload.Splits))
 	var paidTotal, owedTotal float64
 	for _, s := range payload.Splits {
 		if s.Amount <= 0 {
@@ -286,7 +287,7 @@ func (h *ExpensesHandler) Patch(c *gin.Context) {
 			utils.SendError(c, apierrors.ErrInvalidSplit.Msg("no splits provided"))
 			return
 		}
-		splitUserIDs := make([]string, 0, len(*patch.Splits))
+		splitUserIDs := make([]uuid.UUID, 0, len(*patch.Splits))
 		for _, s := range *patch.Splits {
 			splitUserIDs = append(splitUserIDs, s.UserID)
 		}
@@ -353,6 +354,6 @@ func sortExpenseSplits(splits []models.ExpenseSplit) {
 		if splits[i].IsPaid != splits[j].IsPaid {
 			return splits[i].IsPaid // true (paid) before false (owed)
 		}
-		return splits[i].UserID < splits[j].UserID
+		return splits[i].UserID.String() < splits[j].UserID.String()
 	})
 }
