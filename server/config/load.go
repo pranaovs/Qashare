@@ -75,11 +75,12 @@ func loadJWTConfig() JWTConfig {
 	}
 
 	return JWTConfig{
-		Secret:        secret,
-		Issuer:        getEnv("JWT_ISSUER", "qashare"),
-		Audience:      getEnv("JWT_AUDIENCE", "qashare"),
-		AccessExpiry:  getEnvDuration("JWT_ACCESS_EXPIRY", "15m"),
-		RefreshExpiry: getEnvDuration("JWT_REFRESH_EXPIRY", "30d"),
+		Secret:           secret,
+		Issuer:           getEnv("JWT_ISSUER", "qashare"),
+		Audience:         getEnv("JWT_AUDIENCE", "qashare"),
+		AccessExpiry:     getEnvDuration("JWT_ACCESS_EXPIRY", "15m"),
+		RefreshExpiry:    getEnvDuration("JWT_REFRESH_EXPIRY", "30d"),
+		TokenCleanupFreq: getEnvDuration("JWT_TOKEN_CLEANUP_FREQ", "24h"),
 	}
 }
 

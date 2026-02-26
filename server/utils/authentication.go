@@ -144,16 +144,3 @@ func ExtractRefreshClaims(refreshToken string, jwtConfig config.JWTConfig) (*mod
 	return claims, nil
 }
 
-func ExtractUserID(authHeader string, jwtConfig config.JWTConfig) (uuid.UUID, error) {
-	claims, err := ExtractAccessClaims(authHeader, jwtConfig)
-	if err != nil {
-		return uuid.UUID{}, err
-	}
-
-	userID, err := uuid.Parse(claims.Subject)
-	if err != nil {
-		return uuid.UUID{}, ErrInvalidToken.Msg("invalid subject in token")
-	}
-
-	return userID, nil
-}
