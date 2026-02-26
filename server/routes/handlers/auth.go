@@ -134,13 +134,19 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	accessToken, err := utils.GenerateAccessToken(userID, h.jwtConfig)
+	refreshToken, tokenID, expiresAt, err := utils.GenerateRefreshToken(userID, h.jwtConfig)
 	if err != nil {
 		utils.SendError(c, err)
 		return
 	}
 
-	refreshToken, err := utils.GenerateRefreshToken(userID, h.jwtConfig)
+	err = db.StoreToken(c.Request.Context(), h.pool, tokenID, userID, expiresAt)
+	if err != nil {
+		utils.SendError(c, err)
+		return
+	}
+
+	accessToken, err := utils.GenerateAccessToken(userID, h.jwtConfig)
 	if err != nil {
 		utils.SendError(c, err)
 		return
