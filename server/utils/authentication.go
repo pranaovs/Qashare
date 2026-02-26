@@ -3,6 +3,7 @@ package utils
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -84,7 +85,7 @@ func GenerateAccessToken(userID uuid.UUID, jwtConfig config.JWTConfig) (string, 
 
 func extractClaims(tokenString string, jwtConfig config.JWTConfig) (*models.TokenClaims, error) {
 	claims := &models.TokenClaims{}
-	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
+	_, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method")
 		}
@@ -92,15 +93,16 @@ func extractClaims(tokenString string, jwtConfig config.JWTConfig) (*models.Toke
 	},
 		jwt.WithIssuer(jwtConfig.Issuer),
 		jwt.WithAudience(jwtConfig.Audience),
+		jwt.WithExpirationRequired(),
 	)
-	if err != nil {
-		return nil, ErrInvalidToken.Msg("failed to parse token")
-	}
-	if !token.Valid {
-		return nil, ErrInvalidToken.Msg("expired token")
+	if err == nil {
+		return claims, nil
 	}
 
-	return claims, nil
+	if errors.Is(err, jwt.ErrTokenExpired) {
+		return nil, ErrExpiredToken
+	}
+	return nil, ErrInvalidToken
 }
 
 func extractBearerToken(authHeader string) (string, error) {
