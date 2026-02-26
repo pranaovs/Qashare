@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -45,18 +44,3 @@ func RefreshTokenExists(ctx context.Context, pool *pgxpool.Pool, tokenID uuid.UU
 	return exists, nil
 }
 
-// RotateRefreshToken atomically deletes the old refresh token and inserts a new one.
-func RotateRefreshToken(ctx context.Context, pool *pgxpool.Pool, oldTokenID, newTokenID, userID uuid.UUID, expiresAt time.Time) error {
-	return WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
-		result, err := tx.Exec(ctx, `DELETE FROM refresh_tokens WHERE token_id = $1 AND user_id = $2`, oldTokenID, userID)
-		if err != nil {
-			return err
-		}
-		if result.RowsAffected() == 0 {
-			return ErrNotFound.Msg("refresh token not found or already revoked")
-		}
-
-		_, err = tx.Exec(ctx, `INSERT INTO refresh_tokens (token_id, user_id, expires_at) VALUES ($1, $2, $3)`, newTokenID, userID, expiresAt)
-		return err
-	})
-}

@@ -17,6 +17,7 @@ func RequireAuth(jwtConfig config.JWTConfig) gin.HandlerFunc {
 		userID, err := utils.ExtractUserID(c.GetHeader("Authorization"), jwtConfig)
 		if err != nil {
 			utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+				utils.ErrExpiredToken: apierrors.ErrExpiredToken,
 				utils.ErrInvalidToken: apierrors.ErrInvalidToken,
 			}))
 			c.Abort()

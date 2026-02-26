@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/apperrors"
 	"github.com/pranaovs/qashare/config"
 	"github.com/pranaovs/qashare/db"
@@ -156,6 +157,71 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
+	})
+}
+
+// Refresh godoc
+// @Summary Refresh access token
+// @Description Use a valid refresh token to get a access token
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body object{refresh_token=string} true "Refresh token"
+// @Success 200 {object} models.TokenResponse "Returns new access token"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Missing refresh token"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Refresh token is invalid, expired, or revoked"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
+// @Router /v1/auth/refresh [post]
+func (h *AuthHandler) Refresh(c *gin.Context) {
+	var request struct {
+		RefreshToken string `json:"refresh_token" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
+
+	claims, err := utils.ExtractRefreshClaims(request.RefreshToken, h.jwtConfig)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			utils.ErrInvalidToken: apierrors.ErrInvalidToken,
+		}))
+		return
+	}
+
+	tokenID, err := uuid.Parse(claims.ID)
+	if err != nil {
+		utils.SendError(c, apierrors.ErrInvalidToken)
+		return
+	}
+
+	userID, err := uuid.Parse(claims.Subject)
+	if err != nil {
+		utils.SendError(c, apierrors.ErrInvalidToken)
+		return
+	}
+
+	// Check the token valid in the database (not revoked)
+	valid, err := db.RefreshTokenExists(c.Request.Context(), h.pool, tokenID)
+	if err != nil {
+		utils.SendError(c, err)
+		return
+	}
+	if !valid {
+		utils.SendError(c, apierrors.ErrInvalidToken)
+		return
+	}
+
+	accessToken, err := utils.GenerateAccessToken(userID, h.jwtConfig)
+	if err != nil {
+		utils.SendError(c, err)
+		return
+	}
+
+	utils.SendData(c, models.TokenResponse{
+		AccessToken: accessToken,
+		TokenType:   "Bearer",
 	})
 }
 
