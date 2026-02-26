@@ -147,7 +147,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	accessToken, err := utils.GenerateAccessToken(userID, h.jwtConfig)
+	accessToken, err := utils.GenerateAccessToken(userID, tokenID, h.jwtConfig)
 	if err != nil {
 		utils.SendError(c, err)
 		return
@@ -185,6 +185,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	claims, err := utils.ExtractRefreshClaims(request.RefreshToken, h.jwtConfig)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			utils.ErrExpiredToken: apierrors.ErrExpiredToken,
 			utils.ErrInvalidToken: apierrors.ErrInvalidToken,
 		}))
 		return
@@ -213,7 +214,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		return
 	}
 
-	accessToken, err := utils.GenerateAccessToken(userID, h.jwtConfig)
+	accessToken, err := utils.GenerateAccessToken(userID, tokenID, h.jwtConfig)
 	if err != nil {
 		utils.SendError(c, err)
 		return
@@ -223,6 +224,52 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		AccessToken: accessToken,
 		TokenType:   "Bearer",
 	})
+}
+
+// Logout godoc
+// @Summary Logout current session
+// @Description Revoke the refresh token associated with the current access token
+// @Tags auth
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} object{message=string} "Successfully logged out"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid or expired"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
+// @Router /v1/auth/logout [post]
+func (h *AuthHandler) Logout(c *gin.Context) {
+	sessionID := middleware.MustGetSessionID(c)
+
+	err := db.DeleteRefreshToken(c.Request.Context(), h.pool, sessionID)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrInvalidToken,
+		}))
+		return
+	}
+
+	utils.SendOK(c, "logged out")
+}
+
+// LogoutAll godoc
+// @Summary Logout from all devices
+// @Description Revoke all refresh tokens for the authenticated user
+// @Tags auth
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} object{message=string} "All tokens successfully revoked"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid or expired"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
+// @Router /v1/auth/logout-all [post]
+func (h *AuthHandler) LogoutAll(c *gin.Context) {
+	userID := middleware.MustGetUserID(c)
+
+	err := db.DeleteUserRefreshTokens(c.Request.Context(), h.pool, userID)
+	if err != nil {
+		utils.SendError(c, err)
+		return
+	}
+
+	utils.SendOK(c, "logged out from all devices")
 }
 
 // Me godoc

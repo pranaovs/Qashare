@@ -43,4 +43,3 @@ func RefreshTokenExists(ctx context.Context, pool *pgxpool.Pool, tokenID uuid.UU
 	}
 	return exists, nil
 }
-
