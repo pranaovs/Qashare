@@ -36,11 +36,12 @@ type DatabaseConfig struct {
 
 // JWTConfig holds JWT authentication configuration
 type JWTConfig struct {
-	Secret        string        `example:"random-generated-secret"`
-	Audience      string        `example:"qashare"`
-	Issuer        string        `example:"qashare"`
-	RefreshExpiry time.Duration `example:"30d"`
-	AccessExpiry  time.Duration `example:"15m"`
+	Secret           string        `example:"random-generated-secret"`
+	Audience         string        `example:"qashare"`
+	Issuer           string        `example:"qashare"`
+	RefreshExpiry    time.Duration `example:"30d"`
+	AccessExpiry     time.Duration `example:"15m"`
+	TokenCleanupFreq time.Duration `example:"24h"`
 }
 
 // AppConfig holds general application configuration
