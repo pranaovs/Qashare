@@ -159,17 +159,6 @@ definitions:
       user_id:
         type: string
     type: object
-  models.Jwtoken:
-    properties:
-      access_token:
-        type: string
-      expires_in:
-        type: integer
-      refresh_token:
-        type: string
-      token_type:
-        type: string
-    type: object
   models.Settlement:
     properties:
       amount:
@@ -190,6 +179,18 @@ definitions:
         type: number
       transacted_at:
         type: integer
+    type: object
+  models.TokenResponse:
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+      token_type:
+        example: Bearer
+        type: string
     type: object
   models.User:
     properties:
@@ -300,8 +301,11 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'TOKEN_EXPIRED: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "409":
@@ -309,7 +313,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal server error - unexpected database error
+          description: Internal server error
           schema:
             $ref: '#/definitions/apierrors.AppError'
       security:
@@ -321,7 +325,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Authenticate user and return JWT token
+      description: Authenticate user and return access and refresh tokens
       parameters:
       - description: User login credentials
         in: body
@@ -338,9 +342,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Returns JWT token(s)
+          description: Returns access and refresh tokens
           schema:
-            $ref: '#/definitions/models.Jwtoken'
+            $ref: '#/definitions/models.TokenResponse'
         "400":
           description: 'BAD_REQUEST: Invalid request body format or missing required
             fields | BAD_EMAIL: Invalid email format'
@@ -351,11 +355,70 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal server error - JWT generation failed or unexpected
-            database error
+          description: Internal server error
           schema:
             $ref: '#/definitions/apierrors.AppError'
       summary: Login user
+      tags:
+      - auth
+  /v1/auth/logout:
+    post:
+      description: Revoke the refresh token associated with the current access token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully logged out
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+        "401":
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'TOKEN_EXPIRED: Access token has expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Logout current session
+      tags:
+      - auth
+  /v1/auth/logout-all:
+    post:
+      description: Revoke all refresh tokens for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: All tokens successfully revoked
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+        "401":
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'TOKEN_EXPIRED: Access token has expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Logout from all devices
       tags:
       - auth
   /v1/auth/me:
@@ -370,8 +433,11 @@ paths:
           schema:
             $ref: '#/definitions/models.User'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'TOKEN_EXPIRED: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "404":
@@ -380,12 +446,53 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal server error - unexpected database error
+          description: Internal server error
           schema:
             $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Get current user
+      tags:
+      - auth
+  /v1/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Use a valid refresh token to get an access token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            refresh_token:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns new access token
+          schema:
+            $ref: '#/definitions/models.TokenResponse'
+        "400":
+          description: 'BAD_REQUEST: Missing refresh token'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "401":
+          description: 'INVALID_TOKEN: Refresh token is invalid or revoked'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'TOKEN_EXPIRED: Refresh token has expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      summary: Refresh access token
       tags:
       - auth
   /v1/auth/register:
