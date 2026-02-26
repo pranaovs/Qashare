@@ -1,12 +1,8 @@
 package utils
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"errors"
 	"fmt"
-	"log/slog"
-	"os"
 	"strings"
 	"time"
 
@@ -38,17 +34,6 @@ func CheckPassword(password, hashed string) bool {
 	return err == nil
 }
 
-func randB64() string {
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
-		slog.Error("Failed to generate random bytes for JWT secret", "error", err)
-		os.Exit(1)
-	}
-
-	return base64.StdEncoding.EncodeToString(b)
-}
-
 func generateToken(userID uuid.UUID, tokenType models.TokenType, expiry time.Duration, jwtConfig config.JWTConfig) (string, uuid.UUID, time.Time, error) {
 	now := time.Now()
 	expiresAt := now.Add(expiry)
@@ -78,9 +63,25 @@ func GenerateRefreshToken(userID uuid.UUID, jwtConfig config.JWTConfig) (string,
 	return generateToken(userID, models.TokenTypeRefresh, jwtConfig.RefreshExpiry, jwtConfig)
 }
 
-func GenerateAccessToken(userID uuid.UUID, jwtConfig config.JWTConfig) (string, error) {
-	signed, _, _, err := generateToken(userID, models.TokenTypeAccess, jwtConfig.AccessExpiry, jwtConfig)
-	return signed, err
+func GenerateAccessToken(userID uuid.UUID, sessionID uuid.UUID, jwtConfig config.JWTConfig) (string, error) {
+	now := time.Now()
+	expiresAt := now.Add(jwtConfig.AccessExpiry)
+	claims := models.TokenClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    jwtConfig.Issuer,
+			Subject:   userID.String(),
+			Audience:  jwt.ClaimStrings{jwtConfig.Audience},
+			ID:        uuid.New().String(),
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+		},
+		TokenType: models.TokenTypeAccess,
+		SessionID: sessionID.String(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(jwtConfig.Secret))
 }
 
 func extractClaims(tokenString string, jwtConfig config.JWTConfig) (*models.TokenClaims, error) {

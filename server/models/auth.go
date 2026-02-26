@@ -14,6 +14,7 @@ const (
 type TokenClaims struct {
 	jwt.RegisteredClaims
 	TokenType TokenType `json:"typ" example:"access"`
+	SessionID string    `json:"sid,omitempty" example:"550e8400-e29b-41d4-a716-446655440000"`
 }
 
 // TokenResponse is the JSON body returned on login and token refresh.
