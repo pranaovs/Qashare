@@ -12,6 +12,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/config"
+	"github.com/pranaovs/qashare/models"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -47,57 +48,101 @@ func randB64() string {
 	return base64.StdEncoding.EncodeToString(b)
 }
 
-func GenerateJWT(userID uuid.UUID, jwtConfig config.JWTConfig) (string, error) {
-	claims := jwt.MapClaims{
-		"user_id": userID.String(),
-		"exp":     time.Now().Add(jwtConfig.Expiry).Unix(),
+func generateToken(userID uuid.UUID, tokenType models.TokenType, expiry time.Duration, jwtConfig config.JWTConfig) (string, error) {
+	now := time.Now()
+	claims := models.TokenClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    jwtConfig.Issuer,
+			Subject:   userID.String(),
+			Audience:  jwt.ClaimStrings{jwtConfig.Audience},
+			ID:        uuid.New().String(),
+			ExpiresAt: jwt.NewNumericDate(now.Add(expiry)),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+		},
+		TokenType: tokenType,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(jwtConfig.Secret))
 }
 
-func ExtractClaims(authHeader string, jwtConfig config.JWTConfig) (jwt.MapClaims, error) {
-	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-		return nil, ErrInvalidToken.Msg("authorization header missing or malformed")
-	}
+func GenerateAccessToken(userID uuid.UUID, jwtConfig config.JWTConfig) (string, error) {
+	return generateToken(userID, models.TokenTypeAccess, jwtConfig.AccessExpiry, jwtConfig)
+}
 
-	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+func GenerateRefreshToken(userID uuid.UUID, jwtConfig config.JWTConfig) (string, error) {
+	return generateToken(userID, models.TokenTypeRefresh, jwtConfig.RefreshExpiry, jwtConfig)
+}
 
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+func extractClaims(tokenString string, jwtConfig config.JWTConfig) (*models.TokenClaims, error) {
+	claims := &models.TokenClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method")
 		}
 		return []byte(jwtConfig.Secret), nil
-	})
+	},
+		jwt.WithIssuer(jwtConfig.Issuer),
+		jwt.WithAudience(jwtConfig.Audience),
+	)
 	if err != nil {
 		return nil, ErrInvalidToken.Msg("failed to parse token")
 	}
 	if !token.Valid {
 		return nil, ErrInvalidToken.Msg("expired token")
 	}
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return nil, ErrInvalidToken.Msg("invalid token claims")
+
+	return claims, nil
+}
+
+func extractBearerToken(authHeader string) (string, error) {
+	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		return "", ErrInvalidToken.Msg("authorization header missing or malformed")
+	}
+	return strings.TrimPrefix(authHeader, "Bearer "), nil
+}
+
+func ExtractAccessClaims(authHeader string, jwtConfig config.JWTConfig) (*models.TokenClaims, error) {
+	tokenString, err := extractBearerToken(authHeader)
+	if err != nil {
+		return nil, err
+	}
+
+	claims, err := extractClaims(tokenString, jwtConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	if claims.TokenType != models.TokenTypeAccess {
+		return nil, ErrInvalidToken.Msg("expected access token")
+	}
+
+	return claims, nil
+}
+
+func ExtractRefreshClaims(refreshToken string, jwtConfig config.JWTConfig) (*models.TokenClaims, error) {
+	claims, err := extractClaims(refreshToken, jwtConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	if claims.TokenType != models.TokenTypeRefresh {
+		return nil, ErrInvalidToken.Msg("expected refresh token")
 	}
 
 	return claims, nil
 }
 
 func ExtractUserID(authHeader string, jwtConfig config.JWTConfig) (uuid.UUID, error) {
-	claims, err := ExtractClaims(authHeader, jwtConfig)
+	claims, err := ExtractAccessClaims(authHeader, jwtConfig)
 	if err != nil {
 		return uuid.UUID{}, err
 	}
 
-	userIDStr, ok := claims["user_id"].(string)
-	if !ok {
-		return uuid.UUID{}, ErrInvalidToken.Msg("invalid token claims")
-	}
-
-	userID, err := uuid.Parse(userIDStr)
+	userID, err := uuid.Parse(claims.Subject)
 	if err != nil {
-		return uuid.UUID{}, ErrInvalidToken.Msg("invalid user_id in token")
+		return uuid.UUID{}, ErrInvalidToken.Msg("invalid subject in token")
 	}
 
 	return userID, nil

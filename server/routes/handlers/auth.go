@@ -134,13 +134,23 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := utils.GenerateJWT(userID, h.jwtConfig)
+	accessToken, err := utils.GenerateAccessToken(userID, h.jwtConfig)
 	if err != nil {
-		utils.SendError(c, err) // Send this error directly (Sends internal server error and logs the error)
+		utils.SendError(c, err)
 		return
 	}
 
-	utils.SendData(c, models.Jwtoken{RToken: token})
+	refreshToken, err := utils.GenerateRefreshToken(userID, h.jwtConfig)
+	if err != nil {
+		utils.SendError(c, err)
+		return
+	}
+
+	utils.SendData(c, models.TokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		TokenType:    "Bearer",
+	})
 }
 
 // Me godoc
