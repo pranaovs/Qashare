@@ -1,8 +1,7 @@
 package models
 
-type Jwtoken struct {
-	AToken string `json:"access_token"`
-	RToken string `json:"refresh_token"`
-	Type   string `json:"token_type"`
-	Expiry int64  `json:"expires_in"`
+type TokenResponse struct {
+	AccessToken  string `json:"access_token" example:"eyJhbGciOiJIUzI1NiIs..."`
+	RefreshToken string `json:"refresh_token,omitempty" example:"eyJhbGciOiJIUzI1NiIs..."`
+	TokenType    string `json:"token_type" example:"Bearer"`
 }
