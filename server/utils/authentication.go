@@ -143,4 +143,3 @@ func ExtractRefreshClaims(refreshToken string, jwtConfig config.JWTConfig) (*mod
 
 	return claims, nil
 }
-
