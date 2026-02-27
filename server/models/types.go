@@ -85,7 +85,6 @@ type ExpenseSplit struct {
 // In the GetSettle endpoint (balance computation), this is the net amount.
 // In settlement history and CRUD, this reflects the payment direction.
 type Settlement struct {
-	Title        string    `json:"title"`
 	CreatedAt    int64     `json:"created_at" immutable:"true"`
 	GroupID      uuid.UUID `json:"group_id" immutable:"true"`
 	TransactedAt *int64    `json:"transacted_at"`

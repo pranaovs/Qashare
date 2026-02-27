@@ -150,9 +150,9 @@ func (h *SettlementsHandler) Create(c *gin.Context) {
 
 	expense := models.ExpenseDetails{
 		Expense: models.Expense{
+			Title:        "Settlement",
 			GroupID:      groupID,
 			AddedBy:      userID,
-			Title:        req.Title,
 			TransactedAt: req.TransactedAt,
 			Amount:       absAmount,
 			IsSettlement: true,
@@ -180,7 +180,6 @@ func (h *SettlementsHandler) Create(c *gin.Context) {
 func expenseToSettlement(expense models.ExpenseDetails, userID uuid.UUID) models.Settlement {
 	if len(expense.Splits) < 2 {
 		return models.Settlement{
-			Title:        expense.Title,
 			CreatedAt:    expense.CreatedAt,
 			TransactedAt: expense.TransactedAt,
 			GroupID:      expense.GroupID,
@@ -206,7 +205,6 @@ func expenseToSettlement(expense models.ExpenseDetails, userID uuid.UUID) models
 	}
 
 	return models.Settlement{
-		Title:        expense.Title,
 		CreatedAt:    expense.CreatedAt,
 		TransactedAt: expense.TransactedAt,
 		GroupID:      expense.GroupID,
@@ -311,7 +309,6 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 		Expense: models.Expense{
 			GroupID:      groupID,
 			AddedBy:      expense.AddedBy,
-			Title:        req.Title,
 			TransactedAt: transactedAt,
 			Amount:       absAmount,
 			IsSettlement: true,
@@ -360,10 +357,6 @@ func (h *SettlementsHandler) Patch(c *gin.Context) {
 		return
 	}
 
-	// Apply title patch
-	if patch.Title != nil {
-		expense.Title = *patch.Title
-	}
 
 	// Apply transacted_at patch
 	if patch.TransactedAt != nil {
