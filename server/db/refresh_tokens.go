@@ -16,7 +16,7 @@ func StoreToken(ctx context.Context, pool *pgxpool.Pool, tokenID, userID uuid.UU
 	return err
 }
 
-// DeleteRefreshToken removes a specific refresh token (used during rotation).
+// DeleteRefreshToken removes a specific refresh token (e.g., for logout or revocation).
 func DeleteRefreshToken(ctx context.Context, pool *pgxpool.Pool, tokenID uuid.UUID) error {
 	result, err := pool.Exec(ctx, `DELETE FROM refresh_tokens WHERE token_id = $1`, tokenID)
 	if err != nil {
