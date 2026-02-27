@@ -305,7 +305,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: 'TOKEN_EXPIRED: Access token has expired'
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "409":
@@ -379,7 +379,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: 'TOKEN_EXPIRED: Access token has expired'
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "500":
@@ -409,7 +409,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: 'TOKEN_EXPIRED: Access token has expired'
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "500":
@@ -437,7 +437,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: 'TOKEN_EXPIRED: Access token has expired'
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "404":
@@ -486,7 +486,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: 'TOKEN_EXPIRED: Refresh token has expired'
+          description: 'EXPIRED_TOKEN: Refresh token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "500":
@@ -1413,7 +1413,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: 'TOKEN_EXPIRED: Access token has expired'
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "404":
@@ -1449,7 +1449,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: 'TOKEN_EXPIRED: Access token has expired'
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "404":
@@ -1495,7 +1495,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: 'TOKEN_EXPIRED: Access token has expired'
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "404":
@@ -1544,7 +1544,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: 'TOKEN_EXPIRED: Access token has expired'
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "404":
@@ -1581,7 +1581,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: 'TOKEN_EXPIRED: Access token has expired'
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "500":
@@ -1610,7 +1610,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: 'TOKEN_EXPIRED: Access token has expired'
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "500":
@@ -1832,7 +1832,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: 'TOKEN_EXPIRED: Access token has expired | USERS_NOT_RELATED:
+          description: 'EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED:
             The users are not related through any common group'
           schema:
             $ref: '#/definitions/apierrors.AppError'
@@ -1882,7 +1882,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: 'TOKEN_EXPIRED: Access token has expired'
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "409":
@@ -1923,7 +1923,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: 'TOKEN_EXPIRED: Access token has expired'
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "404":
