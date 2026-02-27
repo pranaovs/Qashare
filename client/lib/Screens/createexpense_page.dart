@@ -144,6 +144,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
 
     final res = await ApiService.createExpenseAdvanced(
       token: token,
+      groupId: widget.groupId,
       request: req,
     );
 
@@ -168,156 +169,429 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(title: const Text("Add Expense")),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
           children: [
-            TextFormField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: "Title",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(10)),
-                ),
+            // ── EXPENSE INFO CARD ──
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-              validator: (v) => v == null || v.isEmpty ? "Required" : null,
-            ),
-
-            const SizedBox(height: 12),
-
-            TextFormField(
-              controller: _descController,
-              decoration: const InputDecoration(
-                labelText: "Description (optional)",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(10)),
-                ),
-              ),
-              maxLines: 2,
-            ),
-
-            const SizedBox(height: 12),
-
-            TextFormField(
-              controller: _amountController,
-              decoration: const InputDecoration(
-                labelText: "Amount",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(10)),
-                ),
-              ),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-              ],
-              validator: (v) {
-                if (_incompleteAmount) return null;
-                final n = double.tryParse(v ?? "");
-                if (n == null || n <= 0) return "Invalid amount";
-                return null;
-              },
-            ),
-
-            CheckboxListTile(
-              title: const Text("Amount incomplete"),
-              value: _incompleteAmount,
-              onChanged: (v) => setState(() => _incompleteAmount = v ?? false),
-            ),
-            CheckboxListTile(
-              title: const Text("Split incomplete"),
-              value: _incompleteSplit,
-              onChanged: (v) => setState(() => _incompleteSplit = v ?? false),
-            ),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Split Details",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                TextButton.icon(
-                  onPressed: _equalSplit,
-                  icon: const Icon(Icons.calculate),
-                  label: const Text("Equal"),
-                ),
-              ],
-            ),
-
-            ...widget.members.map(
-              (m) => Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CheckboxListTile(
-                      title: Text(m.name),
-                      subtitle: Text(m.email),
-                      value: _selected[m.userId],
-                      onChanged: (v) =>
-                          setState(() => _selected[m.userId] = v ?? false),
+                    Row(
+                      children: [
+                        Icon(Icons.receipt_long_rounded,
+                            size: 20, color: cs.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          "Expense Info",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: cs.primary,
+                          ),
+                        ),
+                      ],
                     ),
-                    if (_selected[m.userId] == true)
-                      Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _paid[m.userId],
-                                decoration: const InputDecoration(
-                                  labelText: "Paid",
-                                ),
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                    RegExp(r'^\d+\.?\d{0,2}'),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: TextField(
-                                controller: _owed[m.userId],
-                                decoration: const InputDecoration(
-                                  labelText: "Owes",
-                                ),
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                    RegExp(r'^\d+\.?\d{0,2}'),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                    const SizedBox(height: 16),
+
+                    // Title
+                    TextFormField(
+                      controller: _titleController,
+                      decoration: InputDecoration(
+                        labelText: "Title",
+                        prefixIcon: const Icon(Icons.title_rounded),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
+                      validator: (v) =>
+                          v == null || v.isEmpty ? "Required" : null,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Description
+                    TextFormField(
+                      controller: _descController,
+                      decoration: InputDecoration(
+                        labelText: "Description (optional)",
+                        prefixIcon: const Icon(Icons.notes_rounded),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Amount
+                    TextFormField(
+                      controller: _amountController,
+                      decoration: InputDecoration(
+                        labelText: "Amount",
+                        prefixIcon: const Icon(Icons.currency_rupee_rounded),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d+\.?\d{0,2}')),
+                      ],
+                      validator: (v) {
+                        if (_incompleteAmount) return null;
+                        final n = double.tryParse(v ?? "");
+                        if (n == null || n <= 0) return "Invalid amount";
+                        return null;
+                      },
+                    ),
                   ],
                 ),
               ),
             ),
 
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _loading ? null : _submit,
-              child: _loading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text("Create Expense"),
+            const SizedBox(height: 8),
+
+            // ── OPTIONS CARD ──
+            Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    title: const Text("Amount incomplete"),
+                    subtitle: Text(
+                      "Total isn't finalised yet",
+                      style: TextStyle(fontSize: 12, color: cs.outline),
+                    ),
+                    secondary: Icon(
+                      Icons.hourglass_bottom_rounded,
+                      color: _incompleteAmount ? cs.primary : cs.outline,
+                    ),
+                    value: _incompleteAmount,
+                    onChanged: (v) =>
+                        setState(() => _incompleteAmount = v),
+                  ),
+                  Divider(height: 1, indent: 16, endIndent: 16,
+                      color: cs.outlineVariant.withValues(alpha: 0.3)),
+                  SwitchListTile(
+                    title: const Text("Split incomplete"),
+                    subtitle: Text(
+                      "Splits don't need to match total",
+                      style: TextStyle(fontSize: 12, color: cs.outline),
+                    ),
+                    secondary: Icon(
+                      Icons.call_split_rounded,
+                      color: _incompleteSplit ? cs.primary : cs.outline,
+                    ),
+                    value: _incompleteSplit,
+                    onChanged: (v) =>
+                        setState(() => _incompleteSplit = v),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // ── SPLIT HEADER ──
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.people_outline_rounded,
+                        size: 20, color: cs.primary),
+                    const SizedBox(width: 8),
+                    const Text(
+                      "Split Details",
+                      style: TextStyle(
+                          fontSize: 17, fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    TextButton.icon(
+                      onPressed: () {
+                        final allSelected =
+                            _selected.values.every((v) => v);
+                        setState(() {
+                          for (var id in _selected.keys) {
+                            _selected[id] = !allSelected;
+                          }
+                        });
+                      },
+                      icon: Icon(
+                        _selected.values.every((v) => v)
+                            ? Icons.deselect
+                            : Icons.select_all,
+                        size: 18,
+                      ),
+                      label: Text(
+                        _selected.values.every((v) => v)
+                            ? "None"
+                            : "All",
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: _equalSplit,
+                      icon: const Icon(Icons.calculate_rounded, size: 18),
+                      label: const Text("Equal"),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 6),
+
+            // ── MEMBER CARDS ──
+            ...widget.members.map(
+              (m) {
+                final isSelected = _selected[m.userId] == true;
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: isSelected
+                        ? BorderSide(
+                            color: cs.primary.withValues(alpha: 0.4),
+                            width: 1.5)
+                        : BorderSide.none,
+                  ),
+                  child: Column(
+                    children: [
+                      // Member row
+                      InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: () => setState(
+                            () => _selected[m.userId] = !isSelected),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
+                          child: Row(
+                            children: [
+                              // Avatar
+                              CircleAvatar(
+                                radius: 20,
+                                backgroundColor: isSelected
+                                    ? cs.primary
+                                    : cs.surfaceContainerHighest,
+                                child: isSelected
+                                    ? Icon(Icons.check_rounded,
+                                        color: cs.onPrimary, size: 20)
+                                    : Text(
+                                        m.name.isNotEmpty
+                                            ? m.name[0].toUpperCase()
+                                            : "?",
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: cs.onSurface,
+                                        ),
+                                      ),
+                              ),
+                              const SizedBox(width: 12),
+
+                              // Name + email
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      m.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    Text(
+                                      m.email,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: cs.outline,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              // Guest badge
+                              if (m.guest)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: cs.tertiaryContainer,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    "Guest",
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: cs.onTertiaryContainer,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+
+                              // Checkbox
+                              Checkbox(
+                                value: isSelected,
+                                onChanged: (v) => setState(
+                                    () => _selected[m.userId] = v ?? false),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Split fields
+                      if (isSelected)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: cs.surfaceContainerHighest
+                                .withValues(alpha: 0.3),
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(14),
+                              bottomRight: Radius.circular(14),
+                            ),
+                          ),
+                          padding:
+                              const EdgeInsets.fromLTRB(12, 8, 12, 14),
+                          child: Row(
+                            children: [
+                              // Paid
+                              Expanded(
+                                child: TextField(
+                                  controller: _paid[m.userId],
+                                  decoration: InputDecoration(
+                                    labelText: "Paid",
+                                    labelStyle: const TextStyle(
+                                        color: Color(0xFF2E7D32),
+                                        fontSize: 13),
+                                    prefixIcon: const Icon(
+                                      Icons.arrow_upward_rounded,
+                                      color: Color(0xFF2E7D32),
+                                      size: 18,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(10),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(10),
+                                      borderSide: BorderSide(
+                                        color: const Color(0xFF2E7D32)
+                                            .withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                    contentPadding:
+                                        const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 10),
+                                    isDense: true,
+                                  ),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                          decimal: true),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(
+                                        RegExp(r'^\d+\.?\d{0,2}')),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              // Owes
+                              Expanded(
+                                child: TextField(
+                                  controller: _owed[m.userId],
+                                  decoration: InputDecoration(
+                                    labelText: "Owes",
+                                    labelStyle: TextStyle(
+                                        color: cs.error, fontSize: 13),
+                                    prefixIcon: Icon(
+                                      Icons.arrow_downward_rounded,
+                                      color: cs.error,
+                                      size: 18,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(10),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(10),
+                                      borderSide: BorderSide(
+                                        color: cs.error
+                                            .withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                    contentPadding:
+                                        const EdgeInsets.symmetric(
+                                            horizontal: 12, vertical: 10),
+                                    isDense: true,
+                                  ),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                          decimal: true),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(
+                                        RegExp(r'^\d+\.?\d{0,2}')),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 24),
+
+            // ── SUBMIT BUTTON ──
+            SizedBox(
+              height: 50,
+              child: FilledButton.icon(
+                onPressed: _loading ? null : _submit,
+                icon: _loading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.check_rounded),
+                label: Text(
+                  _loading ? "Creating…" : "Create Expense",
+                  style: const TextStyle(fontSize: 16),
+                ),
+                style: FilledButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
             ),
           ],
         ),

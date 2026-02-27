@@ -102,6 +102,82 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
     return "$hour:$minute $period";
   }
 
+  // ─── DELETE EXPENSE ────────────────────────────────────────────
+  Future<void> _confirmDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Delete Expense"),
+        content: const Text(
+          "Are you sure you want to delete this expense? This cannot be undone.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancel"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final token = await TokenStorage.getToken();
+    if (token == null) return;
+
+    final res = await ApiService.deleteExpense(
+      token: token,
+      expenseId: widget.expenseId,
+    );
+
+    if (!mounted) return;
+
+    if (res.isSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Expense deleted")),
+      );
+      Navigator.pop(context, true); // true = signal parent to refresh
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res.errorMessage ?? "Failed to delete"),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  // ─── EDIT EXPENSE ──────────────────────────────────────────────
+  Future<void> _showEditSheet() async {
+    final e = _result!.expense!;
+
+    final edited = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _EditExpenseSheet(
+        expenseId: e.expenseId,
+        title: e.title,
+        description: e.description ?? "",
+        amount: e.amount,
+      ),
+    );
+
+    if (edited == true) {
+      setState(() => _loading = true);
+      _loadExpense();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -188,6 +264,18 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
             SliverAppBar.large(
               title: Text(e.isSettlement ? "Settlement" : "Expense Details"),
               actions: [
+                // Edit button
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  tooltip: "Edit",
+                  onPressed: _showEditSheet,
+                ),
+                // Delete button
+                IconButton(
+                  icon: Icon(Icons.delete_outline, color: cs.error),
+                  tooltip: "Delete",
+                  onPressed: _confirmDelete,
+                ),
                 if (e.isIncompleteAmount || e.isIncompleteSplit)
                   Padding(
                     padding: const EdgeInsets.only(right: 8),
@@ -523,6 +611,193 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
       backgroundColor: cs.errorContainer.withValues(alpha: 0.4),
       side: BorderSide(color: cs.error.withValues(alpha: 0.2)),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    );
+  }
+}
+
+// ================= EDIT EXPENSE BOTTOM SHEET =================
+
+class _EditExpenseSheet extends StatefulWidget {
+  final String expenseId;
+  final String title;
+  final String description;
+  final double amount;
+
+  const _EditExpenseSheet({
+    required this.expenseId,
+    required this.title,
+    required this.description,
+    required this.amount,
+  });
+
+  @override
+  State<_EditExpenseSheet> createState() => _EditExpenseSheetState();
+}
+
+class _EditExpenseSheetState extends State<_EditExpenseSheet> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _titleCtrl;
+  late final TextEditingController _descCtrl;
+  late final TextEditingController _amountCtrl;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleCtrl = TextEditingController(text: widget.title);
+    _descCtrl = TextEditingController(text: widget.description);
+    _amountCtrl = TextEditingController(
+      text: widget.amount.toStringAsFixed(2),
+    );
+  }
+
+  @override
+  void dispose() {
+    _titleCtrl.dispose();
+    _descCtrl.dispose();
+    _amountCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _saving = true);
+
+    final token = await TokenStorage.getToken();
+    if (token == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Session expired")),
+      );
+      setState(() => _saving = false);
+      return;
+    }
+
+    final body = <String, dynamic>{
+      "title": _titleCtrl.text.trim(),
+      "description": _descCtrl.text.trim().isEmpty
+          ? null
+          : _descCtrl.text.trim(),
+      "amount": double.tryParse(_amountCtrl.text) ?? widget.amount,
+    };
+
+    final res = await ApiService.updateExpense(
+      token: token,
+      expenseId: widget.expenseId,
+      body: body,
+    );
+
+    if (!mounted) return;
+    setState(() => _saving = false);
+
+    if (res.isSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Expense updated")),
+      );
+      Navigator.pop(context, true); // true = signal to refresh
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res.errorMessage ?? "Failed to update"),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        16,
+        20,
+        MediaQuery.of(context).viewInsets.bottom + 20,
+      ),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ---- Handle bar ----
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.grey[400],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+
+            Text(
+              "Edit Expense",
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 20),
+
+            TextFormField(
+              controller: _titleCtrl,
+              decoration: const InputDecoration(
+                labelText: "Title",
+                prefixIcon: Icon(Icons.title),
+                border: OutlineInputBorder(),
+              ),
+              validator: (v) =>
+                  (v == null || v.trim().isEmpty) ? "Title required" : null,
+            ),
+            const SizedBox(height: 14),
+
+            TextFormField(
+              controller: _descCtrl,
+              decoration: const InputDecoration(
+                labelText: "Description (optional)",
+                prefixIcon: Icon(Icons.notes),
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 14),
+
+            TextFormField(
+              controller: _amountCtrl,
+              decoration: const InputDecoration(
+                labelText: "Amount",
+                prefixIcon: Icon(Icons.currency_rupee),
+                border: OutlineInputBorder(),
+              ),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return "Amount required";
+                final n = double.tryParse(v);
+                if (n == null || n <= 0) return "Enter a valid amount";
+                return null;
+              },
+            ),
+            const SizedBox(height: 20),
+
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _saving ? null : _save,
+                icon: _saving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.save_rounded),
+                label: Text(_saving ? "Saving…" : "Save Changes"),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
