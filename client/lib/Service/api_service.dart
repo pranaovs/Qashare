@@ -6,6 +6,7 @@ import 'package:qashare/Models/add_member_results.dart';
 import 'package:qashare/Models/auth_model.dart';
 import 'package:qashare/Models/expense_list_model.dart';
 import 'package:qashare/Models/expense_model.dart';
+import 'package:qashare/Models/expensedetail_model.dart';
 import 'package:qashare/Models/group_model.dart';
 import 'package:qashare/Models/groupdetail_model.dart';
 import 'package:qashare/Models/user_models.dart';
@@ -482,4 +483,51 @@ class ApiService {
       return UserLookupResult.error("NETWORK_ERROR");
     }
   }
+
+  static Future<ExpenseDetailResult> getExpenseDetails({
+    required String token,
+    required String expenseId,
+  }) async {
+    final url = Uri.parse("${ApiConfig.baseUrl}/expenses/$expenseId");
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return ExpenseDetailResult.success(
+          ExpenseDetail.fromJson(data),
+        );
+      }
+
+      if (response.statusCode == 401) {
+        return ExpenseDetailResult.error("Session expired");
+      }
+
+      if (response.statusCode == 403) {
+        return ExpenseDetailResult.error("Not allowed to view this expense");
+      }
+
+      if (response.statusCode == 404) {
+        return ExpenseDetailResult.error("Expense not found");
+      }
+
+      if (response.statusCode == 500) {
+        return ExpenseDetailResult.error("Server error");
+      }
+
+      return ExpenseDetailResult.error("Unexpected error");
+    } catch (e) {
+      return ExpenseDetailResult.error("Unable to connect to server");
+    }
+  }
+
+
+
 }

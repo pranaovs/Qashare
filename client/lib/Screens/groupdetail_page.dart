@@ -209,6 +209,17 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
 
                     return Card(
                       child: ListTile(
+                        onTap: (){
+                          final group = _result!.group!;
+                          Navigator.pushNamed(
+                            context,
+                            "/expense-details",
+                            arguments: {
+                              "expenseId": e.expenseId,
+                              "members": group.members,
+                            },
+                          );
+                        },
                         leading: const Icon(Icons.receipt_long),
                         title: Text(e.title),
                         subtitle: Text(
