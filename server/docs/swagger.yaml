@@ -458,7 +458,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Use a valid refresh token to get an access token
+      description: Use a valid refresh token to get new access and refresh tokens.
+        The old refresh token is revoked (token rotation).
       parameters:
       - description: Refresh token
         in: body
@@ -473,7 +474,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Returns new access token
+          description: Returns new access and refresh tokens
           schema:
             $ref: '#/definitions/models.TokenResponse'
         "400":
@@ -481,7 +482,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Refresh token is invalid or revoked'
+          description: 'INVALID_TOKEN: Refresh token is invalid or already used'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -492,7 +493,7 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/apierrors.AppError'
-      summary: Refresh access token
+      summary: Refresh tokens
       tags:
       - auth
   /v1/auth/register:
