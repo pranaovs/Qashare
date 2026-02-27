@@ -325,7 +325,7 @@ const docTemplate = `{
         },
         "/v1/auth/refresh": {
             "post": {
-                "description": "Use a valid refresh token to get an access token",
+                "description": "Use a valid refresh token to get new access and refresh tokens. The old refresh token is revoked (token rotation).",
                 "consumes": [
                     "application/json"
                 ],
@@ -335,7 +335,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
-                "summary": "Refresh access token",
+                "summary": "Refresh tokens",
                 "parameters": [
                     {
                         "description": "Refresh token",
@@ -354,7 +354,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Returns new access token",
+                        "description": "Returns new access and refresh tokens",
                         "schema": {
                             "$ref": "#/definitions/models.TokenResponse"
                         }
@@ -366,7 +366,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Refresh token is invalid or revoked",
+                        "description": "INVALID_TOKEN: Refresh token is invalid or already used",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
