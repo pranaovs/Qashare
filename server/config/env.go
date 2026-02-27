@@ -93,7 +93,7 @@ func getEnvPort(key string, defaultValue int) int {
 
 // getEnvDuration parses a duration string with a suffix: s (seconds), m (minutes), h (hours), d (days).
 // A bare number without a suffix is treated as seconds. Examples: "30s", "15m", "24h", "7d", "3600".
-// Negative values are rejected and the default value is used instead.
+// Non-positive values (zero or negative) are rejected and the default is used instead.
 func getEnvDuration(key string, defaultValue string) time.Duration {
 	valStr := os.Getenv(key)
 	if valStr == "" {
@@ -122,16 +122,20 @@ func parseDuration(s string) (time.Duration, error) {
 	suffix := s[len(s)-1]
 	switch suffix {
 	case 's', 'm', 'h':
-		return time.ParseDuration(s)
+		d, err := time.ParseDuration(s)
+		if err != nil || d <= 0 {
+			return 0, strconv.ErrSyntax
+		}
+		return d, nil
 	case 'd':
 		val, err := strconv.Atoi(s[:len(s)-1])
-		if err != nil || val < 0 {
+		if err != nil || val <= 0 {
 			return 0, strconv.ErrSyntax
 		}
 		return time.Duration(val) * 24 * time.Hour, nil
 	default:
 		val, err := strconv.Atoi(s)
-		if err != nil || val < 0 {
+		if err != nil || val <= 0 {
 			return 0, strconv.ErrSyntax
 		}
 		return time.Duration(val) * time.Second, nil
