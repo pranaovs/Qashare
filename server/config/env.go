@@ -93,6 +93,7 @@ func getEnvPort(key string, defaultValue int) int {
 
 // getEnvDuration parses a duration string with a suffix: s (seconds), m (minutes), h (hours), d (days).
 // A bare number without a suffix is treated as seconds. Examples: "30s", "15m", "24h", "7d", "3600".
+// Negative values are rejected and the default value is used instead.
 func getEnvDuration(key string, defaultValue string) time.Duration {
 	valStr := os.Getenv(key)
 	if valStr == "" {
@@ -100,9 +101,19 @@ func getEnvDuration(key string, defaultValue string) time.Duration {
 	}
 
 	d, err := parseDuration(valStr)
-	if err != nil {
-		slog.Warn("Invalid duration config value", "key", key, "value", valStr, "default", defaultValue)
-		panic("invalid default duration for " + key + ": " + defaultValue)
+	if err != nil || d < 0 {
+		if d < 0 {
+			slog.Warn("Negative duration not allowed, using default", "key", key, "value", valStr, "default", defaultValue)
+		} else {
+			slog.Warn("Invalid duration config value", "key", key, "value", valStr, "default", defaultValue)
+		}
+
+		// Try to parse the default value
+		defaultDuration, defaultErr := parseDuration(defaultValue)
+		if defaultErr != nil {
+			panic("invalid default duration for " + key + ": " + defaultValue)
+		}
+		return defaultDuration
 	}
 	return d
 }
