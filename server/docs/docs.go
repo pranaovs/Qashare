@@ -1703,7 +1703,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "TOKEN_EXPIRED: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1764,7 +1770,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "TOKEN_EXPIRED: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1814,7 +1826,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "TOKEN_EXPIRED: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1881,7 +1899,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "TOKEN_EXPIRED: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1894,6 +1918,52 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "EMAIL_EXISTS: An account with this email already exists",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error - unexpected database error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/me/admin": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all groups that the authenticated user created (is owner of)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "List groups user owns",
+                "responses": {
+                    "200": {
+                        "description": "Returns list of groups the user is owner of",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Group"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "INVALID_TOKEN: Access token is invalid",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "TOKEN_EXPIRED: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1933,47 +2003,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
-                    "500": {
-                        "description": "Internal server error - unexpected database error",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/me/own": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Get all groups that the authenticated user created (is owner of)",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "me"
-                ],
-                "summary": "List groups user owns",
-                "responses": {
-                    "200": {
-                        "description": "Returns list of groups the user is owner of",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Group"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                    "403": {
+                        "description": "TOKEN_EXPIRED: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -2300,7 +2336,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "TOKEN_EXPIRED: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -2358,7 +2400,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "TOKEN_EXPIRED: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -2416,13 +2464,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "USERS_NOT_RELATED: The users are not related through any common group",
+                        "description": "TOKEN_EXPIRED: Access token has expired | USERS_NOT_RELATED: The users are not related through any common group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
