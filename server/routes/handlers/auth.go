@@ -141,13 +141,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	err = db.StoreToken(c.Request.Context(), h.pool, tokenID, userID, expiresAt)
+	accessToken, err := utils.GenerateAccessToken(userID, tokenID, h.jwtConfig)
 	if err != nil {
 		utils.SendError(c, err)
 		return
 	}
 
-	accessToken, err := utils.GenerateAccessToken(userID, tokenID, h.jwtConfig)
+	err = db.StoreToken(c.Request.Context(), h.pool, tokenID, userID, expiresAt)
 	if err != nil {
 		utils.SendError(c, err)
 		return
