@@ -55,9 +55,11 @@ func DeleteExpiredTokens(ctx context.Context, pool *pgxpool.Pool) (int64, error)
 }
 
 // StartTokenCleanup runs a background goroutine that periodically deletes expired refresh tokens.
-// It stops when the context is cancelled.
-func StartTokenCleanup(ctx context.Context, pool *pgxpool.Pool, interval time.Duration) {
+// It stops when the context is cancelled. The returned channel is closed once the goroutine exits.
+func StartTokenCleanup(ctx context.Context, pool *pgxpool.Pool, interval time.Duration) <-chan struct{} {
+	done := make(chan struct{})
 	go func() {
+		defer close(done)
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
@@ -78,4 +80,5 @@ func StartTokenCleanup(ctx context.Context, pool *pgxpool.Pool, interval time.Du
 			}
 		}
 	}()
+	return done
 }
