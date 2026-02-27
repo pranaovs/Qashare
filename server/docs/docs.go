@@ -2528,9 +2528,6 @@ const docTemplate = `{
                 "group_id": {
                     "type": "string"
                 },
-                "title": {
-                    "type": "string"
-                },
                 "transacted_at": {
                     "type": "integer"
                 },
@@ -2545,9 +2542,6 @@ const docTemplate = `{
             "properties": {
                 "amount": {
                     "type": "number"
-                },
-                "title": {
-                    "type": "string"
                 },
                 "transacted_at": {
                     "type": "integer"

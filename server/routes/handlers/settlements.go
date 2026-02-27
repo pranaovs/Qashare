@@ -150,12 +150,12 @@ func (h *SettlementsHandler) Create(c *gin.Context) {
 
 	expense := models.ExpenseDetails{
 		Expense: models.Expense{
+			Title:        "Settlement",
 			GroupID:      groupID,
 			AddedBy:      userID,
-			Title:        req.Title,
-			TransactedAt: req.TransactedAt,
 			Amount:       absAmount,
 			IsSettlement: true,
+			TransactedAt: req.TransactedAt,
 		},
 		Splits: []models.ExpenseSplit{
 			{UserID: payerID, Amount: absAmount, IsPaid: true},
@@ -180,7 +180,6 @@ func (h *SettlementsHandler) Create(c *gin.Context) {
 func expenseToSettlement(expense models.ExpenseDetails, userID uuid.UUID) models.Settlement {
 	if len(expense.Splits) < 2 {
 		return models.Settlement{
-			Title:        expense.Title,
 			CreatedAt:    expense.CreatedAt,
 			TransactedAt: expense.TransactedAt,
 			GroupID:      expense.GroupID,
@@ -206,7 +205,6 @@ func expenseToSettlement(expense models.ExpenseDetails, userID uuid.UUID) models
 	}
 
 	return models.Settlement{
-		Title:        expense.Title,
 		CreatedAt:    expense.CreatedAt,
 		TransactedAt: expense.TransactedAt,
 		GroupID:      expense.GroupID,
@@ -311,7 +309,6 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 		Expense: models.Expense{
 			GroupID:      groupID,
 			AddedBy:      expense.AddedBy,
-			Title:        req.Title,
 			TransactedAt: transactedAt,
 			Amount:       absAmount,
 			IsSettlement: true,
@@ -360,30 +357,17 @@ func (h *SettlementsHandler) Patch(c *gin.Context) {
 		return
 	}
 
-	// Apply title patch
-	if patch.Title != nil {
-		expense.Title = *patch.Title
-	}
-
-	// Apply transacted_at patch
-	if patch.TransactedAt != nil {
-		expense.TransactedAt = patch.TransactedAt
-	}
-
 	// Read current payer/receiver from existing splits
 	var currentPayerID, currentReceiverID uuid.UUID
-	var currentAmount float64
 	for _, split := range expense.Splits {
 		if split.IsPaid {
 			currentPayerID = split.UserID
-			currentAmount = split.Amount
 		} else {
 			currentReceiverID = split.UserID
 		}
 	}
 
-	// Apply amount patch (direction is preserved, only absolute value changes)
-	newAmount := currentAmount
+	// Validate and normalize amount before patching
 	if patch.Amount != nil {
 		if *patch.Amount == 0 {
 			utils.SendError(c, apierrors.ErrInvalidAmount.Msg("settlement amount cannot be zero"))
@@ -397,17 +381,21 @@ func (h *SettlementsHandler) Patch(c *gin.Context) {
 			return
 		}
 
-		newAmount = math.Abs(*patch.Amount)
+		// Normalize to absolute value (Expense.Amount is always positive)
+		absAmount := math.Abs(*patch.Amount)
+		patch.Amount = &absAmount
 	}
 
-	// Preserve existing direction (payer/receiver and user_id are immutable)
-	newPayerID := currentPayerID
-	newReceiverID := currentReceiverID
+	// Apply patch to expense (only non-nil fields are applied)
+	if err := utils.Patch(&expense.Expense, &patch); err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
 
-	expense.Amount = newAmount
+	// Rebuild splits with the (potentially updated) amount
 	expense.Splits = []models.ExpenseSplit{
-		{UserID: newPayerID, Amount: newAmount, IsPaid: true},
-		{UserID: newReceiverID, Amount: newAmount, IsPaid: false},
+		{UserID: currentPayerID, Amount: expense.Amount, IsPaid: true},
+		{UserID: currentReceiverID, Amount: expense.Amount, IsPaid: false},
 	}
 
 	if err := db.UpdateExpense(c.Request.Context(), h.pool, &expense); err != nil {

@@ -167,8 +167,6 @@ definitions:
         type: integer
       group_id:
         type: string
-      title:
-        type: string
       transacted_at:
         type: integer
       user_id:
@@ -179,8 +177,6 @@ definitions:
     properties:
       amount:
         type: number
-      title:
-        type: string
       transacted_at:
         type: integer
     type: object

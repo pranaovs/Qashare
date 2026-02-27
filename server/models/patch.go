@@ -42,7 +42,6 @@ type ExpenseDetailsPatch struct {
 // SettlementPatch represents a partial update to a Settlement.
 // Only non-nil fields will be applied to the target.
 type SettlementPatch struct {
-	Title        *string  `json:"title,omitempty"`
 	TransactedAt *int64   `json:"transacted_at,omitempty"`
 	Amount       *float64 `json:"amount,omitempty"`
 }
