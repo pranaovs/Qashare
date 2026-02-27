@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:qashare/Models/expense_list_model.dart';
+import 'package:qashare/Models/settle_model.dart';
 import 'package:qashare/Screens/members_page.dart';
 import '../Config/token_storage.dart';
 import '../Service/api_service.dart';
@@ -60,6 +61,26 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
     });
   }
 
+  // -------- BALANCE SHEET --------
+  Future<void> _showBalanceSheet() async {
+    final token = await TokenStorage.getToken();
+    if (token == null) return;
+
+    // Show loading bottom sheet
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => _BalanceSheet(
+        token: token,
+        groupId: widget.groupId,
+        members: _result!.group!.members,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,7 +106,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
           : _result == null
           ? const Center(child: Text("Something went wrong"))
           : _result!.isSuccess
-          ? _content() // ✅ HERE it is used
+          ? _content()
           : _errorView(),
 
       floatingActionButton: FloatingActionButton.extended(
@@ -176,7 +197,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
           const SizedBox(height: 12),
 
           _infoTile(Icons.receipt_long, "Expenses", "Coming soon"),
-          _infoTile(Icons.account_balance_wallet, "Balance", "Coming soon"),
+          _balanceTile(),
 
           const SizedBox(height: 40),
 
@@ -209,6 +230,20 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
 
                     return Card(
                       child: ListTile(
+                        onTap: () async {
+                          final group = _result!.group!;
+                          final changed = await Navigator.pushNamed(
+                            context,
+                            "/expense-details",
+                            arguments: {
+                              "expenseId": e.expenseId,
+                              "members": group.members,
+                            },
+                          );
+                          if (changed == true) {
+                            _loadDetails();
+                          }
+                        },
                         leading: const Icon(Icons.receipt_long),
                         title: Text(e.title),
                         subtitle: Text(
@@ -243,6 +278,34 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
     );
   }
 
+  Widget _balanceTile() {
+    final hasExpenses = _expenseResult != null &&
+        _expenseResult!.isSuccess &&
+        _expenseResult!.expenses != null &&
+        _expenseResult!.expenses!.isNotEmpty;
+
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.account_balance_wallet),
+        title: const Text("Balance"),
+        trailing: hasExpenses
+            ? const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("View"),
+                  SizedBox(width: 4),
+                  Icon(Icons.chevron_right, size: 20),
+                ],
+              )
+            : const Text(
+                "No settlements",
+                style: TextStyle(color: Colors.grey),
+              ),
+        onTap: hasExpenses ? _showBalanceSheet : null,
+      ),
+    );
+  }
+
   Widget _infoTile(IconData icon, String title, String value) {
     return Card(
       child: ListTile(
@@ -259,6 +322,155 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
         _result!.errorMessage ?? "Error",
         style: TextStyle(color: Theme.of(context).colorScheme.error),
       ),
+    );
+  }
+}
+
+// ================= BALANCE BOTTOM SHEET =================
+
+class _BalanceSheet extends StatefulWidget {
+  final String token;
+  final String groupId;
+  final List<Member> members;
+
+  const _BalanceSheet({
+    required this.token,
+    required this.groupId,
+    required this.members,
+  });
+
+  @override
+  State<_BalanceSheet> createState() => _BalanceSheetState();
+}
+
+class _BalanceSheetState extends State<_BalanceSheet> {
+  bool _loading = true;
+  SettleResult? _settleResult;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSettlements();
+  }
+
+  Future<void> _fetchSettlements() async {
+    final res = await ApiService.getGroupSettlements(
+      token: widget.token,
+      groupId: widget.groupId,
+    );
+
+    setState(() {
+      _settleResult = res;
+      _loading = false;
+    });
+  }
+
+  String _memberName(String userId) {
+    final match = widget.members.where((m) => m.userId == userId);
+    return match.isNotEmpty ? match.first.name : userId;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.5,
+      minChildSize: 0.3,
+      maxChildSize: 0.85,
+      expand: false,
+      builder: (context, scrollController) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ---- Handle bar ----
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+
+              Text(
+                "Balances",
+                style: theme.textTheme.titleLarge,
+              ),
+              const SizedBox(height: 4),
+              const SizedBox(height: 16),
+
+              if (_loading)
+                const Expanded(
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (!_settleResult!.isSuccess)
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      _settleResult!.errorMessage ?? "Failed to load",
+                      style: TextStyle(color: theme.colorScheme.error),
+                    ),
+                  ),
+                )
+              else if (_settleResult!.settlements!.isEmpty)
+                const Expanded(
+                  child: Center(
+                    child: Text("All settled up! 🎉"),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.separated(
+                    controller: scrollController,
+                    itemCount: _settleResult!.settlements!.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final s = _settleResult!.settlements![index];
+                      final isPositive = s.amount >= 0;
+                      final name = _memberName(s.userId);
+
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: isPositive
+                              ? Colors.green.withValues(alpha: 0.15)
+                              : Colors.red.withValues(alpha: 0.15),
+                          child: Icon(
+                            isPositive
+                                ? Icons.arrow_downward_rounded
+                                : Icons.arrow_upward_rounded,
+                            color: isPositive ? Colors.green : Colors.red,
+                          ),
+                        ),
+                        title: Text(name),
+                        subtitle: Text(
+                          isPositive
+                              ? "$name owes you"
+                              : "You owe $name",
+                          style: TextStyle(
+                            color: isPositive ? Colors.green : Colors.red,
+                            fontSize: 12,
+                          ),
+                        ),
+                        trailing: Text(
+                          "₹${s.amount.abs().toStringAsFixed(2)}",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: isPositive ? Colors.green : Colors.red,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
