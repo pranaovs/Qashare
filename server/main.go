@@ -76,8 +76,11 @@ func run() error {
 
 	// Start periodic cleanup of expired refresh tokens
 	cleanupCtx, cleanupCancel := context.WithCancel(context.Background())
-	defer cleanupCancel()
-	db.StartTokenCleanup(cleanupCtx, pool, cfg.JWT.TokenCleanupFreq)
+	cleanupDone := db.StartTokenCleanup(cleanupCtx, pool, cfg.JWT.TokenCleanupFreq)
+	defer func() {
+		cleanupCancel()
+		<-cleanupDone
+	}()
 
 	// Setup HTTP router
 	router := gin.Default()
