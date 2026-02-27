@@ -155,6 +155,7 @@ func (h *SettlementsHandler) Create(c *gin.Context) {
 			AddedBy:      userID,
 			Amount:       absAmount,
 			IsSettlement: true,
+			TransactedAt: req.TransactedAt,
 		},
 		Splits: []models.ExpenseSplit{
 			{UserID: payerID, Amount: absAmount, IsPaid: true},
