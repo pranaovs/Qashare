@@ -161,15 +161,15 @@ func (h *AuthHandler) Login(c *gin.Context) {
 }
 
 // Refresh godoc
-// @Summary Refresh access token
-// @Description Use a valid refresh token to get an access token
+// @Summary Refresh tokens
+// @Description Use a valid refresh token to get new access and refresh tokens. The old refresh token is revoked (token rotation).
 // @Tags auth
 // @Accept json
 // @Produce json
 // @Param request body object{refresh_token=string} true "Refresh token"
-// @Success 200 {object} models.TokenResponse "Returns new access token"
+// @Success 200 {object} models.TokenResponse "Returns new access and refresh tokens"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Missing refresh token"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Refresh token is invalid or revoked"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Refresh token is invalid or already used"
 // @Failure 403 {object} apierrors.AppError "TOKEN_EXPIRED: Refresh token has expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/auth/refresh [post]
@@ -192,7 +192,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		return
 	}
 
-	tokenID, err := uuid.Parse(claims.ID)
+	oldTokenID, err := uuid.Parse(claims.ID)
 	if err != nil {
 		utils.SendError(c, apierrors.ErrInvalidToken)
 		return
@@ -204,26 +204,30 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		return
 	}
 
-	// Check the token valid in the database (not revoked)
-	valid, err := db.RefreshTokenExists(c.Request.Context(), h.pool, tokenID)
+	newRefreshToken, newTokenID, newExpiresAt, err := utils.GenerateRefreshToken(userID, h.jwtConfig)
 	if err != nil {
 		utils.SendError(c, err)
-		return
-	}
-	if !valid {
-		utils.SendError(c, apierrors.ErrInvalidToken)
 		return
 	}
 
-	accessToken, err := utils.GenerateAccessToken(userID, tokenID, h.jwtConfig)
+	accessToken, err := utils.GenerateAccessToken(userID, newTokenID, h.jwtConfig)
 	if err != nil {
 		utils.SendError(c, err)
+		return
+	}
+
+	err = db.RotateToken(c.Request.Context(), h.pool, oldTokenID, newTokenID, userID, newExpiresAt)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrInvalidToken,
+		}))
 		return
 	}
 
 	utils.SendData(c, models.TokenResponse{
-		AccessToken: accessToken,
-		TokenType:   "Bearer",
+		AccessToken:  accessToken,
+		RefreshToken: newRefreshToken,
+		TokenType:    "Bearer",
 	})
 }
 
@@ -241,7 +245,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 func (h *AuthHandler) Logout(c *gin.Context) {
 	sessionID := middleware.MustGetSessionID(c)
 
-	err := db.DeleteRefreshToken(c.Request.Context(), h.pool, sessionID)
+	err := db.DeleteToken(c.Request.Context(), h.pool, sessionID)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrInvalidToken,
@@ -266,7 +270,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 func (h *AuthHandler) LogoutAll(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 
-	err := db.DeleteUserRefreshTokens(c.Request.Context(), h.pool, userID)
+	err := db.DeleteTokens(c.Request.Context(), h.pool, userID)
 	if err != nil {
 		utils.SendError(c, err)
 		return
