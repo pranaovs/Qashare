@@ -170,7 +170,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Success 200 {object} models.TokenResponse "Returns new access and refresh tokens"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Missing refresh token"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Refresh token is invalid or already used"
-// @Failure 403 {object} apierrors.AppError "TOKEN_EXPIRED: Refresh token has expired"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Refresh token has expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/auth/refresh [post]
 func (h *AuthHandler) Refresh(c *gin.Context) {
@@ -239,7 +239,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 // @Security BearerAuth
 // @Success 200 {object} object{message=string} "Successfully logged out"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
-// @Failure 403 {object} apierrors.AppError "TOKEN_EXPIRED: Access token has expired"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
@@ -264,7 +264,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 // @Security BearerAuth
 // @Success 200 {object} object{message=string} "All tokens successfully revoked"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
-// @Failure 403 {object} apierrors.AppError "TOKEN_EXPIRED: Access token has expired"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/auth/logout-all [post]
 func (h *AuthHandler) LogoutAll(c *gin.Context) {
@@ -288,7 +288,7 @@ func (h *AuthHandler) LogoutAll(c *gin.Context) {
 // @Deprecated
 // @Success 200 {object} models.User "Returns the authenticated user's profile information"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
-// @Failure 403 {object} apierrors.AppError "TOKEN_EXPIRED: Access token has expired"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists in the database"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/auth/me [get]
@@ -320,7 +320,7 @@ func (h *AuthHandler) Me(c *gin.Context) {
 // @Success 201 {object} models.User "Guest user successfully created"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format or missing required fields | BAD_EMAIL: Invalid email format"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
-// @Failure 403 {object} apierrors.AppError "TOKEN_EXPIRED: Access token has expired"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 409 {object} apierrors.AppError "EMAIL_EXISTS: An account with this email already exists"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/auth/guest [post]

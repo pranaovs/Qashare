@@ -97,7 +97,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "TOKEN_EXPIRED: Access token has expired",
+                        "description": "EXPIRED_TOKEN: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -211,7 +211,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "TOKEN_EXPIRED: Access token has expired",
+                        "description": "EXPIRED_TOKEN: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -259,7 +259,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "TOKEN_EXPIRED: Access token has expired",
+                        "description": "EXPIRED_TOKEN: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -303,7 +303,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "TOKEN_EXPIRED: Access token has expired",
+                        "description": "EXPIRED_TOKEN: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -372,7 +372,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "TOKEN_EXPIRED: Refresh token has expired",
+                        "description": "EXPIRED_TOKEN: Refresh token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1709,7 +1709,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "TOKEN_EXPIRED: Access token has expired",
+                        "description": "EXPIRED_TOKEN: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1776,7 +1776,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "TOKEN_EXPIRED: Access token has expired",
+                        "description": "EXPIRED_TOKEN: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1832,7 +1832,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "TOKEN_EXPIRED: Access token has expired",
+                        "description": "EXPIRED_TOKEN: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1905,7 +1905,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "TOKEN_EXPIRED: Access token has expired",
+                        "description": "EXPIRED_TOKEN: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1963,7 +1963,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "TOKEN_EXPIRED: Access token has expired",
+                        "description": "EXPIRED_TOKEN: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -2009,7 +2009,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "TOKEN_EXPIRED: Access token has expired",
+                        "description": "EXPIRED_TOKEN: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -2342,7 +2342,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "TOKEN_EXPIRED: Access token has expired",
+                        "description": "EXPIRED_TOKEN: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -2406,7 +2406,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "TOKEN_EXPIRED: Access token has expired",
+                        "description": "EXPIRED_TOKEN: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -2470,7 +2470,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "TOKEN_EXPIRED: Access token has expired | USERS_NOT_RELATED: The users are not related through any common group",
+                        "description": "EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED: The users are not related through any common group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
