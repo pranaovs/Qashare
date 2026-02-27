@@ -501,9 +501,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return ExpenseDetailResult.success(
-          ExpenseDetail.fromJson(data),
-        );
+        return ExpenseDetailResult.success(ExpenseDetail.fromJson(data));
       }
 
       if (response.statusCode == 401) {
@@ -527,7 +525,4 @@ class ApiService {
       return ExpenseDetailResult.error("Unable to connect to server");
     }
   }
-
-
-
 }
