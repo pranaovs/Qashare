@@ -55,7 +55,12 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
 
   Future<void> _loadExpense() async {
     final token = await TokenStorage.getToken();
-    if (token == null) return;
+    if (token == null) {
+      await TokenStorage.clear();
+      if (!mounted) return;
+      Navigator.pushNamedAndRemoveUntil(context, "/login", (_) => false);
+      return;
+    }
 
     final res = await ApiService.getExpenseDetails(
       token: token,
