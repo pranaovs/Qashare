@@ -57,14 +57,15 @@ class MyApp extends StatelessWidget {
                 members: args["members"],
               );
             },
-            '/expense-details' : (context){
-              final args = ModalRoute.of(context)!.settings.arguments
-                  as Map<String, dynamic>;
+            '/expense-details': (context) {
+              final args =
+                  ModalRoute.of(context)!.settings.arguments
+                      as Map<String, dynamic>;
               return ExpenseDetailsPage(
                 expenseId: args["expenseId"],
                 members: args["members"],
               );
-            }
+            },
             // Add more routes as needed
           },
         );

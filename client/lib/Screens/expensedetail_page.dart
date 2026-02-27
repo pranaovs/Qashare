@@ -35,9 +35,7 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
   void initState() {
     super.initState();
     // Build userId -> name lookup map from the members list
-    _memberNames = {
-      for (final m in widget.members) m.userId: m.name,
-    };
+    _memberNames = {for (final m in widget.members) m.userId: m.name};
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
@@ -81,8 +79,18 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
 
   String _formatDate(DateTime dt) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return "${dt.day} ${months[dt.month - 1]} ${dt.year}";
   }
@@ -106,16 +114,13 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
                 children: [
                   CircularProgressIndicator(color: cs.primary),
                   const SizedBox(height: 16),
-                  Text(
-                    "Loading expense…",
-                    style: TextStyle(color: cs.outline),
-                  ),
+                  Text("Loading expense…", style: TextStyle(color: cs.outline)),
                 ],
               ),
             )
           : !_result!.isSuccess
-              ? _errorBody(cs)
-              : _successBody(cs),
+          ? _errorBody(cs)
+          : _successBody(cs),
     );
   }
 
@@ -123,17 +128,18 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
   Widget _errorBody(ColorScheme cs) {
     return CustomScrollView(
       slivers: [
-        SliverAppBar.large(
-          title: const Text("Expense Details"),
-        ),
+        SliverAppBar.large(title: const Text("Expense Details")),
         SliverFillRemaining(
           hasScrollBody: false,
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.error_outline_rounded,
-                    size: 64, color: cs.error.withValues(alpha: 0.7)),
+                Icon(
+                  Icons.error_outline_rounded,
+                  size: 64,
+                  color: cs.error.withValues(alpha: 0.7),
+                ),
                 const SizedBox(height: 16),
                 Text(
                   _result!.errorMessage!,
@@ -163,10 +169,10 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
   // ─── SUCCESS BODY ─────────────────────────────────────────────
   Widget _successBody(ColorScheme cs) {
     final e = _result!.expense!;
-    final transactedDate =
-        DateTime.fromMillisecondsSinceEpoch(e.transactedAt * 1000);
-    final createdDate =
-        DateTime.fromMillisecondsSinceEpoch(e.createdAt * 1000);
+    final transactedDate = DateTime.fromMillisecondsSinceEpoch(
+      e.transactedAt * 1000,
+    );
+    final createdDate = DateTime.fromMillisecondsSinceEpoch(e.createdAt * 1000);
 
     final paidSplits = e.splits.where((s) => s.isPaid).toList();
     final owedSplits = e.splits.where((s) => !s.isPaid).toList();
@@ -180,9 +186,7 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
           slivers: [
             // ── COLLAPSING HEADER ──
             SliverAppBar.large(
-              title: Text(
-                e.isSettlement ? "Settlement" : "Expense Details",
-              ),
+              title: Text(e.isSettlement ? "Settlement" : "Expense Details"),
               actions: [
                 if (e.isIncompleteAmount || e.isIncompleteSplit)
                   Padding(
@@ -191,8 +195,7 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
                       message: e.isIncompleteAmount
                           ? "Amount is incomplete"
                           : "Split is incomplete",
-                      child: Icon(Icons.warning_amber_rounded,
-                          color: cs.error),
+                      child: Icon(Icons.warning_amber_rounded, color: cs.error),
                     ),
                   ),
               ],
@@ -270,9 +273,10 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
                   // ── PAID BY SECTION ──
                   if (paidSplits.isNotEmpty) ...[
                     _sectionHeader(
-                        e.isSettlement ? "Settled by" : "Paid by",
-                        Icons.arrow_upward_rounded,
-                        cs),
+                      e.isSettlement ? "Settled by" : "Paid by",
+                      Icons.arrow_upward_rounded,
+                      cs,
+                    ),
                     const SizedBox(height: 10),
                     ...paidSplits.map((s) => _splitCard(s, true, cs)),
                     const SizedBox(height: 20),
@@ -281,9 +285,10 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
                   // ── OWES SECTION ──
                   if (owedSplits.isNotEmpty) ...[
                     _sectionHeader(
-                        e.isSettlement ? "Received by" : "Owes",
-                        Icons.arrow_downward_rounded,
-                        cs),
+                      e.isSettlement ? "Received by" : "Owes",
+                      Icons.arrow_downward_rounded,
+                      cs,
+                    ),
                     const SizedBox(height: 10),
                     ...owedSplits.map((s) => _splitCard(s, false, cs)),
                   ],
@@ -301,9 +306,7 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
     return Card(
       elevation: 0,
       color: cs.primaryContainer,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 24),
         child: Column(
@@ -312,8 +315,10 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
             if (e.isSettlement)
               Container(
                 margin: const EdgeInsets.only(bottom: 14),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: cs.tertiary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
@@ -321,8 +326,11 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.handshake_outlined,
-                        size: 16, color: cs.tertiary),
+                    Icon(
+                      Icons.handshake_outlined,
+                      size: 16,
+                      color: cs.tertiary,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       "Settlement",
@@ -437,10 +445,7 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
       margin: const EdgeInsets.only(bottom: 8),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: BorderSide(
-          color: accent.withValues(alpha: 0.2),
-          width: 1,
-        ),
+        side: BorderSide(color: accent.withValues(alpha: 0.2), width: 1),
       ),
       color: accentBg,
       child: Padding(
@@ -506,8 +511,7 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
   // ─── WARNING CHIP ─────────────────────────────────────────────
   Widget _warningChip(String label, ColorScheme cs) {
     return Chip(
-      avatar: Icon(Icons.warning_amber_rounded,
-          size: 16, color: cs.error),
+      avatar: Icon(Icons.warning_amber_rounded, size: 16, color: cs.error),
       label: Text(
         label,
         style: TextStyle(
@@ -518,9 +522,7 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
       ),
       backgroundColor: cs.errorContainer.withValues(alpha: 0.4),
       side: BorderSide(color: cs.error.withValues(alpha: 0.2)),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     );
   }
 }

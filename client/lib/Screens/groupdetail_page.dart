@@ -209,7 +209,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
 
                     return Card(
                       child: ListTile(
-                        onTap: (){
+                        onTap: () {
                           final group = _result!.group!;
                           Navigator.pushNamed(
                             context,
