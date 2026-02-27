@@ -2,6 +2,7 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 import 'package:qashare/Screens/authcheck_page.dart';
 import 'package:qashare/Screens/creategroup_page.dart';
+import 'package:qashare/Screens/expensedetail_page.dart';
 import 'package:qashare/Screens/home_page.dart';
 import 'package:qashare/Screens/profile_page.dart';
 
@@ -55,7 +56,17 @@ class MyApp extends StatelessWidget {
                 groupId: args["groupId"],
                 members: args["members"],
               );
-            }, // Add more routes as needed
+            },
+            '/expense-details': (context) {
+              final args =
+                  ModalRoute.of(context)!.settings.arguments
+                      as Map<String, dynamic>;
+              return ExpenseDetailsPage(
+                expenseId: args["expenseId"],
+                members: args["members"],
+              );
+            },
+            // Add more routes as needed
           },
         );
       },
