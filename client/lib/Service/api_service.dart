@@ -521,7 +521,7 @@ class ApiService {
       }
 
       return ExpenseDetailResult.error("Unexpected error");
-    } catch (e) {
+    } catch (_) {
       return ExpenseDetailResult.error("Unable to connect to server");
     }
   }
