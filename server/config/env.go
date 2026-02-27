@@ -101,12 +101,8 @@ func getEnvDuration(key string, defaultValue string) time.Duration {
 	}
 
 	d, err := parseDuration(valStr)
-	if err != nil || d < 0 {
-		if d < 0 {
-			slog.Warn("Negative duration not allowed, using default", "key", key, "value", valStr, "default", defaultValue)
-		} else {
-			slog.Warn("Invalid duration config value", "key", key, "value", valStr, "default", defaultValue)
-		}
+	if err != nil {
+		slog.Warn("Invalid duration config value", "key", key, "value", valStr, "default", defaultValue)
 
 		// Try to parse the default value
 		defaultDuration, defaultErr := parseDuration(defaultValue)
