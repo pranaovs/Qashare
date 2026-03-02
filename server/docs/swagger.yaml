@@ -27,6 +27,8 @@ definitions:
         type: boolean
       is_incomplete_split:
         type: boolean
+      is_private:
+        type: boolean
       is_settlement:
         type: boolean
       latitude:
@@ -58,6 +60,8 @@ definitions:
       is_incomplete_amount:
         type: boolean
       is_incomplete_split:
+        type: boolean
+      is_private:
         type: boolean
       is_settlement:
         type: boolean
@@ -211,6 +215,8 @@ definitions:
       is_incomplete_amount:
         type: boolean
       is_incomplete_split:
+        type: boolean
+      is_private:
         type: boolean
       is_settlement:
         type: boolean
@@ -848,7 +854,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Returns list of all expenses in the group
+          description: Returns list of all expenses in the group. If an expense is
+            is_private, only the splits related to the authenticated user will be
+            included in the response (creator or involved in splits)
           schema:
             items:
               $ref: '#/definitions/models.Expense'

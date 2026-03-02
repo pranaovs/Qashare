@@ -984,7 +984,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Returns list of all expenses in the group",
+                        "description": "Returns list of all expenses in the group. If an expense is is_private, only the splits related to the authenticated user will be included in the response (creator or involved in splits)",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -2317,6 +2317,9 @@ const docTemplate = `{
                 "is_incomplete_split": {
                     "type": "boolean"
                 },
+                "is_private": {
+                    "type": "boolean"
+                },
                 "is_settlement": {
                     "type": "boolean"
                 },
@@ -2362,6 +2365,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "is_incomplete_split": {
+                    "type": "boolean"
+                },
+                "is_private": {
                     "type": "boolean"
                 },
                 "is_settlement": {
@@ -2594,6 +2600,9 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "is_incomplete_split": {
+                    "type": "boolean"
+                },
+                "is_private": {
                     "type": "boolean"
                 },
                 "is_settlement": {

@@ -63,6 +63,23 @@ func VerifyExpenseAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
+		// Private expenses are only visible to the creator and split participants
+		if expense.IsPrivate {
+			hasAccess := expense.AddedBy == userID
+			if !hasAccess {
+				for _, split := range expense.Splits {
+					if split.UserID == userID {
+						hasAccess = true
+						break
+					}
+				}
+			}
+			if !hasAccess {
+				utils.SendAbort(c, apierrors.ErrExpenseNotFound)
+				return
+			}
+		}
+
 		// Cache the expense in context to avoid double-fetching
 		c.Set(ExpenseKey, expense)
 		c.Set(ExpenseIDKey, expenseID)
@@ -176,6 +193,21 @@ func VerifyExpenseDeleteAccess(pool *pgxpool.Pool) gin.HandlerFunc {
 		if !isCreator && !isGroupAdmin {
 			utils.SendAbort(c, apierrors.ErrNoPermissions)
 			return
+		}
+
+		// For private expenses, group admins cannot delete unless they are the creator or a split participant
+		if expense.IsPrivate && !isCreator {
+			isParticipant := false
+			for _, split := range expense.Splits {
+				if split.UserID == userID {
+					isParticipant = true
+					break
+				}
+			}
+			if !isParticipant {
+				utils.SendAbort(c, apierrors.ErrExpenseNotFound)
+				return
+			}
 		}
 
 		c.Set(ExpenseKey, expense)
