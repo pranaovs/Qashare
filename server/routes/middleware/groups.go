@@ -9,7 +9,9 @@ import (
 	"github.com/pranaovs/qashare/utils"
 )
 
-const GroupIDKey = "groupID"
+const (
+	GroupIDKey = "groupID"
+)
 
 // RequireGroupMember checks if the authenticated user is a member of the group
 func RequireGroupMember(pool *pgxpool.Pool) gin.HandlerFunc {

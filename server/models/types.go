@@ -20,6 +20,7 @@ type Group struct {
 	Description string    `json:"description" db:"description"`
 	CreatedBy   uuid.UUID `json:"created_by" db:"created_by" immutable:"true"`
 	CreatedAt   int64     `json:"created_at" db:"created_at" immutable:"true"`
+	Private     bool      `json:"private" db:"is_private" immutable:"true"`
 }
 
 // GroupDetails represents detailed information about a group including its members

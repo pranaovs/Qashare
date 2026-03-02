@@ -125,6 +125,8 @@ definitions:
         type: string
       name:
         type: string
+      private:
+        type: boolean
     type: object
   models.GroupDetails:
     properties:
@@ -142,6 +144,8 @@ definitions:
         type: array
       name:
         type: string
+      private:
+        type: boolean
     type: object
   models.GroupPatch:
     properties:
@@ -621,7 +625,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new group with the logged in user as the creator
+      description: Create a new group with the logged in user as the creator. A is_private
+        group means all expenses are forced is_private.
       parameters:
       - description: Group details
         in: body

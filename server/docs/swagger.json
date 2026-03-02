@@ -545,7 +545,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new group with the logged in user as the creator",
+                "description": "Create a new group with the logged in user as the creator. A is_private group means all expenses are forced is_private.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2454,6 +2454,9 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "private": {
+                    "type": "boolean"
                 }
             }
         },
@@ -2480,6 +2483,9 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "private": {
+                    "type": "boolean"
                 }
             }
         },

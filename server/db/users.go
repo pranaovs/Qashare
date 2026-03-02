@@ -238,7 +238,7 @@ func UsersRelated(ctx context.Context, pool *pgxpool.Pool, userID1, userID2 uuid
 // This is useful for showing users the groups they manage.
 func OwnerOfGroups(ctx context.Context, pool *pgxpool.Pool, userID uuid.UUID) ([]models.Group, error) {
 	query := `
-		SELECT group_id, group_name, description, created_by, extract(epoch from created_at)::bigint
+		SELECT group_id, group_name, description, created_by, extract(epoch from created_at)::bigint, is_private
 		FROM groups
 		WHERE created_by = $1
 		ORDER BY created_at DESC`
@@ -253,7 +253,7 @@ func OwnerOfGroups(ctx context.Context, pool *pgxpool.Pool, userID uuid.UUID) ([
 	groups := make([]models.Group, 0)
 	for rows.Next() {
 		var g models.Group
-		err := rows.Scan(&g.GroupID, &g.Name, &g.Description, &g.CreatedBy, &g.CreatedAt)
+		err := rows.Scan(&g.GroupID, &g.Name, &g.Description, &g.CreatedBy, &g.CreatedAt, &g.Private)
 		if err != nil {
 			return nil, err
 		}
@@ -273,7 +273,7 @@ func OwnerOfGroups(ctx context.Context, pool *pgxpool.Pool, userID uuid.UUID) ([
 // Groups are returned in descending order by creation date (newest first).
 func MemberOfGroups(ctx context.Context, pool *pgxpool.Pool, userID uuid.UUID) ([]models.Group, error) {
 	query := `
-		SELECT g.group_id, g.group_name, g.description, g.created_by, extract(epoch from g.created_at)::bigint
+		SELECT g.group_id, g.group_name, g.description, g.created_by, extract(epoch from g.created_at)::bigint, g.is_private
 		FROM groups g
 		JOIN group_members gm ON gm.group_id = g.group_id
 		WHERE gm.user_id = $1
@@ -289,7 +289,7 @@ func MemberOfGroups(ctx context.Context, pool *pgxpool.Pool, userID uuid.UUID) (
 	groups := make([]models.Group, 0)
 	for rows.Next() {
 		var g models.Group
-		err := rows.Scan(&g.GroupID, &g.Name, &g.Description, &g.CreatedBy, &g.CreatedAt)
+		err := rows.Scan(&g.GroupID, &g.Name, &g.Description, &g.CreatedBy, &g.CreatedAt, &g.Private)
 		if err != nil {
 			return nil, err
 		}

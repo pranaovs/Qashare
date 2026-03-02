@@ -43,14 +43,19 @@ func CreateExpense(
 	// Use WithTransaction helper for consistent transaction management
 	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
 		// Insert expense record
+		// is_private is forced true when the group itself is private,
+		// otherwise the user-provided value is used.
 		insertQuery := `INSERT INTO expenses (
 			group_id, added_by, title, description, amount,
 			is_incomplete_amount, is_incomplete_split, is_settlement, is_private, latitude, longitude,
 			transacted_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8,
+			$9 OR COALESCE((SELECT is_private FROM groups WHERE group_id = $1), false),
+			$10, $11,
 			COALESCE(to_timestamp($12::bigint), now()))
-		RETURNING expense_id, extract(epoch from created_at)::bigint,
+		RETURNING expense_id, is_private,
+			extract(epoch from created_at)::bigint,
 			extract(epoch from transacted_at)::bigint`
 
 		err := tx.QueryRow(
@@ -68,7 +73,7 @@ func CreateExpense(
 			expense.Latitude,
 			expense.Longitude,
 			expense.TransactedAt,
-		).Scan(&expense.ExpenseID, &expense.CreatedAt, &expense.TransactedAt)
+		).Scan(&expense.ExpenseID, &expense.IsPrivate, &expense.CreatedAt, &expense.TransactedAt)
 		if err != nil {
 			return fmt.Errorf("failed to insert expense: %w", err)
 		}

@@ -553,7 +553,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create a new group with the logged in user as the creator",
+                "description": "Create a new group with the logged in user as the creator. A is_private group means all expenses are forced is_private.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2462,6 +2462,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "private": {
+                    "type": "boolean"
                 }
             }
         },
@@ -2488,6 +2491,9 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "private": {
+                    "type": "boolean"
                 }
             }
         },

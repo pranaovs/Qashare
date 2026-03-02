@@ -24,11 +24,11 @@ func CreateGroup(ctx context.Context, pool *pgxpool.Pool, group *models.Group) e
 	// Use WithTransaction helper for consistent transaction management
 	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
 		// Insert the group
-		query := `INSERT INTO groups (group_name, description, created_by)
-			VALUES ($1, $2, $3)
+		query := `INSERT INTO groups (group_name, description, created_by, is_private)
+			VALUES ($1, $2, $3, $4)
 			RETURNING group_id, extract(epoch from created_at)::bigint`
 
-		err := tx.QueryRow(ctx, query, group.Name, group.Description, group.CreatedBy).Scan(&group.GroupID, &group.CreatedAt)
+		err := tx.QueryRow(ctx, query, group.Name, group.Description, group.CreatedBy, group.Private).Scan(&group.GroupID, &group.CreatedAt)
 		if err != nil {
 			return err
 		}
@@ -76,7 +76,7 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID uuid.UUID) (model
 	var group models.GroupDetails
 
 	query := `SELECT g.group_id, g.group_name, g.description, g.created_by,
-		extract(epoch from g.created_at)::bigint,
+		extract(epoch from g.created_at)::bigint, g.is_private,
 		u.user_id, u.user_name, u.email, u.is_guest,
 		extract(epoch from gm.joined_at)::bigint
 	FROM groups g
@@ -106,6 +106,7 @@ func GetGroup(ctx context.Context, pool *pgxpool.Pool, groupID uuid.UUID) (model
 			&group.Description,
 			&group.CreatedBy,
 			&group.CreatedAt,
+			&group.Private,
 			&memberUserID,
 			&memberName,
 			&memberEmail,

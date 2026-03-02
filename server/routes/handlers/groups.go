@@ -28,7 +28,7 @@ func NewGroupsHandler(pool *pgxpool.Pool, appConfig config.AppConfig) *GroupsHan
 
 // Create godoc
 // @Summary Create a new group
-// @Description Create a new group with the logged in user as the creator
+// @Description Create a new group with the logged in user as the creator. A is_private group means all expenses are forced is_private.
 // @Tags groups
 // @Accept json
 // @Produce json
@@ -49,6 +49,7 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 	var request struct {
 		Name        string `json:"name" binding:"required"`
 		Description string `json:"description"`
+		Private     bool   `json:"private"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -65,6 +66,7 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 	}
 
 	group.Description = request.Description
+	group.Private = request.Private
 	err = db.CreateGroup(c.Request.Context(), h.pool, &group)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
