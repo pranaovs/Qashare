@@ -180,6 +180,18 @@ definitions:
       transacted_at:
         type: integer
     type: object
+  models.TokenResponse:
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIs...
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+    type: object
   models.User:
     properties:
       created_at:
@@ -289,8 +301,11 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "409":
@@ -298,7 +313,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal server error - unexpected database error
+          description: Internal server error
           schema:
             $ref: '#/definitions/apierrors.AppError'
       security:
@@ -310,7 +325,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Authenticate user and return JWT token
+      description: Authenticate user and return access and refresh tokens
       parameters:
       - description: User login credentials
         in: body
@@ -327,11 +342,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Returns JWT token and success message
+          description: Returns access and refresh tokens
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/models.TokenResponse'
         "400":
           description: 'BAD_REQUEST: Invalid request body format or missing required
             fields | BAD_EMAIL: Invalid email format'
@@ -342,11 +355,70 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal server error - JWT generation failed or unexpected
-            database error
+          description: Internal server error
           schema:
             $ref: '#/definitions/apierrors.AppError'
       summary: Login user
+      tags:
+      - auth
+  /v1/auth/logout:
+    post:
+      description: Revoke the refresh token associated with the current access token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully logged out
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+        "401":
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'EXPIRED_TOKEN: Access token has expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Logout current session
+      tags:
+      - auth
+  /v1/auth/logout-all:
+    post:
+      description: Revoke all refresh tokens for the authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: All tokens successfully revoked
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+        "401":
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'EXPIRED_TOKEN: Access token has expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Logout from all devices
       tags:
       - auth
   /v1/auth/me:
@@ -361,8 +433,11 @@ paths:
           schema:
             $ref: '#/definitions/models.User'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "404":
@@ -371,12 +446,54 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "500":
-          description: Internal server error - unexpected database error
+          description: Internal server error
           schema:
             $ref: '#/definitions/apierrors.AppError'
       security:
       - BearerAuth: []
       summary: Get current user
+      tags:
+      - auth
+  /v1/auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Use a valid refresh token to get new access and refresh tokens.
+        The old refresh token is revoked (token rotation).
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          properties:
+            refresh_token:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns new access and refresh tokens
+          schema:
+            $ref: '#/definitions/models.TokenResponse'
+        "400":
+          description: 'BAD_REQUEST: Missing refresh token'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "401":
+          description: 'INVALID_TOKEN: Refresh token is invalid or already used'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'EXPIRED_TOKEN: Refresh token has expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      summary: Refresh tokens
       tags:
       - auth
   /v1/auth/register:
@@ -1292,8 +1409,11 @@ paths:
               type: string
             type: object
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "404":
@@ -1325,8 +1445,11 @@ paths:
           schema:
             $ref: '#/definitions/models.User'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "404":
@@ -1368,8 +1491,11 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "404":
@@ -1414,8 +1540,11 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "404":
@@ -1435,6 +1564,35 @@ paths:
       summary: Update current user (full replacement)
       tags:
       - me
+  /v1/me/admin:
+    get:
+      description: Get all groups that the authenticated user created (is owner of)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns list of groups the user is owner of
+          schema:
+            items:
+              $ref: '#/definitions/models.Group'
+            type: array
+        "401":
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'EXPIRED_TOKEN: Access token has expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error - unexpected database error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: List groups user owns
+      tags:
+      - me
   /v1/me/groups:
     get:
       description: Get all groups the logged in user is a member of
@@ -1448,8 +1606,11 @@ paths:
               $ref: '#/definitions/models.Group'
             type: array
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "500":
@@ -1459,32 +1620,6 @@ paths:
       security:
       - BearerAuth: []
       summary: List user's groups
-      tags:
-      - me
-  /v1/me/own:
-    get:
-      description: Get all groups that the authenticated user created (is owner of)
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Returns list of groups the user is owner of
-          schema:
-            items:
-              $ref: '#/definitions/models.Group'
-            type: array
-        "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
-          schema:
-            $ref: '#/definitions/apierrors.AppError'
-        "500":
-          description: Internal server error - unexpected database error
-          schema:
-            $ref: '#/definitions/apierrors.AppError'
-      security:
-      - BearerAuth: []
-      summary: List groups user owns
       tags:
       - me
   /v1/settlements/{id}:
@@ -1693,13 +1828,12 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is invalid'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
-          description: 'USERS_NOT_RELATED: The users are not related through any common
-            group'
+          description: 'EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED:
+            The users are not related through any common group'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "404":
@@ -1744,8 +1878,11 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "409":
@@ -1782,8 +1919,11 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'EXPIRED_TOKEN: Access token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "404":

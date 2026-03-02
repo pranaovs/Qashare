@@ -74,6 +74,14 @@ func run() error {
 	docs.SwaggerInfo.BasePath = cfg.API.BasePath
 	docs.SwaggerInfo.Schemes = []string{u.Scheme}
 
+	// Start periodic cleanup of expired refresh tokens
+	cleanupCtx, cleanupCancel := context.WithCancel(context.Background())
+	cleanupDone := db.StartTokenCleanup(cleanupCtx, pool, cfg.JWT.TokenCleanupFreq)
+	defer func() {
+		cleanupCancel()
+		<-cleanupDone
+	}()
+
 	// Setup HTTP router
 	router := gin.Default()
 	if err := router.SetTrustedProxies(cfg.API.TrustedProxies); err != nil {
