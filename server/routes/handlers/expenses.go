@@ -82,19 +82,6 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	expense.IsSettlement = false
 	expense.GroupID = groupID
 
-	// Verify user is a member of the group
-	isMember, err := db.MemberOfGroup(c.Request.Context(), h.pool, userID, expense.GroupID)
-	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrNotFound: apierrors.ErrGroupNotFound,
-		}))
-		return
-	}
-	if !isMember {
-		utils.SendError(c, apierrors.ErrUsersNotRelated)
-		return
-	}
-
 	if len(expense.Splits) == 0 {
 		utils.SendError(c, apierrors.ErrBadRequest.Msg("no splits provided"))
 		return
@@ -135,7 +122,7 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 		}
 	}
 
-	err = db.CreateExpense(c.Request.Context(), h.pool, &expense)
+	err := db.CreateExpense(c.Request.Context(), h.pool, &expense)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrNotFound: apierrors.ErrGroupNotFound,
