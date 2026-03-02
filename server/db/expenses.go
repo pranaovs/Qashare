@@ -45,11 +45,11 @@ func CreateExpense(
 		// Insert expense record
 		insertQuery := `INSERT INTO expenses (
 			group_id, added_by, title, description, amount,
-			is_incomplete_amount, is_incomplete_split, is_settlement, latitude, longitude,
+			is_incomplete_amount, is_incomplete_split, is_settlement, is_private, latitude, longitude,
 			transacted_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-			COALESCE(to_timestamp($11::bigint), now()))
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11,
+			COALESCE(to_timestamp($12::bigint), now()))
 		RETURNING expense_id, extract(epoch from created_at)::bigint,
 			extract(epoch from transacted_at)::bigint`
 
@@ -64,6 +64,7 @@ func CreateExpense(
 			expense.IsIncompleteAmount,
 			expense.IsIncompleteSplit,
 			expense.IsSettlement,
+			expense.IsPrivate,
 			expense.Latitude,
 			expense.Longitude,
 			expense.TransactedAt,
@@ -134,9 +135,10 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.Expe
 				is_incomplete_amount = $5,
 				is_incomplete_split = $6,
 				is_settlement = $7,
-				latitude = $8,
-				longitude = $9,
-				transacted_at = COALESCE(to_timestamp($10::bigint), transacted_at)
+				is_private = $8,
+				latitude = $9,
+				longitude = $10,
+				transacted_at = COALESCE(to_timestamp($11::bigint), transacted_at)
 			WHERE expense_id = $1`
 
 		result, err := tx.Exec(
@@ -149,6 +151,7 @@ func UpdateExpense(ctx context.Context, pool *pgxpool.Pool, expense *models.Expe
 			expense.IsIncompleteAmount,
 			expense.IsIncompleteSplit,
 			expense.IsSettlement,
+			expense.IsPrivate,
 			expense.Latitude,
 			expense.Longitude,
 			expense.TransactedAt,
@@ -213,7 +216,7 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID uuid.UUID) (m
 		extract(epoch from e.created_at)::bigint,
 		extract(epoch from e.transacted_at)::bigint,
 		e.amount,
-		e.is_incomplete_amount, e.is_incomplete_split, e.is_settlement,
+		e.is_incomplete_amount, e.is_incomplete_split, e.is_settlement, e.is_private,
 		e.latitude, e.longitude,
 		es.user_id, es.amount, es.is_paid
 	FROM expenses e
@@ -249,6 +252,7 @@ func GetExpense(ctx context.Context, pool *pgxpool.Pool, expenseID uuid.UUID) (m
 			&expense.IsIncompleteAmount,
 			&expense.IsIncompleteSplit,
 			&expense.IsSettlement,
+			&expense.IsPrivate,
 			&expense.Latitude,
 			&expense.Longitude,
 			&splitUserID,
@@ -312,9 +316,10 @@ func DeleteExpense(ctx context.Context, pool *pgxpool.Pool, expenseID uuid.UUID)
 }
 
 // GetExpenses retrieves all expenses for a given group, ordered by creation time descending.
+// Private expenses are only visible to the creator and split participants.
 // Returns an empty slice if no expenses are found.
 // Returns an error if the groupID is empty or the operation fails.
-func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID uuid.UUID) ([]models.Expense, error) {
+func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID, userID uuid.UUID) ([]models.Expense, error) {
 	// TODO: Add pagination support for large datasets
 
 	// Validate input
@@ -323,6 +328,7 @@ func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID uuid.UUID) ([]
 	}
 
 	// Query to get all expenses for the group
+	// Private expenses are filtered to only show to creator or split participants
 	expensesQuery := `SELECT expense_id,
 		group_id,
 		added_by,
@@ -334,14 +340,20 @@ func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID uuid.UUID) ([]
 		is_incomplete_amount,
 		is_incomplete_split,
 		is_settlement,
+		is_private,
 		latitude,
 		longitude
 	FROM expenses
 	WHERE group_id = $1
 		AND is_settlement = false
+		AND (
+			is_private = false
+			OR added_by = $2
+			OR expense_id IN (SELECT expense_id FROM expense_splits WHERE user_id = $2)
+		)
 	ORDER BY created_at DESC`
 
-	rows, err := pool.Query(ctx, expensesQuery, groupID)
+	rows, err := pool.Query(ctx, expensesQuery, groupID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -362,6 +374,7 @@ func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID uuid.UUID) ([]
 			&expense.IsIncompleteAmount,
 			&expense.IsIncompleteSplit,
 			&expense.IsSettlement,
+			&expense.IsPrivate,
 			&expense.Latitude,
 			&expense.Longitude,
 		)
@@ -403,6 +416,7 @@ func GetUserSpending(ctx context.Context, pool *pgxpool.Pool, userID, groupID uu
 			e.is_incomplete_amount,
 			e.is_incomplete_split,
 			e.is_settlement,
+			e.is_private,
 			e.latitude,
 			e.longitude
 		FROM expenses e
@@ -437,6 +451,7 @@ func GetUserSpending(ctx context.Context, pool *pgxpool.Pool, userID, groupID uu
 			&expense.IsIncompleteAmount,
 			&expense.IsIncompleteSplit,
 			&expense.IsSettlement,
+			&expense.IsPrivate,
 			&expense.Latitude,
 			&expense.Longitude,
 		)
