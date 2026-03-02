@@ -326,6 +326,9 @@ func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID, userID uuid.U
 	if groupID == uuid.Nil {
 		return nil, ErrInvalidInput.Msg("group id missing")
 	}
+	if userID == uuid.Nil {
+		return nil, ErrInvalidInput.Msg("user id missing")
+	}
 
 	// Query to get all expenses for the group
 	// Private expenses are filtered to only show to creator or split participants
