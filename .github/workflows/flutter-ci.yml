@@ -2,17 +2,30 @@ name: Flutter Client CI
 
 on:
   push:
-    paths:
-      - "client/**"
-      - ".github/workflows/flutter-ci.yml"
   pull_request:
-    paths:
-      - "client/**"
-      - ".github/workflows/flutter-ci.yml"
 
 jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      client: ${{ steps.filter.outputs.client }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            client:
+              - 'client/**'
+              - '.github/workflows/flutter-ci.yml'
+
   format:
     name: Format Check
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -32,6 +45,8 @@ jobs:
 
   test:
     name: Tests
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -64,6 +79,8 @@ jobs:
 
   build:
     name: Build APK
+    needs: changes
+    if: needs.changes.outputs.client == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read

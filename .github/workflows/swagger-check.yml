@@ -2,16 +2,30 @@ name: Swagger CI
 
 on:
   push:
-    paths:
-      - "server/**"
-      - ".github/workflows/swagger-check.yml"
   pull_request:
-    paths:
-      - "server/**"
 
 jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            server:
+              - 'server/**'
+              - '.github/workflows/swagger-check.yml'
+
   check-swagger:
     name: Check docs sync
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read

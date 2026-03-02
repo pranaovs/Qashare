@@ -1,23 +1,37 @@
 name: Container CI
+
 on:
-  pull_request:
-    paths:
-      - "server/**"
-      - ".github/workflows/container-build-branch.yml"
   push:
     branches-ignore:
       - main
-    paths:
-      - "server/**"
-      - ".github/workflows/container-build-branch.yml"
+  pull_request:
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            server:
+              - 'server/**'
+              - '.github/workflows/container-build-branch.yml'
+
   backend-build:
     name: Container Build
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read

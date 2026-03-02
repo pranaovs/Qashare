@@ -2,17 +2,30 @@ name: Go Server CI
 
 on:
   push:
-    paths:
-      - "server/**"
-      - ".github/workflows/go-ci.yml"
   pull_request:
-    paths:
-      - "server/**"
-      - ".github/workflows/go-ci.yml"
 
 jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      server: ${{ steps.filter.outputs.server }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            server:
+              - 'server/**'
+              - '.github/workflows/go-ci.yml'
+
   format:
     name: Format Check
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -33,6 +46,8 @@ jobs:
 
   test:
     name: Tests
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -58,6 +73,8 @@ jobs:
 
   build:
     name: Build Check
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
