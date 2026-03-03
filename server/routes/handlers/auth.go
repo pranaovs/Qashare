@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/apperrors"
 	"github.com/pranaovs/qashare/config"
 	"github.com/pranaovs/qashare/db"
@@ -90,15 +91,15 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 // Login godoc
 // @Summary Login user
-// @Description Authenticate user and return JWT token
+// @Description Authenticate user and return access and refresh tokens
 // @Tags auth
 // @Accept json
 // @Produce json
 // @Param request body object{email=string,password=string} true "User login credentials"
-// @Success 200 {object} map[string]string "Returns JWT token and success message"
+// @Success 200 {object} models.TokenResponse "Returns access and refresh tokens"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format or missing required fields | BAD_EMAIL: Invalid email format"
 // @Failure 401 {object} apierrors.AppError "BAD_CREDENTIALS: Email or password is incorrect"
-// @Failure 500 {object} apierrors.AppError "Internal server error - JWT generation failed or unexpected database error"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var request struct {
@@ -134,16 +135,148 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := utils.GenerateJWT(userID, h.jwtConfig)
+	refreshToken, tokenID, expiresAt, err := utils.GenerateRefreshToken(userID, h.jwtConfig)
 	if err != nil {
-		utils.SendError(c, err) // Send this error directly (Sends internal server error and logs the error)
+		utils.SendError(c, err)
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, gin.H{
-		"message": "login successful",
-		"token":   token,
+	accessToken, err := utils.GenerateAccessToken(userID, tokenID, h.jwtConfig)
+	if err != nil {
+		utils.SendError(c, err)
+		return
+	}
+
+	err = db.StoreToken(c.Request.Context(), h.pool, tokenID, userID, expiresAt)
+	if err != nil {
+		utils.SendError(c, err)
+		return
+	}
+
+	utils.SendData(c, models.TokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		TokenType:    "Bearer",
 	})
+}
+
+// Refresh godoc
+// @Summary Refresh tokens
+// @Description Use a valid refresh token to get new access and refresh tokens. The old refresh token is revoked (token rotation).
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body object{refresh_token=string} true "Refresh token"
+// @Success 200 {object} models.TokenResponse "Returns new access and refresh tokens"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Missing refresh token"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Refresh token is invalid or already used"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Refresh token has expired"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
+// @Router /v1/auth/refresh [post]
+func (h *AuthHandler) Refresh(c *gin.Context) {
+	var request struct {
+		RefreshToken string `json:"refresh_token" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest)
+		return
+	}
+
+	claims, err := utils.ExtractRefreshClaims(request.RefreshToken, h.jwtConfig)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			utils.ErrExpiredToken: apierrors.ErrExpiredToken,
+			utils.ErrInvalidToken: apierrors.ErrInvalidToken,
+		}))
+		return
+	}
+
+	oldTokenID, err := uuid.Parse(claims.ID)
+	if err != nil {
+		utils.SendError(c, apierrors.ErrInvalidToken)
+		return
+	}
+
+	userID, err := uuid.Parse(claims.Subject)
+	if err != nil {
+		utils.SendError(c, apierrors.ErrInvalidToken)
+		return
+	}
+
+	newRefreshToken, newTokenID, newExpiresAt, err := utils.GenerateRefreshToken(userID, h.jwtConfig)
+	if err != nil {
+		utils.SendError(c, err)
+		return
+	}
+
+	accessToken, err := utils.GenerateAccessToken(userID, newTokenID, h.jwtConfig)
+	if err != nil {
+		utils.SendError(c, err)
+		return
+	}
+
+	err = db.RotateToken(c.Request.Context(), h.pool, oldTokenID, newTokenID, userID, newExpiresAt)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrInvalidToken,
+		}))
+		return
+	}
+
+	utils.SendData(c, models.TokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: newRefreshToken,
+		TokenType:    "Bearer",
+	})
+}
+
+// Logout godoc
+// @Summary Logout current session
+// @Description Revoke the refresh token associated with the current access token
+// @Tags auth
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} object{message=string} "Successfully logged out"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
+// @Router /v1/auth/logout [post]
+func (h *AuthHandler) Logout(c *gin.Context) {
+	sessionID := middleware.MustGetSessionID(c)
+
+	err := db.DeleteToken(c.Request.Context(), h.pool, sessionID)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound: apierrors.ErrInvalidToken,
+		}))
+		return
+	}
+
+	utils.SendOK(c, "logged out")
+}
+
+// LogoutAll godoc
+// @Summary Logout from all devices
+// @Description Revoke all refresh tokens for the authenticated user
+// @Tags auth
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} object{message=string} "All tokens successfully revoked"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
+// @Router /v1/auth/logout-all [post]
+func (h *AuthHandler) LogoutAll(c *gin.Context) {
+	userID := middleware.MustGetUserID(c)
+
+	err := db.DeleteTokens(c.Request.Context(), h.pool, userID)
+	if err != nil {
+		utils.SendError(c, err)
+		return
+	}
+
+	utils.SendOK(c, "logged out from all devices")
 }
 
 // Me godoc
@@ -154,9 +287,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Security BearerAuth
 // @Deprecated
 // @Success 200 {object} models.User "Returns the authenticated user's profile information"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists in the database"
-// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/auth/me [get]
 func (h *AuthHandler) Me(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
@@ -185,9 +319,10 @@ func (h *AuthHandler) Me(c *gin.Context) {
 // @Param request body object{email=string} true "Guest user email"
 // @Success 201 {object} models.User "Guest user successfully created"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format or missing required fields | BAD_EMAIL: Invalid email format"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 409 {object} apierrors.AppError "EMAIL_EXISTS: An account with this email already exists"
-// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/auth/guest [post]
 func (h *AuthHandler) RegisterGuest(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)

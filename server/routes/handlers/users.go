@@ -31,8 +31,8 @@ func NewUsersHandler(pool *pgxpool.Pool) *UsersHandler {
 // @Param id path string true "User ID"
 // @Success 200 {object} models.User "Returns user profile information"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid user ID format"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The users are not related through any common group"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED: The users are not related through any common group"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The specified user does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/users/{id} [get]
@@ -80,7 +80,8 @@ func (h *UsersHandler) Get(c *gin.Context) {
 // @Param email path string true "User Email"
 // @Success 200 {object} models.User "Returns user profile information matching the email"
 // @Failure 400 {object} apierrors.AppError "BAD_EMAIL: Invalid email format"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: No user found with the specified email"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/users/search/email/{email} [get]
@@ -115,7 +116,8 @@ func (h *UsersHandler) SearchByEmail(c *gin.Context) {
 // @Param request body object{email=string} true "Guest user email"
 // @Success 201 {object} models.User "Guest user successfully created"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format or missing required fields | BAD_EMAIL: Invalid email format"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 409 {object} apierrors.AppError "EMAIL_EXISTS: An account with this email already exists"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/users/guest [post]

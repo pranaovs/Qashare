@@ -161,7 +161,7 @@ The Swagger UI provides:
 - [x] Implement PostgreSQL database integration
 - [x] User authentication and authorization
 - [x] Expense tracking and management
-- [ ] Proper logout flow
+- [x] Proper logout flow
 - [x] Create frontend (not the vibe-coded slop)
 - [x] Payment settlement
     - [ ] Frontend integration

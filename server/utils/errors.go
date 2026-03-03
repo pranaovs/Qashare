@@ -97,4 +97,10 @@ var (
 		Code:    "INVALID_TOKEN",
 		Message: "invalid token",
 	}
+
+	// ErrExpiredToken indicates an expired but otherwise valid token
+	ErrExpiredToken = &UtilsError{
+		Code:    "EXPIRED_TOKEN",
+		Message: "token has expired",
+	}
 )
