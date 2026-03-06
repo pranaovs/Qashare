@@ -2,7 +2,7 @@ name: Container Release
 on:
   push:
     branches:
-      - main
+      - "**"
     tags:
       - "v*"
     paths:
@@ -39,8 +39,8 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            # main branch gets :main
-            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
+            # branch pushes get :branch-name
+            type=ref,event=branch
 
             # semver tags (releases only)
             type=semver,pattern={{version}}
