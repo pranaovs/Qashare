@@ -10,10 +10,12 @@ var (
 	ErrInvalidDescription = New(http.StatusBadRequest, "BAD_DESCRIPTION", "The description contains invalid characters.", nil)
 
 	// Auth Errors
-	ErrInvalidPassword = New(http.StatusBadRequest, "BAD_PASSWORD", "The password syntax is incorrect.", nil)
-	ErrBadCredentials  = New(http.StatusUnauthorized, "BAD_CREDENTIALS", "The provided credentials are incorrect.", nil)
-	ErrInvalidToken    = New(http.StatusUnauthorized, "INVALID_TOKEN", "The authentication token is invalid.", nil)
-	ErrExpiredToken    = New(http.StatusForbidden, "EXPIRED_TOKEN", "The authentication token has expired.", nil)
+	ErrInvalidPassword     = New(http.StatusBadRequest, "BAD_PASSWORD", "The password syntax is incorrect.", nil)
+	ErrBadCredentials      = New(http.StatusUnauthorized, "BAD_CREDENTIALS", "The provided credentials are incorrect.", nil)
+	ErrInvalidAccessToken  = New(http.StatusUnauthorized, "INVALID_TOKEN", "The access token is invalid.", nil)
+	ErrExpiredAccessToken  = New(http.StatusUnauthorized, "EXPIRED_TOKEN", "The access token has expired.", nil)
+	ErrInvalidRefreshToken = New(http.StatusBadRequest, "INVALID_REFRESH_TOKEN", "The refresh token is invalid.", nil)
+	ErrExpiredRefreshToken = New(http.StatusBadRequest, "EXPIRED_REFRESH_TOKEN", "The refresh token has expired.", nil)
 
 	// Group Errors
 	ErrUserNotFound    = New(http.StatusNotFound, "USER_NOT_FOUND", "The requested user does not exist.", nil)

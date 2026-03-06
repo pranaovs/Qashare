@@ -488,15 +488,9 @@ paths:
           schema:
             $ref: '#/definitions/models.TokenResponse'
         "400":
-          description: 'BAD_REQUEST: Missing refresh token'
-          schema:
-            $ref: '#/definitions/apierrors.AppError'
-        "401":
-          description: 'INVALID_TOKEN: Refresh token is invalid or already used'
-          schema:
-            $ref: '#/definitions/apierrors.AppError'
-        "403":
-          description: 'EXPIRED_TOKEN: Refresh token has expired'
+          description: 'BAD_REQUEST: Missing refresh token | INVALID_REFRESH_TOKEN:
+            Refresh token is invalid or already used | EXPIRED_REFRESH_TOKEN: Refresh
+            token has expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "500":
@@ -570,8 +564,7 @@ paths:
               type: string
             type: object
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -607,8 +600,7 @@ paths:
           schema:
             $ref: '#/definitions/models.ExpenseDetails'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -661,8 +653,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -715,8 +706,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -769,8 +759,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "500":
@@ -802,8 +791,7 @@ paths:
               type: string
             type: object
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -839,8 +827,7 @@ paths:
           schema:
             $ref: '#/definitions/models.GroupDetails'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -890,8 +877,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -941,8 +927,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -984,8 +969,7 @@ paths:
               $ref: '#/definitions/models.Expense'
             type: array
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -1037,8 +1021,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -1096,8 +1079,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -1150,8 +1132,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -1194,8 +1175,7 @@ paths:
               $ref: '#/definitions/models.Settlement'
             type: array
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -1247,8 +1227,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -1289,8 +1268,7 @@ paths:
               $ref: '#/definitions/models.Settlement'
             type: array
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -1331,8 +1309,7 @@ paths:
               $ref: '#/definitions/models.UserExpense'
             type: array
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -1367,8 +1344,7 @@ paths:
               $ref: '#/definitions/models.Group'
             type: array
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "500":
@@ -1394,8 +1370,7 @@ paths:
               $ref: '#/definitions/models.Group'
             type: array
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "500":
@@ -1654,8 +1629,7 @@ paths:
               type: string
             type: object
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -1691,8 +1665,7 @@ paths:
           schema:
             $ref: '#/definitions/models.Settlement'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -1744,8 +1717,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":
@@ -1797,8 +1769,7 @@ paths:
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "401":
-          description: 'INVALID_TOKEN: Authentication token is missing, invalid, or
-            expired'
+          description: 'INVALID_TOKEN: Access token is missing, invalid, or expired'
           schema:
             $ref: '#/definitions/apierrors.AppError'
         "403":

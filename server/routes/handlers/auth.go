@@ -168,9 +168,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Produce json
 // @Param request body object{refresh_token=string} true "Refresh token"
 // @Success 200 {object} models.TokenResponse "Returns new access and refresh tokens"
-// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Missing refresh token"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Refresh token is invalid or already used"
-// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Refresh token has expired"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Missing refresh token | INVALID_REFRESH_TOKEN: Refresh token is invalid or already used | EXPIRED_REFRESH_TOKEN: Refresh token has expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/auth/refresh [post]
 func (h *AuthHandler) Refresh(c *gin.Context) {
@@ -186,21 +184,21 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	claims, err := utils.ExtractRefreshClaims(request.RefreshToken, h.jwtConfig)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			utils.ErrExpiredToken: apierrors.ErrExpiredToken,
-			utils.ErrInvalidToken: apierrors.ErrInvalidToken,
+			utils.ErrExpiredToken: apierrors.ErrExpiredRefreshToken,
+			utils.ErrInvalidToken: apierrors.ErrInvalidRefreshToken,
 		}))
 		return
 	}
 
 	oldTokenID, err := uuid.Parse(claims.ID)
 	if err != nil {
-		utils.SendError(c, apierrors.ErrInvalidToken)
+		utils.SendError(c, apierrors.ErrInvalidRefreshToken)
 		return
 	}
 
 	userID, err := uuid.Parse(claims.Subject)
 	if err != nil {
-		utils.SendError(c, apierrors.ErrInvalidToken)
+		utils.SendError(c, apierrors.ErrInvalidRefreshToken)
 		return
 	}
 
@@ -219,7 +217,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 	err = db.RotateToken(c.Request.Context(), h.pool, oldTokenID, newTokenID, userID, newExpiresAt)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrNotFound: apierrors.ErrInvalidToken,
+			db.ErrNotFound: apierrors.ErrInvalidRefreshToken,
 		}))
 		return
 	}
@@ -248,7 +246,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	err := db.DeleteToken(c.Request.Context(), h.pool, sessionID)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrNotFound: apierrors.ErrInvalidToken,
+			db.ErrNotFound: apierrors.ErrInvalidAccessToken,
 		}))
 		return
 	}

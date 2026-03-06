@@ -360,19 +360,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "BAD_REQUEST: Missing refresh token",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    },
-                    "401": {
-                        "description": "INVALID_TOKEN: Refresh token is invalid or already used",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    },
-                    "403": {
-                        "description": "EXPIRED_TOKEN: Refresh token has expired",
+                        "description": "BAD_REQUEST: Missing refresh token | INVALID_REFRESH_TOKEN: Refresh token is invalid or already used | EXPIRED_REFRESH_TOKEN: Refresh token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -481,7 +469,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -555,7 +543,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -614,7 +602,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -688,7 +676,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -765,7 +753,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -806,7 +794,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -847,7 +835,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -893,7 +881,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -967,7 +955,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1026,7 +1014,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1100,7 +1088,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1161,7 +1149,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1235,7 +1223,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1320,7 +1308,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1403,7 +1391,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1458,7 +1446,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1532,7 +1520,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1593,7 +1581,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1654,7 +1642,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -2055,7 +2043,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -2129,7 +2117,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -2188,7 +2176,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -2262,7 +2250,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Authentication token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }

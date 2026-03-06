@@ -20,8 +20,8 @@ func RequireAuth(jwtConfig config.JWTConfig) gin.HandlerFunc {
 		claims, err := utils.ExtractAccessClaims(c.GetHeader("Authorization"), jwtConfig)
 		if err != nil {
 			utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-				utils.ErrExpiredToken: apierrors.ErrExpiredToken,
-				utils.ErrInvalidToken: apierrors.ErrInvalidToken,
+				utils.ErrExpiredToken: apierrors.ErrExpiredAccessToken,
+				utils.ErrInvalidToken: apierrors.ErrInvalidAccessToken,
 			}))
 			c.Abort()
 			return
@@ -29,14 +29,14 @@ func RequireAuth(jwtConfig config.JWTConfig) gin.HandlerFunc {
 
 		userID, err := uuid.Parse(claims.Subject)
 		if err != nil {
-			utils.SendError(c, apierrors.ErrInvalidToken)
+			utils.SendError(c, apierrors.ErrInvalidAccessToken)
 			c.Abort()
 			return
 		}
 
 		sessionID, err := uuid.Parse(claims.SessionID)
 		if err != nil {
-			utils.SendError(c, apierrors.ErrInvalidToken)
+			utils.SendError(c, apierrors.ErrInvalidAccessToken)
 			c.Abort()
 			return
 		}
