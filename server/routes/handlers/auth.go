@@ -262,7 +262,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 // @Security BearerAuth
 // @Success 200 {object} object{message=string} "All tokens successfully revoked"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
-// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
+// @Failure 401 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/auth/logout-all [post]
 func (h *AuthHandler) LogoutAll(c *gin.Context) {
