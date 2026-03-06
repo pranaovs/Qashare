@@ -11,6 +11,7 @@ import 'package:qashare/Models/group_model.dart';
 import 'package:qashare/Models/groupdetail_model.dart';
 import 'package:qashare/Models/user_models.dart';
 import 'package:qashare/Models/settle_model.dart';
+import 'package:qashare/Models/spending_model.dart';
 import 'package:qashare/Models/userlookup_model.dart';
 
 class ApiService {
@@ -547,8 +548,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body);
-        final settlements =
-            data.map((e) => Settlement.fromJson(e)).toList();
+        final settlements = data.map((e) => Settlement.fromJson(e)).toList();
         return SettleResult.success(settlements);
       }
 
@@ -558,12 +558,83 @@ class ApiService {
         return SettleResult.error("Not group member");
       if (response.statusCode == 404)
         return SettleResult.error("Group not found");
-      if (response.statusCode == 500)
-        return SettleResult.error("Server error");
+      if (response.statusCode == 500) return SettleResult.error("Server error");
 
       return SettleResult.error("Unexpected error");
     } catch (e) {
       return SettleResult.error(e.toString());
+    }
+  }
+
+  // ================= SETTLEMENT HISTORY =================
+  static Future<SettleResult> getSettlementHistory({
+    required String token,
+    required String groupId,
+  }) async {
+    final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/settlements");
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List data = jsonDecode(response.body);
+        final settlements = data.map((e) => Settlement.fromJson(e)).toList();
+        return SettleResult.success(settlements);
+      }
+
+      if (response.statusCode == 401)
+        return SettleResult.error("Session expired");
+      if (response.statusCode == 403)
+        return SettleResult.error("Not group member");
+      if (response.statusCode == 404)
+        return SettleResult.error("Group not found");
+      if (response.statusCode == 500) return SettleResult.error("Server error");
+
+      return SettleResult.error("Unexpected error");
+    } catch (e) {
+      return SettleResult.error(e.toString());
+    }
+  }
+
+  // ================= SETTLEMENT DETAILS =================
+  static Future<SettlementDetailResult> getSettlementDetails({
+    required String token,
+    required String settlementId,
+  }) async {
+    final url = Uri.parse("${ApiConfig.baseUrl}/settlements/$settlementId");
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return SettlementDetailResult.success(Settlement.fromJson(data));
+      }
+
+      if (response.statusCode == 401)
+        return SettlementDetailResult.error("Session expired");
+      if (response.statusCode == 403)
+        return SettlementDetailResult.error("Access denied");
+      if (response.statusCode == 404)
+        return SettlementDetailResult.error("Settlement not found");
+      if (response.statusCode == 500)
+        return SettlementDetailResult.error("Server error");
+
+      return SettlementDetailResult.error("Unexpected error");
+    } catch (e) {
+      return SettlementDetailResult.error(e.toString());
     }
   }
 
@@ -631,12 +702,93 @@ class ApiService {
         return BasicResult.error("No permission to delete");
       if (response.statusCode == 404)
         return BasicResult.error("Expense not found");
-      if (response.statusCode == 500)
-        return BasicResult.error("Server error");
+      if (response.statusCode == 500) return BasicResult.error("Server error");
 
       return BasicResult.error("Unexpected error");
     } catch (e) {
       return BasicResult.error(e.toString());
+    }
+  }
+
+  // ================= SETTLE PAYMENT =================
+  static Future<BasicResult> settlePayment({
+    required String token,
+    required String groupId,
+    required String userId,
+    required double amount,
+    required String title,
+  }) async {
+    final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/settle");
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({
+          "group_id": groupId,
+          "user_id": userId,
+          "amount": amount,
+          "title": title,
+        }),
+      );
+
+      if (response.statusCode == 201) return BasicResult.success();
+      if (response.statusCode == 200) return BasicResult.success();
+      if (response.statusCode == 400)
+        return BasicResult.error(
+          "Cannot settle with yourself or invalid amount",
+        );
+      if (response.statusCode == 401)
+        return BasicResult.error("Session expired");
+      if (response.statusCode == 403)
+        return BasicResult.error("Not a member of this group");
+      if (response.statusCode == 404)
+        return BasicResult.error("Group not found");
+      if (response.statusCode == 500) return BasicResult.error("Server error");
+
+      return BasicResult.error("Unexpected error (${response.statusCode})");
+    } catch (e) {
+      return BasicResult.error(e.toString());
+    }
+  }
+
+  // ================= USER SPENDINGS =================
+  static Future<SpendingResult> getUserSpendings({
+    required String token,
+    required String groupId,
+  }) async {
+    final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/spendings");
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as List;
+        final spendings = data.map((e) => UserSpending.fromJson(e)).toList();
+        return SpendingResult.success(spendings);
+      }
+
+      if (response.statusCode == 401)
+        return SpendingResult.error("Session expired");
+      if (response.statusCode == 403)
+        return SpendingResult.error("Not a group member");
+      if (response.statusCode == 404)
+        return SpendingResult.error("Group not found");
+      if (response.statusCode == 500)
+        return SpendingResult.error("Server error");
+
+      return SpendingResult.error("Unexpected error");
+    } catch (e) {
+      return SpendingResult.error(e.toString());
     }
   }
 }

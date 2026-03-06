@@ -140,9 +140,9 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
     if (!mounted) return;
 
     if (res.isSuccess) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Expense deleted")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Expense deleted")));
       Navigator.pop(context, true); // true = signal parent to refresh
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -646,9 +646,7 @@ class _EditExpenseSheetState extends State<_EditExpenseSheet> {
     super.initState();
     _titleCtrl = TextEditingController(text: widget.title);
     _descCtrl = TextEditingController(text: widget.description);
-    _amountCtrl = TextEditingController(
-      text: widget.amount.toStringAsFixed(2),
-    );
+    _amountCtrl = TextEditingController(text: widget.amount.toStringAsFixed(2));
   }
 
   @override
@@ -667,9 +665,9 @@ class _EditExpenseSheetState extends State<_EditExpenseSheet> {
     final token = await TokenStorage.getToken();
     if (token == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Session expired")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Session expired")));
       setState(() => _saving = false);
       return;
     }
@@ -692,9 +690,9 @@ class _EditExpenseSheetState extends State<_EditExpenseSheet> {
     setState(() => _saving = false);
 
     if (res.isSuccess) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Expense updated")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Expense updated")));
       Navigator.pop(context, true); // true = signal to refresh
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -731,10 +729,7 @@ class _EditExpenseSheetState extends State<_EditExpenseSheet> {
               ),
             ),
 
-            Text(
-              "Edit Expense",
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text("Edit Expense", style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 20),
 
             TextFormField(
@@ -767,8 +762,9 @@ class _EditExpenseSheetState extends State<_EditExpenseSheet> {
                 prefixIcon: Icon(Icons.currency_rupee),
                 border: OutlineInputBorder(),
               ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return "Amount required";
                 final n = double.tryParse(v);

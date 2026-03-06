@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:qashare/Models/expense_list_model.dart';
+import 'package:qashare/Models/expense_model.dart';
 import 'package:qashare/Models/settle_model.dart';
+import 'package:qashare/Models/spending_model.dart';
 import 'package:qashare/Screens/members_page.dart';
 import '../Config/token_storage.dart';
 import '../Service/api_service.dart';
@@ -196,8 +198,9 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
           ),
           const SizedBox(height: 12),
 
-          _infoTile(Icons.receipt_long, "Expenses", "Coming soon"),
+          _spendingsTile(),
           _balanceTile(),
+          _settlementHistoryTile(),
 
           const SizedBox(height: 40),
 
@@ -279,7 +282,8 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
   }
 
   Widget _balanceTile() {
-    final hasExpenses = _expenseResult != null &&
+    final hasExpenses =
+        _expenseResult != null &&
         _expenseResult!.isSuccess &&
         _expenseResult!.expenses != null &&
         _expenseResult!.expenses!.isNotEmpty;
@@ -302,6 +306,64 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                 style: TextStyle(color: Colors.grey),
               ),
         onTap: hasExpenses ? _showBalanceSheet : null,
+      ),
+    );
+  }
+
+  Widget _settlementHistoryTile() {
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.history_rounded),
+        title: const Text("Settlement History"),
+        trailing: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("View"),
+            SizedBox(width: 4),
+            Icon(Icons.chevron_right, size: 20),
+          ],
+        ),
+        onTap: () {
+          final group = _result!.group!;
+          Navigator.pushNamed(
+            context,
+            "/settlement-history",
+            arguments: {
+              "groupId": widget.groupId,
+              "groupName": widget.groupName,
+              "members": group.members,
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _spendingsTile() {
+    return Card(
+      child: ListTile(
+        leading: const Icon(Icons.receipt_long),
+        title: const Text("My Expenses"),
+        trailing: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("View"),
+            SizedBox(width: 4),
+            Icon(Icons.chevron_right, size: 20),
+          ],
+        ),
+        onTap: () {
+          final group = _result!.group!;
+          Navigator.pushNamed(
+            context,
+            "/spendings",
+            arguments: {
+              "groupId": widget.groupId,
+              "groupName": widget.groupName,
+              "members": group.members,
+            },
+          );
+        },
       ),
     );
   }
@@ -346,6 +408,7 @@ class _BalanceSheet extends StatefulWidget {
 class _BalanceSheetState extends State<_BalanceSheet> {
   bool _loading = true;
   SettleResult? _settleResult;
+  final Set<String> _settlingIds = {};
 
   @override
   void initState() {
@@ -359,6 +422,7 @@ class _BalanceSheetState extends State<_BalanceSheet> {
       groupId: widget.groupId,
     );
 
+    if (!mounted) return;
     setState(() {
       _settleResult = res;
       _loading = false;
@@ -370,9 +434,71 @@ class _BalanceSheetState extends State<_BalanceSheet> {
     return match.isNotEmpty ? match.first.name : userId;
   }
 
+  Future<void> _settleUp(Settlement s) async {
+    final name = _memberName(s.userId);
+    final isPositive = s.amount >= 0;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Settle Up"),
+        content: Text(
+          isPositive
+              ? "Record that $name paid you ₹${s.amount.abs().toStringAsFixed(2)}?"
+              : "Record that you paid $name ₹${s.amount.abs().toStringAsFixed(2)}?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancel"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Settle"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _settlingIds.add(s.userId));
+
+    final res = await ApiService.settlePayment(
+      token: widget.token,
+      groupId: widget.groupId,
+      userId: s.userId,
+      amount: -s.amount,
+      title: "Settlement with $name",
+    );
+
+    if (!mounted) return;
+    setState(() => _settlingIds.remove(s.userId));
+
+    if (res.isSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Settled with $name ✓"),
+          duration: const Duration(milliseconds: 1200),
+        ),
+      );
+      // Refresh balances
+      setState(() => _loading = true);
+      await _fetchSettlements();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(res.errorMessage ?? "Failed to settle"),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
     return DraggableScrollableSheet(
       initialChildSize: 0.5,
@@ -396,11 +522,7 @@ class _BalanceSheetState extends State<_BalanceSheet> {
                 ),
               ),
 
-              Text(
-                "Balances",
-                style: theme.textTheme.titleLarge,
-              ),
-              const SizedBox(height: 4),
+              Text("Balances", style: theme.textTheme.titleLarge),
               const SizedBox(height: 16),
 
               if (_loading)
@@ -412,59 +534,355 @@ class _BalanceSheetState extends State<_BalanceSheet> {
                   child: Center(
                     child: Text(
                       _settleResult!.errorMessage ?? "Failed to load",
-                      style: TextStyle(color: theme.colorScheme.error),
+                      style: TextStyle(color: cs.error),
                     ),
                   ),
                 )
               else if (_settleResult!.settlements!.isEmpty)
-                const Expanded(
-                  child: Center(
-                    child: Text("All settled up! 🎉"),
-                  ),
-                )
+                const Expanded(child: Center(child: Text("All settled up! 🎉")))
               else
                 Expanded(
                   child: ListView.separated(
                     controller: scrollController,
                     itemCount: _settleResult!.settlements!.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
                     itemBuilder: (context, index) {
                       final s = _settleResult!.settlements![index];
                       final isPositive = s.amount >= 0;
                       final name = _memberName(s.userId);
+                      final color = isPositive
+                          ? const Color(0xFF2E7D32)
+                          : cs.error;
+                      final isSettling = _settlingIds.contains(s.userId);
 
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: isPositive
-                              ? Colors.green.withValues(alpha: 0.15)
-                              : Colors.red.withValues(alpha: 0.15),
-                          child: Icon(
-                            isPositive
-                                ? Icons.arrow_downward_rounded
-                                : Icons.arrow_upward_rounded,
-                            color: isPositive ? Colors.green : Colors.red,
+                      return Card(
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          side: BorderSide(
+                            color: color.withValues(alpha: 0.2),
+                            width: 1,
                           ),
                         ),
-                        title: Text(name),
-                        subtitle: Text(
-                          isPositive
-                              ? "$name owes you"
-                              : "You owe $name",
-                          style: TextStyle(
-                            color: isPositive ? Colors.green : Colors.red,
-                            fontSize: 12,
-                          ),
-                        ),
-                        trailing: Text(
-                          "₹${s.amount.abs().toStringAsFixed(2)}",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: isPositive ? Colors.green : Colors.red,
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Row(
+                            children: [
+                              // Avatar
+                              CircleAvatar(
+                                radius: 22,
+                                backgroundColor: color.withValues(alpha: 0.12),
+                                child: Icon(
+                                  isPositive
+                                      ? Icons.arrow_downward_rounded
+                                      : Icons.arrow_upward_rounded,
+                                  color: color,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+
+                              // Name + description
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      isPositive ? "owes you" : "you owe",
+                                      style: TextStyle(
+                                        color: color,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              // Amount
+                              Text(
+                                "₹${s.amount.abs().toStringAsFixed(2)}",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: color,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+
+                              // Settle button
+                              SizedBox(
+                                height: 36,
+                                child: FilledButton(
+                                  onPressed: isSettling
+                                      ? null
+                                      : () => _settleUp(s),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: color,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: isSettling
+                                      ? const SizedBox(
+                                          height: 16,
+                                          width: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                      : const Text(
+                                          "Settle",
+                                          style: TextStyle(fontSize: 13),
+                                        ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       );
                     },
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ================= SPENDINGS BOTTOM SHEET =================
+
+class _SpendingsSheet extends StatefulWidget {
+  final String token;
+  final String groupId;
+  final List<Member> members;
+
+  const _SpendingsSheet({
+    required this.token,
+    required this.groupId,
+    required this.members,
+  });
+
+  @override
+  State<_SpendingsSheet> createState() => _SpendingsSheetState();
+}
+
+class _SpendingsSheetState extends State<_SpendingsSheet> {
+  bool _loading = true;
+  SpendingResult? _result;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchSpendings();
+  }
+
+  Future<void> _fetchSpendings() async {
+    final res = await ApiService.getUserSpendings(
+      token: widget.token,
+      groupId: widget.groupId,
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _result = res;
+      _loading = false;
+    });
+  }
+
+  String _formatDate(int epochSecs) {
+    final dt = DateTime.fromMillisecondsSinceEpoch(epochSecs * 1000);
+    return "${dt.day}/${dt.month}/${dt.year}";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.55,
+      minChildSize: 0.3,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Text("My Expenses", style: theme.textTheme.titleLarge),
+              const SizedBox(height: 4),
+              Text(
+                "Your share in each expense",
+                style: TextStyle(fontSize: 13, color: cs.outline),
+              ),
+              const SizedBox(height: 16),
+              if (_loading)
+                const Expanded(
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (!_result!.isSuccess)
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      _result!.errorMessage ?? "Failed to load",
+                      style: TextStyle(color: cs.error),
+                    ),
+                  ),
+                )
+              else if (_result!.spendings!.isEmpty)
+                const Expanded(child: Center(child: Text("No expenses yet")))
+              else
+                Expanded(
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: cs.primaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "Total you owe",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: cs.onPrimaryContainer,
+                              ),
+                            ),
+                            Text(
+                              "\u20b9${_result!.spendings!.fold<double>(0, (sum, s) => sum + s.userAmount).toStringAsFixed(2)}",
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                color: cs.onPrimaryContainer,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: ListView.separated(
+                          controller: scrollController,
+                          itemCount: _result!.spendings!.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 6),
+                          itemBuilder: (context, index) {
+                            final s = _result!.spendings![index];
+                            return Card(
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                                side: BorderSide(
+                                  color: cs.outlineVariant.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  width: 1,
+                                ),
+                              ),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 4,
+                                ),
+                                leading: CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: s.isSettlement
+                                      ? cs.tertiaryContainer
+                                      : cs.primaryContainer,
+                                  child: Icon(
+                                    s.isSettlement
+                                        ? Icons.handshake_outlined
+                                        : Icons.receipt_long_rounded,
+                                    size: 20,
+                                    color: s.isSettlement
+                                        ? cs.onTertiaryContainer
+                                        : cs.onPrimaryContainer,
+                                  ),
+                                ),
+                                title: Text(
+                                  s.title,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                subtitle: Text(
+                                  _formatDate(s.createdAt),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: cs.outline,
+                                  ),
+                                ),
+                                trailing: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      "\u20b9${s.userAmount.toStringAsFixed(2)}",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 16,
+                                        color: cs.error,
+                                      ),
+                                    ),
+                                    Text(
+                                      "of \u20b9${s.amount.toStringAsFixed(2)}",
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: cs.outline,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  Navigator.pushNamed(
+                                    context,
+                                    "/expense-details",
+                                    arguments: {
+                                      "expenseId": s.expenseId,
+                                      "members": widget.members,
+                                    },
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
             ],

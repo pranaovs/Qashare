@@ -190,8 +190,11 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.receipt_long_rounded,
-                            size: 20, color: cs.primary),
+                        Icon(
+                          Icons.receipt_long_rounded,
+                          size: 20,
+                          color: cs.primary,
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           "Expense Info",
@@ -249,7 +252,8 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                       ),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(
-                            RegExp(r'^\d+\.?\d{0,2}')),
+                          RegExp(r'^\d+\.?\d{0,2}'),
+                        ),
                       ],
                       validator: (v) {
                         if (_incompleteAmount) return null;
@@ -283,11 +287,14 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                       color: _incompleteAmount ? cs.primary : cs.outline,
                     ),
                     value: _incompleteAmount,
-                    onChanged: (v) =>
-                        setState(() => _incompleteAmount = v),
+                    onChanged: (v) => setState(() => _incompleteAmount = v),
                   ),
-                  Divider(height: 1, indent: 16, endIndent: 16,
-                      color: cs.outlineVariant.withValues(alpha: 0.3)),
+                  Divider(
+                    height: 1,
+                    indent: 16,
+                    endIndent: 16,
+                    color: cs.outlineVariant.withValues(alpha: 0.3),
+                  ),
                   SwitchListTile(
                     title: const Text("Split incomplete"),
                     subtitle: Text(
@@ -299,8 +306,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                       color: _incompleteSplit ? cs.primary : cs.outline,
                     ),
                     value: _incompleteSplit,
-                    onChanged: (v) =>
-                        setState(() => _incompleteSplit = v),
+                    onChanged: (v) => setState(() => _incompleteSplit = v),
                   ),
                 ],
               ),
@@ -314,13 +320,18 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.people_outline_rounded,
-                        size: 20, color: cs.primary),
+                    Icon(
+                      Icons.people_outline_rounded,
+                      size: 20,
+                      color: cs.primary,
+                    ),
                     const SizedBox(width: 8),
                     const Text(
                       "Split Details",
                       style: TextStyle(
-                          fontSize: 17, fontWeight: FontWeight.w700),
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ],
                 ),
@@ -328,8 +339,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                   children: [
                     TextButton.icon(
                       onPressed: () {
-                        final allSelected =
-                            _selected.values.every((v) => v);
+                        final allSelected = _selected.values.every((v) => v);
                         setState(() {
                           for (var id in _selected.keys) {
                             _selected[id] = !allSelected;
@@ -343,9 +353,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                         size: 18,
                       ),
                       label: Text(
-                        _selected.values.every((v) => v)
-                            ? "None"
-                            : "All",
+                        _selected.values.every((v) => v) ? "None" : "All",
                       ),
                     ),
                     TextButton.icon(
@@ -361,211 +369,222 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
             const SizedBox(height: 6),
 
             // ── MEMBER CARDS ──
-            ...widget.members.map(
-              (m) {
-                final isSelected = _selected[m.userId] == true;
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    side: isSelected
-                        ? BorderSide(
-                            color: cs.primary.withValues(alpha: 0.4),
-                            width: 1.5)
-                        : BorderSide.none,
-                  ),
-                  child: Column(
-                    children: [
-                      // Member row
-                      InkWell(
-                        borderRadius: BorderRadius.circular(14),
-                        onTap: () => setState(
-                            () => _selected[m.userId] = !isSelected),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
-                          child: Row(
-                            children: [
-                              // Avatar
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundColor: isSelected
-                                    ? cs.primary
-                                    : cs.surfaceContainerHighest,
-                                child: isSelected
-                                    ? Icon(Icons.check_rounded,
-                                        color: cs.onPrimary, size: 20)
-                                    : Text(
-                                        m.name.isNotEmpty
-                                            ? m.name[0].toUpperCase()
-                                            : "?",
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                          color: cs.onSurface,
-                                        ),
-                                      ),
-                              ),
-                              const SizedBox(width: 12),
-
-                              // Name + email
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      m.name,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                    Text(
-                                      m.email,
+            ...widget.members.map((m) {
+              final isSelected = _selected[m.userId] == true;
+              return Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: isSelected
+                      ? BorderSide(
+                          color: cs.primary.withValues(alpha: 0.4),
+                          width: 1.5,
+                        )
+                      : BorderSide.none,
+                ),
+                child: Column(
+                  children: [
+                    // Member row
+                    InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () =>
+                          setState(() => _selected[m.userId] = !isSelected),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            // Avatar
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor: isSelected
+                                  ? cs.primary
+                                  : cs.surfaceContainerHighest,
+                              child: isSelected
+                                  ? Icon(
+                                      Icons.check_rounded,
+                                      color: cs.onPrimary,
+                                      size: 20,
+                                    )
+                                  : Text(
+                                      m.name.isNotEmpty
+                                          ? m.name[0].toUpperCase()
+                                          : "?",
                                       style: TextStyle(
-                                        fontSize: 12,
-                                        color: cs.outline,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: cs.onSurface,
                                       ),
-                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  ],
-                                ),
-                              ),
+                            ),
+                            const SizedBox(width: 12),
 
-                              // Guest badge
-                              if (m.guest)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: cs.tertiaryContainer,
-                                    borderRadius: BorderRadius.circular(8),
+                            // Name + email
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    m.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                    ),
                                   ),
-                                  child: Text(
-                                    "Guest",
+                                  Text(
+                                    m.email,
                                     style: TextStyle(
-                                      fontSize: 11,
-                                      color: cs.onTertiaryContainer,
-                                      fontWeight: FontWeight.w500,
+                                      fontSize: 12,
+                                      color: cs.outline,
                                     ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Guest badge
+                            if (m.guest)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: cs.tertiaryContainer,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  "Guest",
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: cs.onTertiaryContainer,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-
-                              // Checkbox
-                              Checkbox(
-                                value: isSelected,
-                                onChanged: (v) => setState(
-                                    () => _selected[m.userId] = v ?? false),
                               ),
-                            ],
-                          ),
+
+                            // Checkbox
+                            Checkbox(
+                              value: isSelected,
+                              onChanged: (v) => setState(
+                                () => _selected[m.userId] = v ?? false,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                    ),
 
-                      // Split fields
-                      if (isSelected)
-                        Container(
-                          decoration: BoxDecoration(
-                            color: cs.surfaceContainerHighest
-                                .withValues(alpha: 0.3),
-                            borderRadius: const BorderRadius.only(
-                              bottomLeft: Radius.circular(14),
-                              bottomRight: Radius.circular(14),
-                            ),
+                    // Split fields
+                    if (isSelected)
+                      Container(
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainerHighest.withValues(
+                            alpha: 0.3,
                           ),
-                          padding:
-                              const EdgeInsets.fromLTRB(12, 8, 12, 14),
-                          child: Row(
-                            children: [
-                              // Paid
-                              Expanded(
-                                child: TextField(
-                                  controller: _paid[m.userId],
-                                  decoration: InputDecoration(
-                                    labelText: "Paid",
-                                    labelStyle: const TextStyle(
-                                        color: Color(0xFF2E7D32),
-                                        fontSize: 13),
-                                    prefixIcon: const Icon(
-                                      Icons.arrow_upward_rounded,
-                                      color: Color(0xFF2E7D32),
-                                      size: 18,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(10),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                        color: const Color(0xFF2E7D32)
-                                            .withValues(alpha: 0.3),
-                                      ),
-                                    ),
-                                    contentPadding:
-                                        const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 10),
-                                    isDense: true,
-                                  ),
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                          decimal: true),
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.allow(
-                                        RegExp(r'^\d+\.?\d{0,2}')),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              // Owes
-                              Expanded(
-                                child: TextField(
-                                  controller: _owed[m.userId],
-                                  decoration: InputDecoration(
-                                    labelText: "Owes",
-                                    labelStyle: TextStyle(
-                                        color: cs.error, fontSize: 13),
-                                    prefixIcon: Icon(
-                                      Icons.arrow_downward_rounded,
-                                      color: cs.error,
-                                      size: 18,
-                                    ),
-                                    border: OutlineInputBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(10),
-                                    ),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(10),
-                                      borderSide: BorderSide(
-                                        color: cs.error
-                                            .withValues(alpha: 0.3),
-                                      ),
-                                    ),
-                                    contentPadding:
-                                        const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 10),
-                                    isDense: true,
-                                  ),
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                          decimal: true),
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.allow(
-                                        RegExp(r'^\d+\.?\d{0,2}')),
-                                  ],
-                                ),
-                              ),
-                            ],
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(14),
+                            bottomRight: Radius.circular(14),
                           ),
                         ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                        padding: const EdgeInsets.fromLTRB(12, 8, 12, 14),
+                        child: Row(
+                          children: [
+                            // Paid
+                            Expanded(
+                              child: TextField(
+                                controller: _paid[m.userId],
+                                decoration: InputDecoration(
+                                  labelText: "Paid",
+                                  labelStyle: const TextStyle(
+                                    color: Color(0xFF2E7D32),
+                                    fontSize: 13,
+                                  ),
+                                  prefixIcon: const Icon(
+                                    Icons.arrow_upward_rounded,
+                                    color: Color(0xFF2E7D32),
+                                    size: 18,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide(
+                                      color: const Color(
+                                        0xFF2E7D32,
+                                      ).withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  isDense: true,
+                                ),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r'^\d+\.?\d{0,2}'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            // Owes
+                            Expanded(
+                              child: TextField(
+                                controller: _owed[m.userId],
+                                decoration: InputDecoration(
+                                  labelText: "Owes",
+                                  labelStyle: TextStyle(
+                                    color: cs.error,
+                                    fontSize: 13,
+                                  ),
+                                  prefixIcon: Icon(
+                                    Icons.arrow_downward_rounded,
+                                    color: cs.error,
+                                    size: 18,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    borderSide: BorderSide(
+                                      color: cs.error.withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 10,
+                                  ),
+                                  isDense: true,
+                                ),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(
+                                    RegExp(r'^\d+\.?\d{0,2}'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            }),
 
             const SizedBox(height: 24),
 
@@ -579,7 +598,9 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : const Icon(Icons.check_rounded),
                 label: Text(
