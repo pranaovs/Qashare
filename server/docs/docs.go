@@ -253,12 +253,6 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is invalid",
-                        "schema": {
-                            "$ref": "#/definitions/apierrors.AppError"
-                        }
-                    },
-                    "403": {
                         "description": "EXPIRED_TOKEN: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
