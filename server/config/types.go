@@ -8,6 +8,7 @@ type Config struct {
 	Database DatabaseConfig
 	JWT      JWTConfig
 	App      AppConfig
+	Email    EmailConfig
 }
 
 // APIConfig holds API server configuration
@@ -50,4 +51,14 @@ type AppConfig struct {
 	DisableSwagger bool    `example:"false"`
 	SplitTolerance float64 `example:"0.01"`
 	EnvPath        string  `example:".env"`
+}
+
+type EmailConfig struct {
+	Verification bool          `example:"true"`
+	Host         string        `example:"smtp.example.com"`
+	Port         int           `example:"587"`
+	Username     string        `example:"user@example.com"`
+	Password     string        `example:"password"`
+	From         string        `example:"noreply@example.com"`
+	Expiry       time.Duration `example:"24h"`
 }

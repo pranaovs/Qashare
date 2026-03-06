@@ -34,6 +34,9 @@ func Load() (*Config, error) {
 	// Load JWT configuration
 	cfg.JWT = loadJWTConfig()
 
+	// Load Email configuration
+	cfg.Email = loadEmailConfig()
+
 	// Load App configuration
 	cfg.App = loadAppConfig(envPath)
 
@@ -91,6 +94,26 @@ func loadAppConfig(envPath string) AppConfig {
 		SplitTolerance: getEnvFloat("SPLIT_TOLERANCE", 0.01),
 		EnvPath:        envPath,
 	}
+}
+
+func loadEmailConfig() EmailConfig {
+	config := EmailConfig{
+		Verification: getEnvBool("VERIFY_EMAIL", false),
+		Host:         getEnv("SMTP_HOST", ""),
+		Port:         getEnvInt("SMTP_PORT", 0),
+		Username:     getEnv("SMTP_USERNAME", ""),
+		Password:     getEnv("SMTP_PASSWORD", ""),
+		From:         getEnv("EMAIL_FROM", ""),
+		Expiry:       getEnvDuration("VERIFY_EMAIL_EXPIRY", "24h"),
+	}
+
+	if config.Verification {
+		if config.Host == "" || config.Port == 0 || config.Username == "" || config.Password == "" || config.From == "" {
+			slog.Error("Email verification is enabled but SMTP configuration is incomplete. Email verification disabled.")
+			config.Verification = false
+		}
+	}
+	return config
 }
 
 func generateRandomSecret(length int) string {
