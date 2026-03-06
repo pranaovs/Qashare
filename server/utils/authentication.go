@@ -1,17 +1,15 @@
 package utils
 
 import (
-	"crypto/rand"
-	"encoding/base64"
+	"errors"
 	"fmt"
-	"log/slog"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/config"
+	"github.com/pranaovs/qashare/models"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -36,69 +34,112 @@ func CheckPassword(password, hashed string) bool {
 	return err == nil
 }
 
-func randB64() string {
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
-	if err != nil {
-		slog.Error("Failed to generate random bytes for JWT secret", "error", err)
-		os.Exit(1)
+func generateToken(userID uuid.UUID, tokenType models.TokenType, expiry time.Duration, jwtConfig config.JWTConfig) (string, uuid.UUID, time.Time, error) {
+	now := time.Now()
+	expiresAt := now.Add(expiry)
+	tokenID := uuid.New()
+	claims := models.TokenClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    jwtConfig.Issuer,
+			Subject:   userID.String(),
+			Audience:  jwt.ClaimStrings{jwtConfig.Audience},
+			ID:        tokenID.String(),
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+		},
+		TokenType: tokenType,
 	}
 
-	return base64.StdEncoding.EncodeToString(b)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signed, err := token.SignedString([]byte(jwtConfig.Secret))
+	if err != nil {
+		return "", uuid.UUID{}, time.Time{}, err
+	}
+	return signed, tokenID, expiresAt, nil
 }
 
-func GenerateJWT(userID uuid.UUID, jwtConfig config.JWTConfig) (string, error) {
-	claims := jwt.MapClaims{
-		"user_id": userID.String(),
-		"exp":     time.Now().Add(jwtConfig.Expiry).Unix(),
+func GenerateRefreshToken(userID uuid.UUID, jwtConfig config.JWTConfig) (string, uuid.UUID, time.Time, error) {
+	return generateToken(userID, models.TokenTypeRefresh, jwtConfig.RefreshExpiry, jwtConfig)
+}
+
+func GenerateAccessToken(userID uuid.UUID, sessionID uuid.UUID, jwtConfig config.JWTConfig) (string, error) {
+	now := time.Now()
+	expiresAt := now.Add(jwtConfig.AccessExpiry)
+	claims := models.TokenClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    jwtConfig.Issuer,
+			Subject:   userID.String(),
+			Audience:  jwt.ClaimStrings{jwtConfig.Audience},
+			ID:        uuid.New().String(),
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
+		},
+		TokenType: models.TokenTypeAccess,
+		SessionID: sessionID.String(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(jwtConfig.Secret))
 }
 
-func ExtractClaims(authHeader string, jwtConfig config.JWTConfig) (jwt.MapClaims, error) {
-	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-		return nil, ErrInvalidToken.Msg("authorization header missing or malformed")
-	}
-
-	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+func extractClaims(tokenString string, jwtConfig config.JWTConfig) (*models.TokenClaims, error) {
+	claims := &models.TokenClaims{}
+	_, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method")
 		}
 		return []byte(jwtConfig.Secret), nil
-	})
+	},
+		jwt.WithIssuer(jwtConfig.Issuer),
+		jwt.WithAudience(jwtConfig.Audience),
+		jwt.WithExpirationRequired(),
+	)
+	if err == nil {
+		return claims, nil
+	}
+
+	if errors.Is(err, jwt.ErrTokenExpired) {
+		return nil, ErrExpiredToken
+	}
+	return nil, ErrInvalidToken
+}
+
+func extractBearerToken(authHeader string) (string, error) {
+	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		return "", ErrInvalidToken.Msg("authorization header missing or malformed")
+	}
+	return strings.TrimPrefix(authHeader, "Bearer "), nil
+}
+
+func ExtractAccessClaims(authHeader string, jwtConfig config.JWTConfig) (*models.TokenClaims, error) {
+	tokenString, err := extractBearerToken(authHeader)
 	if err != nil {
-		return nil, ErrInvalidToken.Msg("failed to parse token")
+		return nil, err
 	}
-	if !token.Valid {
-		return nil, ErrInvalidToken.Msg("expired token")
+
+	claims, err := extractClaims(tokenString, jwtConfig)
+	if err != nil {
+		return nil, err
 	}
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return nil, ErrInvalidToken.Msg("invalid token claims")
+
+	if claims.TokenType != models.TokenTypeAccess {
+		return nil, ErrInvalidToken.Msg("expected access token")
 	}
 
 	return claims, nil
 }
 
-func ExtractUserID(authHeader string, jwtConfig config.JWTConfig) (uuid.UUID, error) {
-	claims, err := ExtractClaims(authHeader, jwtConfig)
+func ExtractRefreshClaims(refreshToken string, jwtConfig config.JWTConfig) (*models.TokenClaims, error) {
+	claims, err := extractClaims(refreshToken, jwtConfig)
 	if err != nil {
-		return uuid.UUID{}, err
+		return nil, err
 	}
 
-	userIDStr, ok := claims["user_id"].(string)
-	if !ok {
-		return uuid.UUID{}, ErrInvalidToken.Msg("invalid token claims")
+	if claims.TokenType != models.TokenTypeRefresh {
+		return nil, ErrInvalidToken.Msg("expected refresh token")
 	}
 
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		return uuid.UUID{}, ErrInvalidToken.Msg("invalid user_id in token")
-	}
-
-	return userID, nil
+	return claims, nil
 }

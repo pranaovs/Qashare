@@ -28,7 +28,8 @@ func NewMeHandler(pool *pgxpool.Pool) *MeHandler {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} models.User "Returns the authenticated user's profile information"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists in the database"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/me [get]
@@ -55,7 +56,8 @@ func (h *MeHandler) Me(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {array} models.Group "Returns list of groups the user is a member of"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/me/groups [get]
 func (h *MeHandler) GetGroups(c *gin.Context) {
@@ -76,9 +78,10 @@ func (h *MeHandler) GetGroups(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {array} models.Group "Returns list of groups the user is owner of"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /v1/me/own [get]
+// @Router /v1/me/admin [get]
 func (h *MeHandler) GetOwner(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	groups, err := db.OwnerOfGroups(c.Request.Context(), h.pool, userID)
@@ -103,7 +106,8 @@ func (h *MeHandler) GetOwner(c *gin.Context) {
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or missing required fields"
 // @Failure 400 {object} apierrors.AppError "BAD_NAME: The name provided contains invalid characters"
 // @Failure 400 {object} apierrors.AppError "BAD_EMAIL: The email format is incorrect"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists"
 // @Failure 409 {object} apierrors.AppError "EMAIL_EXISTS: An account with this email already exists"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
@@ -179,7 +183,8 @@ func (h *MeHandler) Update(c *gin.Context) {
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or validation failed"
 // @Failure 400 {object} apierrors.AppError "BAD_NAME: The name provided contains invalid characters"
 // @Failure 400 {object} apierrors.AppError "BAD_EMAIL: The email format is incorrect"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists"
 // @Failure 409 {object} apierrors.AppError "EMAIL_EXISTS: An account with this email already exists"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
@@ -252,7 +257,8 @@ func (h *MeHandler) Patch(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Success 200 {object} map[string]string "Returns success message"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Authentication token is missing, invalid, or expired"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists in the database"
 // @Failure 409 {object} apierrors.AppError "USER_OWNS_GROUPS: User owns groups and must delete the groups or transfer ownership first"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"

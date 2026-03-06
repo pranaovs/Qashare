@@ -14,6 +14,9 @@ func RegisterAuthRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, jwtConfig c
 
 	router.POST("/register", handler.Register)
 	router.POST("/login", handler.Login)
+	router.POST("/refresh", handler.Refresh)
+	router.POST("/logout", middleware.RequireAuth(jwtConfig), handler.Logout)
+	router.POST("/logout-all", middleware.RequireAuth(jwtConfig), handler.LogoutAll)
 	router.GET("/me", middleware.RequireAuth(jwtConfig), handler.Me)
 	router.POST("/guest", middleware.RequireAuth(jwtConfig), handler.RegisterGuest)
 }

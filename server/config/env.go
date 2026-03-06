@@ -91,18 +91,55 @@ func getEnvPort(key string, defaultValue int) int {
 	return val
 }
 
-func getEnvDuration(key string, defaultSeconds int) time.Duration {
+// getEnvDuration parses a duration string with a suffix: s (seconds), m (minutes), h (hours), d (days).
+// A bare number without a suffix is treated as seconds. Examples: "30s", "15m", "24h", "7d", "3600".
+// Non-positive values (zero or negative) are rejected and the default is used instead.
+func getEnvDuration(key string, defaultValue string) time.Duration {
 	valStr := os.Getenv(key)
 	if valStr == "" {
-		return time.Duration(defaultSeconds) * time.Second
+		valStr = defaultValue
 	}
 
-	val, err := strconv.Atoi(valStr)
-	if err != nil || val < 0 {
-		slog.Warn("Config duration must be valid seconds, using default", "key", key, "default", defaultSeconds)
-		return time.Duration(defaultSeconds) * time.Second
+	d, err := parseDuration(valStr)
+	if err != nil {
+		slog.Warn("Invalid duration config value", "key", key, "value", valStr, "default", defaultValue)
+
+		// Try to parse the default value
+		defaultDuration, defaultErr := parseDuration(defaultValue)
+		if defaultErr != nil {
+			panic("invalid default duration for " + key + ": " + defaultValue)
+		}
+		return defaultDuration
 	}
-	return time.Duration(val) * time.Second
+	return d
+}
+
+func parseDuration(s string) (time.Duration, error) {
+	if len(s) == 0 {
+		return 0, strconv.ErrSyntax
+	}
+
+	suffix := s[len(s)-1]
+	switch suffix {
+	case 's', 'm', 'h':
+		d, err := time.ParseDuration(s)
+		if err != nil || d <= 0 {
+			return 0, strconv.ErrSyntax
+		}
+		return d, nil
+	case 'd':
+		val, err := strconv.Atoi(s[:len(s)-1])
+		if err != nil || val <= 0 {
+			return 0, strconv.ErrSyntax
+		}
+		return time.Duration(val) * 24 * time.Hour, nil
+	default:
+		val, err := strconv.Atoi(s)
+		if err != nil || val <= 0 {
+			return 0, strconv.ErrSyntax
+		}
+		return time.Duration(val) * time.Second, nil
+	}
 }
 
 func getEnvList(key string, defaultVal []string) []string {
