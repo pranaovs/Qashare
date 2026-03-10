@@ -201,8 +201,8 @@ func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (mo
 // GetUserCredentials retrieves the user ID, password hash, and email verification
 // status for authentication. This function is specifically designed for login verification.
 // Returns ErrNotFound if no user with the email exists or if the user has no password (guest).
-// Returns ErrEmailNotVerified if the user's email has not been verified.
-func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (uuid.UUID, string, error) {
+// The caller is responsible for checking emailVerified against the app config.
+func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (uuid.UUID, string, bool, error) {
 	var userID uuid.UUID
 	var passwordHash *string
 	var guest bool
@@ -212,22 +212,18 @@ func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (
 
 	err := pool.QueryRow(ctx, query, email).Scan(&userID, &passwordHash, &guest, &emailVerified)
 	if err == pgx.ErrNoRows {
-		return uuid.Nil, "", ErrNotFound.Msgf("user with email %s not found", email)
+		return uuid.Nil, "", false, ErrNotFound.Msgf("user with email %s not found", email)
 	}
 	if err != nil {
-		return uuid.Nil, "", err
+		return uuid.Nil, "", false, err
 	}
 
 	// Treat guest users as not found for login purposes
 	if guest || passwordHash == nil {
-		return uuid.Nil, "", ErrNotFound.Msgf("user with email %s not found", email)
+		return uuid.Nil, "", false, ErrNotFound.Msgf("user with email %s not found", email)
 	}
 
-	if !emailVerified {
-		return uuid.Nil, "", ErrEmailNotVerified
-	}
-
-	return userID, *passwordHash, nil
+	return userID, *passwordHash, emailVerified, nil
 }
 
 // GetUser retrieves a user by their unique user ID.
