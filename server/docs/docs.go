@@ -428,6 +428,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/models.User"
                         }
                     },
+                    "202": {
+                        "description": "User registered, email verification required",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    },
                     "400": {
                         "description": "BAD_REQUEST: Invalid request body format, missing required fields, or JSON parsing error | BAD_NAME: Name contains invalid characters or is too short/long | BAD_EMAIL: Invalid email format | BAD_PASSWORD: Password does not meet requirements (e.g., too short, too weak)",
                         "schema": {

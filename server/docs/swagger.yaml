@@ -533,6 +533,10 @@ paths:
           description: User successfully registered
           schema:
             $ref: '#/definitions/models.User'
+        "202":
+          description: User registered, email verification required
+          schema:
+            $ref: '#/definitions/models.User'
         "400":
           description: 'BAD_REQUEST: Invalid request body format, missing required
             fields, or JSON parsing error | BAD_NAME: Name contains invalid characters

@@ -34,6 +34,7 @@ func NewAuthHandler(pool *pgxpool.Pool, jwtConfig config.JWTConfig, emailConfig 
 // @Accept json
 // @Produce json
 // @Param request body object{name=string,email=string,password=string} true "User registration details"
+// @Success 202 {object} models.User "User registered, email verification required"
 // @Success 201 {object} models.User "User successfully registered"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format, missing required fields, or JSON parsing error | BAD_NAME: Name contains invalid characters or is too short/long | BAD_EMAIL: Invalid email format | BAD_PASSWORD: Password does not meet requirements (e.g., too short, too weak)"
 // @Failure 409 {object} apierrors.AppError "EMAIL_EXISTS: An account with this email already exists"
@@ -103,6 +104,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 			}))
 			return
 		}
+		utils.SendJSON(c, http.StatusAccepted, user)
+		return
 	}
 
 	utils.SendJSON(c, http.StatusCreated, user)
