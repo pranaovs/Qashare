@@ -34,8 +34,8 @@ func NewSettlementsHandler(pool *pgxpool.Pool, appConfig config.AppConfig) *Sett
 // @Security BearerAuth
 // @Param id path string true "Group ID"
 // @Success 200 {array} models.Settlement "List of non-zero settlement balances"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the specified group"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED: The authenticated user is not a member of the specified group"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/groups/{id}/settle [get]
@@ -63,8 +63,8 @@ func (h *GroupsHandler) GetSettle(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Group ID"
 // @Success 200 {array} models.Settlement "List of settlement history entries"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the specified group"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED: The authenticated user is not a member of the specified group"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/groups/{id}/settlements [get]
@@ -99,8 +99,8 @@ func (h *GroupsHandler) GetSettlements(c *gin.Context) {
 // @Param request body models.Settlement true "Settle payment request"
 // @Success 201 {object} models.Settlement "Created settlement expense with splits"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Cannot settle with yourself or missing group_id | INVALID_AMOUNT: Settlement amount cannot be zero"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user or the other user is not a member of the specified group"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED: The authenticated user or the other user is not a member of the specified group"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/groups/{id}/settle [post]
@@ -221,9 +221,9 @@ func expenseToSettlement(expense models.ExpenseDetails, userID uuid.UUID) models
 // @Security BearerAuth
 // @Param id path string true "Settlement ID"
 // @Success 200 {object} models.Settlement "Returns settlement details"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "Access denied: user is not a member of the group"
-// @Failure 404 {object} apierrors.AppError "Settlement not found or expense is not a settlement"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not a member of the settlement's group"
+// @Failure 404 {object} apierrors.AppError "EXPENSE_NOT_FOUND: The settlement does not exist or the expense is not a settlement"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/settlements/{id} [get]
 func (h *SettlementsHandler) Get(c *gin.Context) {
@@ -243,9 +243,9 @@ func (h *SettlementsHandler) Get(c *gin.Context) {
 // @Param request body models.Settlement true "Updated settlement details"
 // @Success 200 {object} models.Settlement "Returns updated settlement"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or cannot settle with yourself | INVALID_AMOUNT: Settlement amount cannot be zero"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "Access denied: user is not the payer | USERS_NOT_RELATED: The other user is not a member of the group"
-// @Failure 404 {object} apierrors.AppError "Settlement not found or expense is not a settlement"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the settlement payer"
+// @Failure 404 {object} apierrors.AppError "EXPENSE_NOT_FOUND: The settlement does not exist or the expense is not a settlement"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/settlements/{id} [put]
 func (h *SettlementsHandler) Update(c *gin.Context) {
@@ -342,9 +342,9 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 // @Param request body models.SettlementPatch true "Partial settlement details (all fields optional)"
 // @Success 200 {object} models.Settlement "Returns updated settlement"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or cannot settle with yourself | INVALID_AMOUNT: Settlement amount cannot be zero"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "Access denied: user is not the payer | USERS_NOT_RELATED: The other user is not a member of the group"
-// @Failure 404 {object} apierrors.AppError "Settlement not found or expense is not a settlement"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the settlement payer"
+// @Failure 404 {object} apierrors.AppError "EXPENSE_NOT_FOUND: The settlement does not exist or the expense is not a settlement"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/settlements/{id} [patch]
 func (h *SettlementsHandler) Patch(c *gin.Context) {
@@ -417,9 +417,9 @@ func (h *SettlementsHandler) Patch(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Settlement ID"
 // @Success 200 {object} map[string]string "Returns success message"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "Access denied: user is not the payer"
-// @Failure 404 {object} apierrors.AppError "Settlement not found or expense is not a settlement"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the settlement payer"
+// @Failure 404 {object} apierrors.AppError "EXPENSE_NOT_FOUND: The settlement does not exist or the expense is not a settlement"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/settlements/{id} [delete]
 func (h *SettlementsHandler) Delete(c *gin.Context) {

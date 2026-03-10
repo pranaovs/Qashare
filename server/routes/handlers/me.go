@@ -103,9 +103,7 @@ func (h *MeHandler) GetOwner(c *gin.Context) {
 // @Security BearerAuth
 // @Param request body models.User true "Updated user details"
 // @Success 200 {object} models.User "Returns updated user"
-// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or missing required fields"
-// @Failure 400 {object} apierrors.AppError "BAD_NAME: The name provided contains invalid characters"
-// @Failure 400 {object} apierrors.AppError "BAD_EMAIL: The email format is incorrect"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or missing required fields | BAD_NAME: The name provided contains invalid characters | BAD_EMAIL: The email format is incorrect"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
 // @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists"
@@ -180,9 +178,7 @@ func (h *MeHandler) Update(c *gin.Context) {
 // @Security BearerAuth
 // @Param request body models.UserPatch true "Partial user details (name and/or email, all optional)"
 // @Success 200 {object} models.User "Returns updated user"
-// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or validation failed"
-// @Failure 400 {object} apierrors.AppError "BAD_NAME: The name provided contains invalid characters"
-// @Failure 400 {object} apierrors.AppError "BAD_EMAIL: The email format is incorrect"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or validation failed | BAD_NAME: The name provided contains invalid characters | BAD_EMAIL: The email format is incorrect"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
 // @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: The authenticated user no longer exists"

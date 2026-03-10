@@ -112,12 +112,11 @@ func (h *AuthHandler) Register(c *gin.Context) {
 // @Summary Verify email address
 // @Description Verify a user's email address using a token sent to their email
 // @Tags auth
-// @Accept json
 // @Produce json
 // @Param token query string true "Email verification token"
 // @Success 200 {object} object{message=string} "Email successfully verified"
-// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Missing token | INVALID_TOKEN: Token is invalid or malformed | EXPIRED_TOKEN: Token has expired"
-// @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: No user associated with the token was found"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Missing token | EMAIL_VERIFICATION_TOKEN_ERROR: Token is invalid, malformed, or not found"
+// @Failure 403 {object} apierrors.AppError "EMAIL_VERIFICATION_TOKEN_EXPIRED: Token has expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/auth/verify [get]
 func (h *AuthHandler) Verify(c *gin.Context) {
@@ -155,6 +154,7 @@ func (h *AuthHandler) Verify(c *gin.Context) {
 // @Success 200 {object} models.TokenResponse "Returns access and refresh tokens"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format or missing required fields | BAD_EMAIL: Invalid email format"
 // @Failure 401 {object} apierrors.AppError "BAD_CREDENTIALS: Email or password is incorrect"
+// @Failure 403 {object} apierrors.AppError "EMAIL_NOT_VERIFIED: The email address has not been verified"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -229,7 +229,8 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Produce json
 // @Param request body object{refresh_token=string} true "Refresh token"
 // @Success 200 {object} models.TokenResponse "Returns new access and refresh tokens"
-// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Missing refresh token | INVALID_REFRESH_TOKEN: Refresh token is invalid or already used | EXPIRED_REFRESH_TOKEN: Refresh token has expired"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Missing refresh token | INVALID_REFRESH_TOKEN: Refresh token is invalid or already used"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_REFRESH_TOKEN: Refresh token has expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/auth/refresh [post]
 func (h *AuthHandler) Refresh(c *gin.Context) {
@@ -323,7 +324,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 // @Security BearerAuth
 // @Success 200 {object} object{message=string} "All tokens successfully revoked"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
-// @Failure 401 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
 // @Router /v1/auth/logout-all [post]
 func (h *AuthHandler) LogoutAll(c *gin.Context) {

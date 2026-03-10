@@ -33,10 +33,11 @@ func NewGroupsHandler(pool *pgxpool.Pool, appConfig config.AppConfig) *GroupsHan
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body object{name=string,description=string} true "Group details"
+// @Param request body object{name=string,description=string,private=bool} true "Group details"
 // @Success 201 {object} models.GroupDetails "Group successfully created"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format or missing required fields | BAD_NAME: Name contains invalid characters or is too short/long"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is missing, invalid, or expired"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/groups/ [post]
 func (h *GroupsHandler) Create(c *gin.Context) {
@@ -95,7 +96,8 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 // @Security BearerAuth
 // @Deprecated
 // @Success 200 {array} models.Group "Returns list of groups the user is a member of"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is missing, invalid, or expired"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/groups/me [get]
 func (h *GroupsHandler) ListUser(c *gin.Context) {
@@ -117,7 +119,8 @@ func (h *GroupsHandler) ListUser(c *gin.Context) {
 // @Security BearerAuth
 // @Deprecated
 // @Success 200 {array} models.Group "Returns list of groups the user is admin of"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is missing, invalid, or expired"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/groups/admin [get]
 func (h *GroupsHandler) ListAdmin(c *gin.Context) {
@@ -140,8 +143,8 @@ func (h *GroupsHandler) ListAdmin(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Group ID"
 // @Success 200 {object} models.GroupDetails "Returns group details including members and expenses"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the group"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED: The authenticated user is not a member of the group"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/groups/{id} [get]
@@ -169,9 +172,9 @@ func (h *GroupsHandler) Get(c *gin.Context) {
 // @Param id path string true "Group ID"
 // @Param request body models.Group true "Updated group details"
 // @Success 200 {object} models.GroupDetails "Returns updated group"
-// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or missing required fields"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED: The authenticated user is not a member of the group"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or missing required fields | BAD_NAME: Name contains invalid characters or is too short/long"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the group admin"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/groups/{id} [put]
@@ -233,9 +236,9 @@ func (h *GroupsHandler) Update(c *gin.Context) {
 // @Param id path string true "Group ID"
 // @Param request body models.GroupPatch true "Partial group details (name and/or description, all optional)"
 // @Success 200 {object} models.GroupDetails "Returns updated group with all fields"
-// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or validation failed"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED: The authenticated user is not a member of the group"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body or validation failed | BAD_NAME: Name contains invalid characters or is too short/long"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the group admin"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/groups/{id} [patch]
@@ -304,8 +307,8 @@ func (h *GroupsHandler) Patch(c *gin.Context) {
 // @Param request body object{user_ids=[]string} true "User IDs to add"
 // @Success 200 {object} map[string]interface{} "Returns success message and list of added member IDs"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body, missing required fields, or constraint violation"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED: The authenticated user is not a member of the group"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the group admin"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist | USER_NOT_FOUND: One or more specified users do not exist or no valid user IDs provided"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/groups/{id}/members [post]
@@ -363,8 +366,8 @@ func (h *GroupsHandler) AddMembers(c *gin.Context) {
 // @Param request body object{user_ids=[]string} true "User IDs to remove"
 // @Success 200 {object} map[string]interface{} "Returns success message and list of removed member IDs"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body, missing required fields, or attempting to remove self from group"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more specified users are not members of the group"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the group admin | USER_NOT_IN_GROUP: One or more specified users are not members of the group"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/groups/{id}/members [delete]
 func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
@@ -414,8 +417,8 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Group ID"
 // @Success 200 {array} models.UserExpense "List of expenses with user-specific amounts"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "USERS_NOT_RELATED: The authenticated user is not a member of the group"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED: The authenticated user is not a member of the group"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/groups/{id}/spendings [get]
@@ -440,8 +443,8 @@ func (h *GroupsHandler) GetSpendings(c *gin.Context) {
 // @Security BearerAuth
 // @Param id path string true "Group ID"
 // @Success 200 {object} map[string]string "Returns success message"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is missing, invalid, or expired"
-// @Failure 403 {object} apierrors.AppError "NO_PERMISSIONS: User is not the group admin/owner"
+// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the group admin/owner"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/groups/{id} [delete]

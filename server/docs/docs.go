@@ -168,6 +168,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
+                    "403": {
+                        "description": "EMAIL_NOT_VERIFIED: The email address has not been verified",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -253,6 +259,12 @@ const docTemplate = `{
                         }
                     },
                     "401": {
+                        "description": "INVALID_TOKEN: Access token is invalid",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
                         "description": "EXPIRED_TOKEN: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
@@ -354,7 +366,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "BAD_REQUEST: Missing refresh token | INVALID_REFRESH_TOKEN: Refresh token is invalid or already used | EXPIRED_REFRESH_TOKEN: Refresh token has expired",
+                        "description": "BAD_REQUEST: Missing refresh token | INVALID_REFRESH_TOKEN: Refresh token is invalid or already used",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "EXPIRED_REFRESH_TOKEN: Refresh token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -434,9 +452,6 @@ const docTemplate = `{
         "/v1/auth/verify": {
             "get": {
                 "description": "Verify a user's email address using a token sent to their email",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -466,13 +481,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "BAD_REQUEST: Missing token | INVALID_TOKEN: Token is invalid or malformed | EXPIRED_TOKEN: Token has expired",
+                        "description": "BAD_REQUEST: Missing token | EMAIL_VERIFICATION_TOKEN_ERROR: Token is invalid, malformed, or not found",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
-                    "404": {
-                        "description": "USER_NOT_FOUND: No user associated with the token was found",
+                    "403": {
+                        "description": "EMAIL_VERIFICATION_TOKEN_EXPIRED: Token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -518,13 +533,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the group this expense belongs to",
+                        "description": "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: The authenticated user is not a member of the group this expense belongs to",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -592,13 +607,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "NO_PERMISSIONS: User is not the expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group",
+                        "description": "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the expense creator | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -651,13 +666,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "NO_PERMISSIONS: User is not the expense creator or group admin",
+                        "description": "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the expense creator or group admin",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -725,13 +740,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "NO_PERMISSIONS: User is not the expense creator | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group",
+                        "description": "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the expense creator | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -783,6 +798,9 @@ const docTemplate = `{
                                 },
                                 "name": {
                                     "type": "string"
+                                },
+                                "private": {
+                                    "type": "boolean"
                                 }
                             }
                         }
@@ -802,7 +820,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "EXPIRED_TOKEN: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -843,7 +867,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "EXPIRED_TOKEN: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -884,7 +914,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "403": {
+                        "description": "EXPIRED_TOKEN: Access token has expired",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -930,13 +966,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the group",
+                        "description": "EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED: The authenticated user is not a member of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -998,19 +1034,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "BAD_REQUEST: Invalid request body or missing required fields",
+                        "description": "BAD_REQUEST: Invalid request body or missing required fields | BAD_NAME: Name contains invalid characters or is too short/long",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED: The authenticated user is not a member of the group",
+                        "description": "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the group admin",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1063,13 +1099,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "NO_PERMISSIONS: User is not the group admin/owner",
+                        "description": "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the group admin/owner",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1131,19 +1167,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "BAD_REQUEST: Invalid request body or validation failed",
+                        "description": "BAD_REQUEST: Invalid request body or validation failed | BAD_NAME: Name contains invalid characters or is too short/long",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED: The authenticated user is not a member of the group",
+                        "description": "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the group admin",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1198,13 +1234,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the group",
+                        "description": "EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED: The authenticated user is not a member of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1272,13 +1308,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the specified group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group",
+                        "description": "EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED: The authenticated user is not a member of the specified group | USER_NOT_IN_GROUP: One or more users in the splits are not members of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1357,13 +1393,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED: The authenticated user is not a member of the group",
+                        "description": "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the group admin",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1440,13 +1476,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "NO_PERMISSIONS: User is not the group admin | USERS_NOT_RELATED: The authenticated user is not a member of the group | USER_NOT_IN_GROUP: One or more specified users are not members of the group",
+                        "description": "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the group admin | USER_NOT_IN_GROUP: One or more specified users are not members of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1495,13 +1531,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the specified group",
+                        "description": "EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED: The authenticated user is not a member of the specified group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1569,13 +1605,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "USERS_NOT_RELATED: The authenticated user or the other user is not a member of the specified group",
+                        "description": "EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED: The authenticated user or the other user is not a member of the specified group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1630,13 +1666,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the specified group",
+                        "description": "EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED: The authenticated user is not a member of the specified group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1691,13 +1727,13 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "USERS_NOT_RELATED: The authenticated user is not a member of the group",
+                        "description": "EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED: The authenticated user is not a member of the group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1801,7 +1837,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "BAD_EMAIL: The email format is incorrect",
+                        "description": "BAD_REQUEST: Invalid request body or missing required fields | BAD_NAME: The name provided contains invalid characters | BAD_EMAIL: The email format is incorrect",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -1930,7 +1966,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "BAD_EMAIL: The email format is incorrect",
+                        "description": "BAD_REQUEST: Invalid request body or validation failed | BAD_NAME: The name provided contains invalid characters | BAD_EMAIL: The email format is incorrect",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -2092,19 +2128,19 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "Access denied: user is not a member of the group",
+                        "description": "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not a member of the settlement's group",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "404": {
-                        "description": "Settlement not found or expense is not a settlement",
+                        "description": "EXPENSE_NOT_FOUND: The settlement does not exist or the expense is not a settlement",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -2166,19 +2202,19 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "Access denied: user is not the payer | USERS_NOT_RELATED: The other user is not a member of the group",
+                        "description": "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the settlement payer",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "404": {
-                        "description": "Settlement not found or expense is not a settlement",
+                        "description": "EXPENSE_NOT_FOUND: The settlement does not exist or the expense is not a settlement",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -2225,19 +2261,19 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "Access denied: user is not the payer",
+                        "description": "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the settlement payer",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "404": {
-                        "description": "Settlement not found or expense is not a settlement",
+                        "description": "EXPENSE_NOT_FOUND: The settlement does not exist or the expense is not a settlement",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
@@ -2299,19 +2335,19 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "INVALID_TOKEN: Access token is missing, invalid, or expired",
+                        "description": "INVALID_TOKEN: Access token is invalid",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "403": {
-                        "description": "Access denied: user is not the payer | USERS_NOT_RELATED: The other user is not a member of the group",
+                        "description": "EXPIRED_TOKEN: Access token has expired | NO_PERMISSIONS: User is not the settlement payer",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
                     },
                     "404": {
-                        "description": "Settlement not found or expense is not a settlement",
+                        "description": "EXPENSE_NOT_FOUND: The settlement does not exist or the expense is not a settlement",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
