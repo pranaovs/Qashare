@@ -2839,9 +2839,6 @@ const docTemplate = `{
                 "email": {
                     "type": "string"
                 },
-                "email_verified": {
-                    "type": "boolean"
-                },
                 "guest": {
                     "type": "boolean"
                 },
