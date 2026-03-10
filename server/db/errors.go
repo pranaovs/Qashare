@@ -95,6 +95,18 @@ var (
 		Code:    "INVALID_INPUT",
 		Message: "invalid input data",
 	}
+
+	// ErrExpiredToken indicates a token has expired
+	ErrExpiredToken = &DBError{
+		Code:    "EXPIRED_TOKEN",
+		Message: "token has expired",
+	}
+
+	// ErrEmailNotVerified indicates the user's email has not been verified
+	ErrEmailNotVerified = &DBError{
+		Code:    "EMAIL_NOT_VERIFIED",
+		Message: "email address has not been verified",
+	}
 )
 
 // IsNotFound checks if an error is a "not found" error
