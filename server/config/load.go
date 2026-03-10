@@ -58,12 +58,12 @@ func loadDatabaseConfig() DatabaseConfig {
 		VerifyMigrations:  getEnvBool("DB_VERIFY_MIGRATIONS", true),
 		MaxConnections:    getEnvInt32("DB_MAX_CONNECTIONS", 10),
 		MinConnections:    getEnvInt32("DB_MIN_CONNECTIONS", 2),
-		MaxConnLifetime:   getEnvDuration("DB_MAX_CONN_LIFETIME", 60*60),
-		MaxConnIdleTime:   getEnvDuration("DB_MAX_CONN_IDLE_TIME", 30*60),
-		HealthCheckPeriod: getEnvDuration("DB_HEALTH_CHECK_PERIOD", 60),
-		ConnectTimeout:    getEnvDuration("DB_CONNECT_TIMEOUT", 10),
+		MaxConnLifetime:   getEnvDuration("DB_MAX_CONN_LIFETIME", "1h"),
+		MaxConnIdleTime:   getEnvDuration("DB_MAX_CONN_IDLE_TIME", "30m"),
+		HealthCheckPeriod: getEnvDuration("DB_HEALTH_CHECK_PERIOD", "60s"),
+		ConnectTimeout:    getEnvDuration("DB_CONNECT_TIMEOUT", "10s"),
 		RetryAttempts:     getEnvInt("DB_RETRY_ATTEMPTS", 5),
-		RetryInterval:     getEnvDuration("DB_RETRY_INTERVAL", 5),
+		RetryInterval:     getEnvDuration("DB_RETRY_INTERVAL", "5s"),
 	}
 }
 
@@ -75,8 +75,12 @@ func loadJWTConfig() JWTConfig {
 	}
 
 	return JWTConfig{
-		Secret: secret,
-		Expiry: getEnvDuration("JWT_EXPIRY", 60*60*24), // 24 hours
+		Secret:           secret,
+		Issuer:           getEnv("JWT_ISSUER", "qashare"),
+		Audience:         getEnv("JWT_AUDIENCE", "qashare"),
+		AccessExpiry:     getEnvDuration("JWT_ACCESS_EXPIRY", "15m"),
+		RefreshExpiry:    getEnvDuration("JWT_REFRESH_EXPIRY", "30d"),
+		TokenCleanupFreq: getEnvDuration("JWT_TOKEN_CLEANUP_FREQ", "24h"),
 	}
 }
 
