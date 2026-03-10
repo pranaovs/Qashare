@@ -18,7 +18,7 @@ var (
 	ErrExpiredRefreshToken           = New(http.StatusForbidden, "EXPIRED_REFRESH_TOKEN", "The refresh token has expired.", nil)
 	ErrEmailNotVerified              = New(http.StatusForbidden, "EMAIL_NOT_VERIFIED", "The email address has not been verified.", nil)
 	ErrEmailVerificationTokenExpired = New(http.StatusForbidden, "EMAIL_VERIFICATION_TOKEN_EXPIRED", "The email verification token has expired.", nil)
-	ErrEmailVerificationTokenError   = New(http.StatusBadRequest, "EMAIL_VERIFICATION_TOKEN_ERROR", "The email verification token is invalid or has expired.", nil)
+	ErrEmailVerificationTokenError   = New(http.StatusBadRequest, "EMAIL_VERIFICATION_TOKEN_ERROR", "The email verification token is invalid or malformed.", nil)
 
 	// Group Errors
 	ErrUserNotFound    = New(http.StatusNotFound, "USER_NOT_FOUND", "The requested user does not exist.", nil)
