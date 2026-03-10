@@ -17,6 +17,21 @@ func sanitizeHeader(s string) string {
 	return s
 }
 
+// sanitizeEmailAddress normalizes and sanitizes an email address to prevent injection.
+// It trims whitespace, strips CR/LF characters, and re-validates the address.
+func sanitizeEmailAddress(email string) (string, error) {
+	// First, remove any CR/LF characters that could be used for header injection.
+	email = sanitizeHeader(email)
+
+	// Reuse existing email validation/normalization logic.
+	safeEmail, err := ValidateEmail(email)
+	if err != nil {
+		return "", err
+	}
+
+	return safeEmail, nil
+}
+
 // ErrEmailSendFailed indicates that the verification email could not be sent
 var ErrEmailSendFailed = &UtilsError{
 	Code:    "EMAIL_SEND_FAILED",
@@ -25,6 +40,12 @@ var ErrEmailSendFailed = &UtilsError{
 
 // SendVerificationEmail sends a link-based verification email to the given address.
 func SendVerificationEmail(emailConfig config.EmailConfig, apiConfig config.APIConfig, to string, token uuid.UUID) error {
+	// Sanitize and validate the recipient email to prevent header injection.
+	safeTo, err := sanitizeEmailAddress(to)
+	if err != nil {
+		return ErrEmailSendFailed.WithError(err)
+	}
+
 	subject := "Qashare - Verify your email address"
 
 	link := fmt.Sprintf("%s%s/v1/auth/verify?token=%s", apiConfig.PublicURL, apiConfig.BasePath, token.String())
@@ -48,14 +69,14 @@ func SendVerificationEmail(emailConfig config.EmailConfig, apiConfig config.APIC
 			"Content-Type: text/html; charset=\"UTF-8\"\r\n"+
 			"\r\n"+
 			"%s",
-		sanitizeHeader(emailConfig.From.String()), sanitizeHeader(to), subject, body,
+		sanitizeHeader(emailConfig.From.String()), safeTo, subject, body,
 	)
 
 	auth := smtp.PlainAuth("", emailConfig.Username, emailConfig.Password, emailConfig.Host)
 
-	err := smtp.SendMail(emailConfig.Host+":"+fmt.Sprint(emailConfig.Port), auth, emailConfig.From.Address, []string{to}, []byte(msg))
+	err = smtp.SendMail(emailConfig.Host+":"+fmt.Sprint(emailConfig.Port), auth, emailConfig.From.Address, []string{safeTo}, []byte(msg))
 	if err != nil {
-		slog.Error("Failed to send verification email", "to", to, "error", err)
+		slog.Error("Failed to send verification email", "to", safeTo, "error", err)
 		return ErrEmailSendFailed.WithError(err)
 	}
 
