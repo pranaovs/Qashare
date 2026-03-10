@@ -6,6 +6,7 @@ package db
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/models"
@@ -18,49 +19,68 @@ import (
 // CreateUser inserts a new non-guest (fully authenticated) user into the database.
 // Guest accounts should normally be created using CreateGuest. If an existing guest user
 // is found for the given email, this function will promote them to a full user account.
-// Takes a User model with Name, Email, and PasswordHash populated, and adds UserID and CreatedAt.
-// Returns ErrDuplicateKey if a non-guest user with the email already exists.
-func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) error {
+// If an existing non-guest user is found whose email is not yet verified, their credentials
+// are updated and a new verification token is generated (allowing re-registration).
+// Takes a User model with Name, Email, PasswordHash, and EmailVerified populated.
+// If EmailVerified is false, a verification token is created inside the same transaction
+// and its UUID is returned. If EmailVerified is true, uuid.Nil is returned.
+// Returns ErrDuplicateKey if a verified non-guest user with the email already exists.
+func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User, verificationExpiry time.Duration) (uuid.UUID, error) {
 	user.Guest = false
+	var verificationToken uuid.UUID
 
 	err := WithTransaction(ctx, pool, func(ctx context.Context, tx pgx.Tx) error {
 		// Check for existing user inside the transaction with FOR UPDATE to prevent races
 		var existingUserID uuid.UUID
 		var isGuest bool
+		var existingEmailVerified bool
 		err := tx.QueryRow(ctx,
-			`SELECT user_id, COALESCE(is_guest, false) FROM users WHERE email = $1 FOR UPDATE`,
+			`SELECT user_id, COALESCE(is_guest, false), email_verified FROM users WHERE email = $1 FOR UPDATE`,
 			user.Email,
-		).Scan(&existingUserID, &isGuest)
+		).Scan(&existingUserID, &isGuest, &existingEmailVerified)
 
 		if err == nil {
 			// User exists
-			if !isGuest {
+			if !isGuest && existingEmailVerified {
 				return ErrDuplicateKey.Msgf("user with email %s already exists", user.Email)
 			}
 
-			// Promote guest user to regular user
-			query := `UPDATE users
-				SET user_name = $1, password_hash = $2, is_guest = $3, created_at = NOW()
-				WHERE user_id = $4
-				RETURNING user_id, extract(epoch from created_at)::bigint`
+			if !isGuest {
+				// Unverified user re-registering — update credentials and resend verification
+				query := `UPDATE users
+					SET user_name = $1, password_hash = $2, email_verified = $3, created_at = NOW()
+					WHERE user_id = $4
+					RETURNING user_id, extract(epoch from created_at)::bigint`
 
-			err = tx.QueryRow(ctx, query, user.Name, user.PasswordHash, user.Guest, existingUserID).Scan(&user.UserID, &user.CreatedAt)
-			if err != nil {
-				return err
-			}
+				err = tx.QueryRow(ctx, query, user.Name, user.PasswordHash, user.EmailVerified, existingUserID).Scan(&user.UserID, &user.CreatedAt)
+				if err != nil {
+					return err
+				}
+			} else {
+				// Promote guest user to regular user
+				query := `UPDATE users
+					SET user_name = $1, password_hash = $2, is_guest = $3, email_verified = $4, created_at = NOW()
+					WHERE user_id = $5
+					RETURNING user_id, extract(epoch from created_at)::bigint`
 
-			// Delete the guest entry since user is now promoted
-			_, err = tx.Exec(ctx, `DELETE FROM guests WHERE user_id = $1`, user.UserID)
-			if err != nil {
-				return err
+				err = tx.QueryRow(ctx, query, user.Name, user.PasswordHash, user.Guest, user.EmailVerified, existingUserID).Scan(&user.UserID, &user.CreatedAt)
+				if err != nil {
+					return err
+				}
+
+				// Delete the guest entry since user is now promoted
+				_, err = tx.Exec(ctx, `DELETE FROM guests WHERE user_id = $1`, user.UserID)
+				if err != nil {
+					return err
+				}
 			}
 		} else if err == pgx.ErrNoRows {
 			// No existing user — insert new
-			query := `INSERT INTO users (user_name, email, password_hash, is_guest)
-				VALUES ($1, $2, $3, $4)
+			query := `INSERT INTO users (user_name, email, password_hash, is_guest, email_verified)
+				VALUES ($1, $2, $3, $4, $5)
 				RETURNING user_id, extract(epoch from created_at)::bigint`
 
-			err = tx.QueryRow(ctx, query, user.Name, user.Email, user.PasswordHash, user.Guest).Scan(&user.UserID, &user.CreatedAt)
+			err = tx.QueryRow(ctx, query, user.Name, user.Email, user.PasswordHash, user.Guest, user.EmailVerified).Scan(&user.UserID, &user.CreatedAt)
 			if err != nil {
 				if IsDuplicateKey(err) {
 					return ErrDuplicateKey.Msgf("user with email %s already exists", user.Email)
@@ -71,14 +91,32 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User) erro
 			return err
 		}
 
+		// Create verification token if email is not yet verified
+		if !user.EmailVerified {
+			_, err = tx.Exec(ctx, `DELETE FROM email_verification_tokens WHERE user_id = $1`, user.UserID)
+			if err != nil {
+				return err
+			}
+
+			err = tx.QueryRow(ctx,
+				`INSERT INTO email_verification_tokens (user_id, expires_at)
+				VALUES ($1, NOW() + make_interval(secs => $2))
+				RETURNING token`,
+				user.UserID, verificationExpiry.Seconds(),
+			).Scan(&verificationToken)
+			if err != nil {
+				return err
+			}
+		}
+
 		return nil
 	})
 	if err != nil {
-		return err
+		return uuid.Nil, err
 	}
 
 	user.PasswordHash = nil // Remove password hash after insertion
-	return nil
+	return verificationToken, nil
 }
 
 // CreateGuest inserts a new guest user into the database.
@@ -142,12 +180,12 @@ func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy 
 // Returns ErrNotFound if no user with the email exists.
 func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (models.User, error) {
 	var user models.User
-	query := `SELECT user_id, user_name, email, COALESCE(is_guest, false) AS is_guest, extract(epoch from created_at)::bigint
+	query := `SELECT user_id, user_name, email, email_verified, COALESCE(is_guest, false) AS is_guest, extract(epoch from created_at)::bigint
 		FROM users
 		WHERE email = $1`
 
 	err := pool.QueryRow(ctx, query, email).Scan(
-		&user.UserID, &user.Name, &user.Email, &user.Guest, &user.CreatedAt,
+		&user.UserID, &user.Name, &user.Email, &user.EmailVerified, &user.Guest, &user.CreatedAt,
 	)
 
 	if err == pgx.ErrNoRows {
@@ -160,43 +198,44 @@ func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (mo
 	return user, nil
 }
 
-// GetUserCredentials retrieves the user ID and password hash for authentication.
-// This function is specifically designed for login verification.
-// Only returns the minimal information needed for authentication.
+// GetUserCredentials retrieves the user ID, password hash, and email verification
+// status for authentication. This function is specifically designed for login verification.
 // Returns ErrNotFound if no user with the email exists or if the user has no password (guest).
-func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (uuid.UUID, string, error) {
+// The caller is responsible for checking emailVerified against the app config.
+func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (uuid.UUID, string, bool, error) {
 	var userID uuid.UUID
 	var passwordHash *string
 	var guest bool
+	var emailVerified bool
 
-	query := `SELECT user_id, password_hash, is_guest FROM users WHERE email = $1`
+	query := `SELECT user_id, password_hash, is_guest, email_verified FROM users WHERE email = $1`
 
-	err := pool.QueryRow(ctx, query, email).Scan(&userID, &passwordHash, &guest)
+	err := pool.QueryRow(ctx, query, email).Scan(&userID, &passwordHash, &guest, &emailVerified)
 	if err == pgx.ErrNoRows {
-		return uuid.Nil, "", ErrNotFound.Msgf("user with email %s not found", email)
+		return uuid.Nil, "", false, ErrNotFound.Msgf("user with email %s not found", email)
 	}
 	if err != nil {
-		return uuid.Nil, "", err
+		return uuid.Nil, "", false, err
 	}
 
 	// Treat guest users as not found for login purposes
 	if guest || passwordHash == nil {
-		return uuid.Nil, "", ErrNotFound.Msgf("user with email %s not found", email)
+		return uuid.Nil, "", false, ErrNotFound.Msgf("user with email %s not found", email)
 	}
 
-	return userID, *passwordHash, nil
+	return userID, *passwordHash, emailVerified, nil
 }
 
 // GetUser retrieves a user by their unique user ID.
 // Returns ErrNotFound if no user with the ID exists.
 func GetUser(ctx context.Context, pool *pgxpool.Pool, userID uuid.UUID) (models.User, error) {
 	var user models.User
-	query := `SELECT user_id, user_name, email, COALESCE(is_guest, false), extract(epoch from created_at)::bigint
+	query := `SELECT user_id, user_name, email, email_verified, COALESCE(is_guest, false), extract(epoch from created_at)::bigint
 		FROM users
 		WHERE user_id = $1`
 
 	err := pool.QueryRow(ctx, query, userID).Scan(
-		&user.UserID, &user.Name, &user.Email, &user.Guest, &user.CreatedAt,
+		&user.UserID, &user.Name, &user.Email, &user.EmailVerified, &user.Guest, &user.CreatedAt,
 	)
 
 	if err == pgx.ErrNoRows {

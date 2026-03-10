@@ -95,6 +95,12 @@ var (
 		Code:    "INVALID_INPUT",
 		Message: "invalid input data",
 	}
+
+	// ErrExpiredToken indicates a token has expired
+	ErrExpiredToken = &DBError{
+		Code:    "EXPIRED_TOKEN",
+		Message: "token has expired",
+	}
 )
 
 // IsNotFound checks if an error is a "not found" error

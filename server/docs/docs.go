@@ -431,6 +431,61 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1/auth/verify": {
+            "get": {
+                "description": "Verify a user's email address using a token sent to their email",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Verify email address",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Email verification token",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Email successfully verified",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "BAD_REQUEST: Missing token | INVALID_TOKEN: Token is invalid or malformed | EXPIRED_TOKEN: Token has expired",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "404": {
+                        "description": "USER_NOT_FOUND: No user associated with the token was found",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.AppError"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/expenses/{id}": {
             "get": {
                 "security": [

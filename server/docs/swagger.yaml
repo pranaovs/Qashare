@@ -540,6 +540,43 @@ paths:
       summary: Register a new user
       tags:
       - auth
+  /v1/auth/verify:
+    get:
+      consumes:
+      - application/json
+      description: Verify a user's email address using a token sent to their email
+      parameters:
+      - description: Email verification token
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Email successfully verified
+          schema:
+            properties:
+              message:
+                type: string
+            type: object
+        "400":
+          description: 'BAD_REQUEST: Missing token | INVALID_TOKEN: Token is invalid
+            or malformed | EXPIRED_TOKEN: Token has expired'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'USER_NOT_FOUND: No user associated with the token was found'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      summary: Verify email address
+      tags:
+      - auth
   /v1/expenses/{id}:
     delete:
       description: Delete an expense (requires being the expense creator or group

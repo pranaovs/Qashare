@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"log/slog"
+	"net/mail"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -33,6 +34,9 @@ func Load() (*Config, error) {
 
 	// Load JWT configuration
 	cfg.JWT = loadJWTConfig()
+
+	// Load Email configuration
+	cfg.Email = loadEmailConfig()
 
 	// Load App configuration
 	cfg.App = loadAppConfig(envPath)
@@ -91,6 +95,36 @@ func loadAppConfig(envPath string) AppConfig {
 		SplitTolerance: getEnvFloat("SPLIT_TOLERANCE", 0.01),
 		EnvPath:        envPath,
 	}
+}
+
+func loadEmailConfig() EmailConfig {
+	fromRaw := getEnv("EMAIL_FROM", "")
+	var fromAddr *mail.Address
+	if fromRaw != "" {
+		var err error
+		fromAddr, err = mail.ParseAddress(fromRaw)
+		if err != nil {
+			slog.Error("EMAIL_FROM is not a valid email address. Email verification disabled.", "value", fromRaw, "error", err)
+		}
+	}
+
+	config := EmailConfig{
+		Verification: getEnvBool("VERIFY_EMAIL", false),
+		Host:         getEnv("SMTP_HOST", ""),
+		Port:         getEnvInt("SMTP_PORT", 0),
+		Username:     getEnv("SMTP_USERNAME", ""),
+		Password:     getEnv("SMTP_PASSWORD", ""),
+		From:         fromAddr,
+		Expiry:       getEnvDuration("VERIFY_EMAIL_EXPIRY", "24h"),
+	}
+
+	if config.Verification {
+		if config.Host == "" || config.Port == 0 || config.Username == "" || config.Password == "" || config.From == nil {
+			slog.Error("Email verification is enabled but SMTP configuration is incomplete. Email verification disabled.")
+			config.Verification = false
+		}
+	}
+	return config
 }
 
 func generateRandomSecret(length int) string {

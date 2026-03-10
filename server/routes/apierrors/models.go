@@ -10,12 +10,15 @@ var (
 	ErrInvalidDescription = New(http.StatusBadRequest, "BAD_DESCRIPTION", "The description contains invalid characters.", nil)
 
 	// Auth Errors
-	ErrInvalidPassword     = New(http.StatusBadRequest, "BAD_PASSWORD", "The password syntax is incorrect.", nil)
-	ErrBadCredentials      = New(http.StatusUnauthorized, "BAD_CREDENTIALS", "The provided credentials are incorrect.", nil)
-	ErrInvalidAccessToken  = New(http.StatusUnauthorized, "INVALID_TOKEN", "The access token is invalid.", nil)
-	ErrExpiredAccessToken  = New(http.StatusForbidden, "EXPIRED_TOKEN", "The access token has expired.", nil)
-	ErrInvalidRefreshToken = New(http.StatusBadRequest, "INVALID_REFRESH_TOKEN", "The refresh token is invalid.", nil)
-	ErrExpiredRefreshToken = New(http.StatusForbidden, "EXPIRED_REFRESH_TOKEN", "The refresh token has expired.", nil)
+	ErrInvalidPassword               = New(http.StatusBadRequest, "BAD_PASSWORD", "The password syntax is incorrect.", nil)
+	ErrBadCredentials                = New(http.StatusUnauthorized, "BAD_CREDENTIALS", "The provided credentials are incorrect.", nil)
+	ErrInvalidAccessToken            = New(http.StatusUnauthorized, "INVALID_TOKEN", "The access token is invalid.", nil)
+	ErrExpiredAccessToken            = New(http.StatusForbidden, "EXPIRED_TOKEN", "The access token has expired.", nil)
+	ErrInvalidRefreshToken           = New(http.StatusBadRequest, "INVALID_REFRESH_TOKEN", "The refresh token is invalid.", nil)
+	ErrExpiredRefreshToken           = New(http.StatusForbidden, "EXPIRED_REFRESH_TOKEN", "The refresh token has expired.", nil)
+	ErrEmailNotVerified              = New(http.StatusForbidden, "EMAIL_NOT_VERIFIED", "The email address has not been verified.", nil)
+	ErrEmailVerificationTokenExpired = New(http.StatusForbidden, "EMAIL_VERIFICATION_TOKEN_EXPIRED", "The email verification token has expired.", nil)
+	ErrEmailVerificationTokenError   = New(http.StatusBadRequest, "EMAIL_VERIFICATION_TOKEN_ERROR", "The email verification token is invalid or malformed.", nil)
 
 	// Group Errors
 	ErrUserNotFound    = New(http.StatusNotFound, "USER_NOT_FOUND", "The requested user does not exist.", nil)
