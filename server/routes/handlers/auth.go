@@ -186,13 +186,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	if h.emailConfig.Verification && !emailVerified {
-		utils.SendError(c, apierrors.ErrEmailNotVerified)
+	if ok := utils.CheckPassword(password, savedPassword); !ok {
+		utils.SendError(c, apierrors.ErrBadCredentials)
 		return
 	}
 
-	if ok := utils.CheckPassword(password, savedPassword); !ok {
-		utils.SendError(c, apierrors.ErrBadCredentials)
+	if h.emailConfig.Verification && !emailVerified {
+		utils.SendError(c, apierrors.ErrEmailNotVerified)
 		return
 	}
 
