@@ -9,10 +9,11 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func RegisterAuthRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, jwtConfig config.JWTConfig) {
-	handler := handlers.NewAuthHandler(pool, jwtConfig)
+func RegisterAuthRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, jwtConfig config.JWTConfig, emailConfig config.EmailConfig, apiConfig config.APIConfig) {
+	handler := handlers.NewAuthHandler(pool, jwtConfig, emailConfig, apiConfig)
 
 	router.POST("/register", handler.Register)
+	router.GET("/verify", handler.Verify)
 	router.POST("/login", handler.Login)
 	router.POST("/refresh", handler.Refresh)
 	router.POST("/logout", middleware.RequireAuth(jwtConfig), handler.Logout)

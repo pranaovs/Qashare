@@ -88,7 +88,7 @@ func run() error {
 		slog.Error("Invalid trusted proxies configuration", "error", err)
 		return err
 	}
-	routes.RegisterRoutes(cfg.API.BasePath, router, pool, cfg.JWT, cfg.App)
+	routes.RegisterRoutes(cfg.API.BasePath, router, pool, cfg.JWT, cfg.Email, cfg.API, cfg.App)
 
 	// Start server with graceful shutdown
 	return startServer(router, cfg.API)

@@ -89,11 +89,16 @@ func StartTokenCleanup(ctx context.Context, pool *pgxpool.Pool, interval time.Du
 			case <-ticker.C:
 				deleted, err := DeleteExpiredTokens(ctx, pool)
 				if err != nil {
-					slog.Error("Failed to clean up expired tokens", "error", err)
-					continue
-				}
-				if deleted > 0 {
+					slog.Error("Failed to clean up expired refresh tokens", "error", err)
+				} else if deleted > 0 {
 					slog.Info("Cleaned up expired refresh tokens", "count", deleted)
+				}
+
+				deletedVerification, err := DeleteExpiredVerificationTokens(ctx, pool)
+				if err != nil {
+					slog.Error("Failed to clean up expired verification tokens", "error", err)
+				} else if deletedVerification > 0 {
+					slog.Info("Cleaned up expired verification tokens", "count", deletedVerification)
 				}
 			}
 		}

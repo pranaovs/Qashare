@@ -17,12 +17,14 @@ import (
 )
 
 type AuthHandler struct {
-	pool      *pgxpool.Pool
-	jwtConfig config.JWTConfig
+	pool        *pgxpool.Pool
+	jwtConfig   config.JWTConfig
+	emailConfig config.EmailConfig
+	apiConfig   config.APIConfig
 }
 
-func NewAuthHandler(pool *pgxpool.Pool, jwtConfig config.JWTConfig) *AuthHandler {
-	return &AuthHandler{pool: pool, jwtConfig: jwtConfig}
+func NewAuthHandler(pool *pgxpool.Pool, jwtConfig config.JWTConfig, emailConfig config.EmailConfig, apiConfig config.APIConfig) *AuthHandler {
+	return &AuthHandler{pool: pool, jwtConfig: jwtConfig, emailConfig: emailConfig, apiConfig: apiConfig}
 }
 
 // Register godoc
@@ -78,7 +80,13 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 	user.PasswordHash = &passwordHash
 
-	err = db.CreateUser(c.Request.Context(), h.pool, &user)
+	if h.emailConfig.Verification {
+		user.EmailVerified = false
+	} else {
+		user.EmailVerified = true
+	}
+
+	verificationToken, err := db.CreateUser(c.Request.Context(), h.pool, &user, h.emailConfig.Expiry)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrDuplicateKey: apierrors.ErrEmailAlreadyExists,
@@ -86,7 +94,55 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
+	// Send verification email if verification is enabled
+	if h.emailConfig.Verification {
+		err = utils.SendVerificationEmail(h.emailConfig, h.apiConfig, user.Email, verificationToken)
+		if err != nil {
+			utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+				utils.ErrEmailSendFailed: apierrors.ErrInternalServer,
+			}))
+			return
+		}
+	}
+
 	utils.SendJSON(c, http.StatusCreated, user)
+}
+
+// Verify godoc
+// @Summary Verify email address
+// @Description Verify a user's email address using a token sent to their email
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param token query string true "Email verification token"
+// @Success 200 {object} object{message=string} "Email successfully verified"
+// @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Missing token | INVALID_TOKEN: Token is invalid or malformed | EXPIRED_TOKEN: Token has expired"
+// @Failure 404 {object} apierrors.AppError "USER_NOT_FOUND: No user associated with the token was found"
+// @Failure 500 {object} apierrors.AppError "Internal server error"
+// @Router /v1/auth/verify [get]
+func (h *AuthHandler) Verify(c *gin.Context) {
+	tokenStr := c.Query("token")
+	if tokenStr == "" {
+		utils.SendError(c, apierrors.ErrBadRequest.Msg("missing token query parameter"))
+		return
+	}
+
+	token, err := uuid.Parse(tokenStr)
+	if err != nil {
+		utils.SendError(c, apierrors.ErrEmailVerificationTokenError)
+		return
+	}
+
+	err = db.VerifyEmail(c.Request.Context(), h.pool, token)
+	if err != nil {
+		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
+			db.ErrNotFound:     apierrors.ErrEmailVerificationTokenError,
+			db.ErrExpiredToken: apierrors.ErrEmailVerificationTokenExpired,
+		}))
+		return
+	}
+
+	utils.SendOK(c, "email verified")
 }
 
 // Login godoc
@@ -125,7 +181,8 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	userID, savedPassword, err := db.GetUserCredentials(c.Request.Context(), h.pool, email)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrNotFound: apierrors.ErrBadCredentials,
+			db.ErrNotFound:          apierrors.ErrBadCredentials,
+			db.ErrEmailNotVerified: apierrors.ErrEmailNotVerified,
 		}))
 		return
 	}
