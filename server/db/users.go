@@ -180,12 +180,12 @@ func CreateGuest(ctx context.Context, pool *pgxpool.Pool, email string, addedBy 
 // Returns ErrNotFound if no user with the email exists.
 func GetUserFromEmail(ctx context.Context, pool *pgxpool.Pool, email string) (models.User, error) {
 	var user models.User
-	query := `SELECT user_id, user_name, email, COALESCE(is_guest, false) AS is_guest, extract(epoch from created_at)::bigint
+	query := `SELECT user_id, user_name, email, email_verified, COALESCE(is_guest, false) AS is_guest, extract(epoch from created_at)::bigint
 		FROM users
 		WHERE email = $1`
 
 	err := pool.QueryRow(ctx, query, email).Scan(
-		&user.UserID, &user.Name, &user.Email, &user.Guest, &user.CreatedAt,
+		&user.UserID, &user.Name, &user.Email, &user.EmailVerified, &user.Guest, &user.CreatedAt,
 	)
 
 	if err == pgx.ErrNoRows {
@@ -230,12 +230,12 @@ func GetUserCredentials(ctx context.Context, pool *pgxpool.Pool, email string) (
 // Returns ErrNotFound if no user with the ID exists.
 func GetUser(ctx context.Context, pool *pgxpool.Pool, userID uuid.UUID) (models.User, error) {
 	var user models.User
-	query := `SELECT user_id, user_name, email, COALESCE(is_guest, false), extract(epoch from created_at)::bigint
+	query := `SELECT user_id, user_name, email, email_verified, COALESCE(is_guest, false), extract(epoch from created_at)::bigint
 		FROM users
 		WHERE user_id = $1`
 
 	err := pool.QueryRow(ctx, query, userID).Scan(
-		&user.UserID, &user.Name, &user.Email, &user.Guest, &user.CreatedAt,
+		&user.UserID, &user.Name, &user.Email, &user.EmailVerified, &user.Guest, &user.CreatedAt,
 	)
 
 	if err == pgx.ErrNoRows {
