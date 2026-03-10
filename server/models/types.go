@@ -8,7 +8,7 @@ type User struct {
 	UserID        uuid.UUID `json:"user_id" db:"user_id" immutable:"true"`
 	Name          string    `json:"name" db:"user_name"`
 	Email         string    `json:"email" db:"email"`
-	EmailVerified bool      `json:"email_verified" db:"email_verified"`
+	EmailVerified bool      `json:"-" db:"email_verified"`
 	Guest         bool      `json:"guest" db:"is_guest" immutable:"true"`
 	PasswordHash  *string   `json:"-" db:"password_hash" immutable:"true"` // excluded from JSON responses
 	CreatedAt     int64     `json:"created_at" db:"created_at" immutable:"true"`
