@@ -100,9 +100,9 @@ func CreateUser(ctx context.Context, pool *pgxpool.Pool, user *models.User, veri
 
 			err = tx.QueryRow(ctx,
 				`INSERT INTO email_verification_tokens (user_id, expires_at)
-				VALUES ($1, NOW() + $2::interval)
+				VALUES ($1, NOW() + make_interval(secs => $2))
 				RETURNING token`,
-				user.UserID, verificationExpiry.String(),
+				user.UserID, verificationExpiry.Seconds(),
 			).Scan(&verificationToken)
 			if err != nil {
 				return err
