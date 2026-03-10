@@ -4,10 +4,18 @@ import (
 	"fmt"
 	"log/slog"
 	"net/smtp"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/config"
 )
+
+// sanitizeHeader removes CR and LF characters to prevent email header injection.
+func sanitizeHeader(s string) string {
+	s = strings.ReplaceAll(s, "\r", "")
+	s = strings.ReplaceAll(s, "\n", "")
+	return s
+}
 
 // ErrEmailSendFailed indicates that the verification email could not be sent
 var ErrEmailSendFailed = &UtilsError{
@@ -40,7 +48,7 @@ func SendVerificationEmail(emailConfig config.EmailConfig, apiConfig config.APIC
 			"Content-Type: text/html; charset=\"UTF-8\"\r\n"+
 			"\r\n"+
 			"%s",
-		emailConfig.From, to, subject, body,
+		sanitizeHeader(emailConfig.From), sanitizeHeader(to), subject, body,
 	)
 
 	auth := smtp.PlainAuth("", emailConfig.Username, emailConfig.Password, emailConfig.Host)
