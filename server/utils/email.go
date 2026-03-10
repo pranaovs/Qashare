@@ -48,12 +48,12 @@ func SendVerificationEmail(emailConfig config.EmailConfig, apiConfig config.APIC
 			"Content-Type: text/html; charset=\"UTF-8\"\r\n"+
 			"\r\n"+
 			"%s",
-		sanitizeHeader(emailConfig.From), sanitizeHeader(to), subject, body,
+		sanitizeHeader(emailConfig.From.String()), sanitizeHeader(to), subject, body,
 	)
 
 	auth := smtp.PlainAuth("", emailConfig.Username, emailConfig.Password, emailConfig.Host)
 
-	err := smtp.SendMail(emailConfig.Host+":"+fmt.Sprint(emailConfig.Port), auth, emailConfig.From, []string{to}, []byte(msg))
+	err := smtp.SendMail(emailConfig.Host+":"+fmt.Sprint(emailConfig.Port), auth, emailConfig.From.Address, []string{to}, []byte(msg))
 	if err != nil {
 		slog.Error("Failed to send verification email", "to", to, "error", err)
 		return ErrEmailSendFailed.WithError(err)

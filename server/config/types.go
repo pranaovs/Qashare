@@ -1,6 +1,9 @@
 package config
 
-import "time"
+import (
+	"net/mail"
+	"time"
+)
 
 // Config holds all application configuration
 type Config struct {
@@ -54,11 +57,11 @@ type AppConfig struct {
 }
 
 type EmailConfig struct {
-	Verification bool          `example:"true"`
-	Host         string        `example:"smtp.example.com"`
-	Port         int           `example:"587"`
-	Username     string        `example:"user@example.com"`
-	Password     string        `example:"password"`
-	From         string        `example:"noreply@example.com"`
+	Verification bool   `example:"true"`
+	Host         string `example:"smtp.example.com"`
+	Port         int    `example:"587"`
+	Username     string `example:"user@example.com"`
+	Password     string `example:"password"`
+	From         *mail.Address
 	Expiry       time.Duration `example:"24h"`
 }
