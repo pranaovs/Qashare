@@ -181,7 +181,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	userID, savedPassword, err := db.GetUserCredentials(c.Request.Context(), h.pool, email)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrNotFound:          apierrors.ErrBadCredentials,
+			db.ErrNotFound:         apierrors.ErrBadCredentials,
 			db.ErrEmailNotVerified: apierrors.ErrEmailNotVerified,
 		}))
 		return
