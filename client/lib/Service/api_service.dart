@@ -36,11 +36,24 @@ class ApiService {
   }) async {
     String? accessToken = await TokenStorage.getAccessToken();
     if (accessToken == null) {
-      // No token at all – return a fake 401
-      return http.Response(
-        '{"code":"NO_TOKEN","message":"Not logged in"}',
-        401,
-      );
+      // Access token missing – try to refresh before failing
+      final refreshed = await _tryRefreshTokens();
+      if (!refreshed) {
+        // Still no way to authenticate – return a fake 401
+        return http.Response(
+          '{"code":"NO_TOKEN","message":"Not logged in"}',
+          401,
+        );
+      }
+      // Reload access token after successful refresh attempt
+      accessToken = await TokenStorage.getAccessToken();
+      if (accessToken == null) {
+        // Defensive: refresh reported success but no token is available
+        return http.Response(
+          '{"code":"NO_TOKEN","message":"Not logged in"}',
+          401,
+        );
+      }
     }
 
     // First attempt
