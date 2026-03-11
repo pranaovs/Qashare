@@ -301,16 +301,37 @@ class ApiService {
         return result;
       }
 
-      if (response.statusCode == 400)
-        return RefreshResult.error("Missing refresh token");
-      if (response.statusCode == 401)
-        return RefreshResult.error("Invalid refresh token");
-      if (response.statusCode == 403)
-        return RefreshResult.error("Refresh token expired");
-      if (response.statusCode == 500)
-        return RefreshResult.error("Server error");
+      // Attempt to decode structured error information from the response body.
+      String message = "Unexpected error (${response.statusCode})";
+      try {
+        if (response.body.isNotEmpty) {
+          final errorData = jsonDecode(response.body);
+          final String? code = errorData["code"];
+          final String? serverMessage = errorData["message"];
 
-      return RefreshResult.error("Unexpected error (${response.statusCode})");
+          if (code != null) {
+            if (code == "MISSING_REFRESH_TOKEN") {
+              message = "Missing refresh token";
+            } else if (code == "INVALID_REFRESH_TOKEN") {
+              message = "Invalid refresh token";
+            } else if (code == "REFRESH_TOKEN_EXPIRED") {
+              message = "Refresh token expired";
+            } else {
+              // Fall back to server-provided message, if any, for unknown codes.
+              if (serverMessage != null && serverMessage.isNotEmpty) {
+                message = serverMessage;
+              }
+            }
+          } else if (serverMessage != null && serverMessage.isNotEmpty) {
+            // No explicit code, but a message is provided.
+            message = serverMessage;
+          }
+        }
+      } catch (_) {
+        // Ignore JSON parsing errors and keep the default message.
+      }
+
+      return RefreshResult.error(message);
     } catch (_) {
       return RefreshResult.error("Cannot connect to server");
     }
