@@ -12,6 +12,9 @@ import 'Screens/createexpense_page.dart';
 import 'Screens/login_page.dart';
 import 'Screens/signup_page.dart';
 
+/// Global navigator key so services can trigger navigation (e.g. auto-logout).
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() {
   runApp(const MyApp());
 }
@@ -24,6 +27,7 @@ class MyApp extends StatelessWidget {
     return DynamicColorBuilder(
       builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
         return MaterialApp(
+          navigatorKey: navigatorKey,
           debugShowCheckedModeBanner: false,
           title: "Qashare",
           themeMode: ThemeMode.system,

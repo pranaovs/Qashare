@@ -4,7 +4,6 @@ import 'package:qashare/Models/expense_model.dart';
 import 'package:qashare/Models/settle_model.dart';
 import 'package:qashare/Models/spending_model.dart';
 import 'package:qashare/Screens/members_page.dart';
-import '../Config/token_storage.dart';
 import '../Service/api_service.dart';
 import 'package:qashare/Models/groupdetail_model.dart';
 
@@ -35,23 +34,9 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
   }
 
   Future<void> _loadDetails() async {
-    final token = await TokenStorage.getToken();
-
-    if (token == null) {
-      setState(() {
-        _result = GroupDetailsResult.error("Not logged in");
-        _loading = false;
-      });
-      return;
-    }
-
-    final res = await ApiService.getGroupDetails(
-      token: token,
-      groupId: widget.groupId,
-    );
+    final res = await ApiService.getGroupDetails(groupId: widget.groupId);
 
     final expenseRes = await ApiService.getGroupExpenses(
-      token: token,
       groupId: widget.groupId,
     );
 
@@ -65,9 +50,6 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
 
   // -------- BALANCE SHEET --------
   Future<void> _showBalanceSheet() async {
-    final token = await TokenStorage.getToken();
-    if (token == null) return;
-
     // Show loading bottom sheet
     showModalBottomSheet(
       context: context,
@@ -76,7 +58,6 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (_) => _BalanceSheet(
-        token: token,
         groupId: widget.groupId,
         members: _result!.group!.members,
       ),
@@ -391,15 +372,10 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
 // ================= BALANCE BOTTOM SHEET =================
 
 class _BalanceSheet extends StatefulWidget {
-  final String token;
   final String groupId;
   final List<Member> members;
 
-  const _BalanceSheet({
-    required this.token,
-    required this.groupId,
-    required this.members,
-  });
+  const _BalanceSheet({required this.groupId, required this.members});
 
   @override
   State<_BalanceSheet> createState() => _BalanceSheetState();
@@ -417,10 +393,7 @@ class _BalanceSheetState extends State<_BalanceSheet> {
   }
 
   Future<void> _fetchSettlements() async {
-    final res = await ApiService.getGroupSettlements(
-      token: widget.token,
-      groupId: widget.groupId,
-    );
+    final res = await ApiService.getGroupSettlements(groupId: widget.groupId);
 
     if (!mounted) return;
     setState(() {
@@ -465,7 +438,6 @@ class _BalanceSheetState extends State<_BalanceSheet> {
     setState(() => _settlingIds.add(s.userId));
 
     final res = await ApiService.settlePayment(
-      token: widget.token,
       groupId: widget.groupId,
       userId: s.userId,
       amount: -s.amount,
@@ -667,15 +639,10 @@ class _BalanceSheetState extends State<_BalanceSheet> {
 // ================= SPENDINGS BOTTOM SHEET =================
 
 class _SpendingsSheet extends StatefulWidget {
-  final String token;
   final String groupId;
   final List<Member> members;
 
-  const _SpendingsSheet({
-    required this.token,
-    required this.groupId,
-    required this.members,
-  });
+  const _SpendingsSheet({required this.groupId, required this.members});
 
   @override
   State<_SpendingsSheet> createState() => _SpendingsSheetState();
@@ -692,10 +659,7 @@ class _SpendingsSheetState extends State<_SpendingsSheet> {
   }
 
   Future<void> _fetchSpendings() async {
-    final res = await ApiService.getUserSpendings(
-      token: widget.token,
-      groupId: widget.groupId,
-    );
+    final res = await ApiService.getUserSpendings(groupId: widget.groupId);
 
     if (!mounted) return;
     setState(() {

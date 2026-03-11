@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:qashare/Screens/groupdetail_page.dart';
-import '../Config/token_storage.dart';
 import '/Models/group_model.dart';
 import '../Service/api_service.dart';
 
@@ -22,17 +21,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadGroups() async {
-    final token = await TokenStorage.getToken();
-
-    if (token == null) {
-      setState(() {
-        _result = GroupListResult.error("Not logged in");
-        _loading = false;
-      });
-      return;
-    }
-
-    final res = await ApiService.displayGroup(token);
+    final res = await ApiService.displayGroup();
 
     setState(() {
       _result = res;

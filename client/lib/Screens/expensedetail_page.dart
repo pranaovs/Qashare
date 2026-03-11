@@ -54,17 +54,10 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
   }
 
   Future<void> _loadExpense() async {
-    final token = await TokenStorage.getToken();
-    if (token == null) return;
-
-    final res = await ApiService.getExpenseDetails(
-      token: token,
-      expenseId: widget.expenseId,
-    );
+    final res = await ApiService.getExpenseDetails(expenseId: widget.expenseId);
 
     // JWT expired handling
     if (res.errorMessage == "Session expired") {
-      await TokenStorage.clear();
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(context, "/login", (_) => false);
       return;
@@ -129,13 +122,7 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
 
     if (confirmed != true) return;
 
-    final token = await TokenStorage.getToken();
-    if (token == null) return;
-
-    final res = await ApiService.deleteExpense(
-      token: token,
-      expenseId: widget.expenseId,
-    );
+    final res = await ApiService.deleteExpense(expenseId: widget.expenseId);
 
     if (!mounted) return;
 
@@ -662,26 +649,13 @@ class _EditExpenseSheetState extends State<_EditExpenseSheet> {
 
     setState(() => _saving = true);
 
-    final token = await TokenStorage.getToken();
-    if (token == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Session expired")));
-      setState(() => _saving = false);
-      return;
-    }
-
     final body = <String, dynamic>{
       "title": _titleCtrl.text.trim(),
-      "description": _descCtrl.text.trim().isEmpty
-          ? null
-          : _descCtrl.text.trim(),
-      "amount": double.tryParse(_amountCtrl.text) ?? widget.amount,
+      "description": _descCtrl.text.trim(),
+      "amount": double.tryParse(_amountCtrl.text.trim()) ?? widget.amount,
     };
 
     final res = await ApiService.updateExpense(
-      token: token,
       expenseId: widget.expenseId,
       body: body,
     );

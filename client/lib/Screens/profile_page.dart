@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:qashare/Config/token_storage.dart';
 import 'package:qashare/Service/api_service.dart';
 import 'package:qashare/Models/user_models.dart';
 
@@ -21,17 +20,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadProfile() async {
-    final token = await TokenStorage.getToken();
-
-    if (token == null) {
-      setState(() {
-        _result = UserResult.error("Not logged in");
-        _loading = false;
-      });
-      return;
-    }
-
-    final res = await ApiService.getCurrentUser(token);
+    final res = await ApiService.getCurrentUser();
 
     setState(() {
       _result = res;
@@ -155,7 +144,8 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _handleLogout() async {
-    await TokenStorage.clear();
+    // Call the logout API to revoke the refresh token on the server
+    await ApiService.logout();
     if (!mounted) return;
     Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
   }
