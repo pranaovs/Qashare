@@ -48,22 +48,9 @@ class _SpendingsPageState extends State<SpendingsPage>
   }
 
   Future<void> _loadSpendings() async {
-    final token = await TokenStorage.getToken();
-    if (token == null) {
-      setState(() {
-        _result = SpendingResult.error("Not logged in");
-        _loading = false;
-      });
-      return;
-    }
-
-    final res = await ApiService.getUserSpendings(
-      token: token,
-      groupId: widget.groupId,
-    );
+    final res = await ApiService.getUserSpendings(groupId: widget.groupId);
 
     if (res.errorMessage == "Session expired") {
-      await TokenStorage.clear();
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(context, "/login", (_) => false);
       return;

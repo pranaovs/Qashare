@@ -54,23 +54,10 @@ class _SettlementHistoryPageState extends State<SettlementHistoryPage>
   }
 
   Future<void> _loadHistory() async {
-    final token = await TokenStorage.getToken();
-    if (token == null) {
-      setState(() {
-        _result = SettleResult.error("Not logged in");
-        _loading = false;
-      });
-      return;
-    }
-
     // Handle session expiry
-    final res = await ApiService.getSettlementHistory(
-      token: token,
-      groupId: widget.groupId,
-    );
+    final res = await ApiService.getSettlementHistory(groupId: widget.groupId);
 
     if (res.errorMessage == "Session expired") {
-      await TokenStorage.clear();
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(context, "/login", (_) => false);
       return;

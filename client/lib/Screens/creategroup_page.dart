@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:qashare/Config/token_storage.dart';
 import 'package:qashare/Service/api_service.dart';
 
 class CreategroupPage extends StatefulWidget {
@@ -27,13 +26,7 @@ class _CreategroupPageState extends State<CreategroupPage> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
 
-    final token = await TokenStorage.getToken();
-    if (token == null) {
-      setState(() => _loading = false);
-      return;
-    }
     final result = await ApiService.createGroup(
-      token: token,
       name: _nameController.text,
       description: _descriptionController.text,
     );

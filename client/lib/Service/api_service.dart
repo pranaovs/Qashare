@@ -1,7 +1,9 @@
 import "package:http/http.dart" as http;
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:qashare/Config/api_config.dart';
+import 'package:qashare/Config/token_storage.dart';
 import 'package:qashare/Models/add_member_results.dart';
 import 'package:qashare/Models/auth_model.dart';
 import 'package:qashare/Models/expense_list_model.dart';
@@ -13,11 +15,178 @@ import 'package:qashare/Models/user_models.dart';
 import 'package:qashare/Models/settle_model.dart';
 import 'package:qashare/Models/spending_model.dart';
 import 'package:qashare/Models/userlookup_model.dart';
+import 'package:qashare/main.dart';
 
 class ApiService {
+  // ============================================================
+  //  INTERNAL: Authenticated HTTP helpers with auto-refresh
+  // ============================================================
+
+  /// Navigates to the login screen and clears the back stack.
+  /// Called when the refresh token is definitively invalid/expired.
+  static void _forceLogout() {
+    final ctx = navigatorKey.currentState;
+    if (ctx != null) {
+      ctx.pushNamedAndRemoveUntil("/login", (_) => false);
+    }
+  }
+
+  /// Performs an authenticated HTTP request.
+  /// If the server returns 401/403 (expired token), it will attempt to
+  /// refresh the tokens once and retry the request.
+  ///
+  /// [method]  – "GET", "POST", "DELETE", etc.
+  /// [url]     – full URL to call
+  /// [body]    – optional JSON-encodable map
+  ///
+  /// Returns the [http.Response] or throws on network error.
+  static Future<http.Response> _authenticatedRequest({
+    required String method,
+    required Uri url,
+    Map<String, dynamic>? body,
+  }) async {
+    String? accessToken = await TokenStorage.getAccessToken();
+    if (accessToken == null) {
+      // Access token missing – try to refresh before failing
+      final refreshed = await _tryRefreshTokens();
+      if (!refreshed) {
+        // Still no way to authenticate – return a fake 401
+        return http.Response(
+          '{"code":"NO_TOKEN","message":"Not logged in"}',
+          401,
+        );
+      }
+      // Reload access token after successful refresh attempt
+      accessToken = await TokenStorage.getAccessToken();
+      if (accessToken == null) {
+        // Defensive: refresh reported success but no token is available
+        return http.Response(
+          '{"code":"NO_TOKEN","message":"Not logged in"}',
+          401,
+        );
+      }
+    }
+
+    // First attempt
+    var response = await _rawRequest(
+      method: method,
+      url: url,
+      accessToken: accessToken,
+      body: body,
+    );
+
+    // If 401 or 403, check error code to decide whether to refresh
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      String? errorCode;
+      try {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map && decoded['code'] is String) {
+          errorCode = decoded['code'] as String;
+        }
+      } catch (_) {
+        // If the body is not valid JSON or doesn't match the expected shape,
+        // we don't attempt a refresh and return the original response.
+      }
+
+      // Only attempt refresh for token-related errors
+      if (errorCode == 'EXPIRED_TOKEN' || errorCode == 'INVALID_TOKEN') {
+        final refreshed = await _tryRefreshTokens();
+        if (refreshed) {
+          // Retry with new access token
+          accessToken = await TokenStorage.getAccessToken();
+          response = await _rawRequest(
+            method: method,
+            url: url,
+            accessToken: accessToken!,
+            body: body,
+          );
+        }
+      }
+    }
+
+    return response;
+  }
+
+  /// Raw HTTP call with Bearer token.
+  static Future<http.Response> _rawRequest({
+    required String method,
+    required Uri url,
+    required String accessToken,
+    Map<String, dynamic>? body,
+  }) async {
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $accessToken",
+    };
+
+    switch (method.toUpperCase()) {
+      case "GET":
+        return await http.get(url, headers: headers);
+      case "POST":
+        return await http.post(
+          url,
+          headers: headers,
+          body: body != null ? jsonEncode(body) : null,
+        );
+      case "DELETE":
+        return await http.delete(
+          url,
+          headers: headers,
+          body: body != null ? jsonEncode(body) : null,
+        );
+      case "PUT":
+        return await http.put(
+          url,
+          headers: headers,
+          body: body != null ? jsonEncode(body) : null,
+        );
+      default:
+        return await http.get(url, headers: headers);
+    }
+  }
+
+  /// Attempts to refresh the access token using the stored refresh token.
+  /// Returns `true` if successful (tokens are updated in storage).
+  static Future<bool> _tryRefreshTokens() async {
+    final refreshToken = await TokenStorage.getRefreshToken();
+    if (refreshToken == null) return false;
+
+    try {
+      final url = Uri.parse("${ApiConfig.baseUrl}/auth/refresh");
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"refresh_token": refreshToken}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        await TokenStorage.saveTokens(
+          accessToken: data["access_token"],
+          refreshToken: data["refresh_token"],
+        );
+        return true;
+      }
+
+      // Only clear tokens when the refresh token is definitively invalid/expired.
+      if (response.statusCode == 400 || response.statusCode == 403) {
+        await TokenStorage.clear();
+        _forceLogout();
+      }
+      // For other non-200 statuses (e.g., 5xx), keep tokens and surface a retryable failure.
+      return false;
+    } catch (_) {
+      // Network or decoding error: keep tokens and allow caller to retry later.
+      return false;
+    }
+  }
+
+  // ============================================================
+  //  AUTH ENDPOINTS
+  // ============================================================
+
   // ================= REGISTER =================
   static Future<RegisterResult> registerUser({
-    required String username,
     required String name,
     required String email,
     required String password,
@@ -28,12 +197,7 @@ class ApiService {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "username": username,
-          "name": name,
-          "email": email,
-          "password": password,
-        }),
+        body: jsonEncode({"email": email, "name": name, "password": password}),
       );
 
       if (response.statusCode == 201) {
@@ -45,6 +209,10 @@ class ApiService {
           guest: data["guest"],
           createdAt: data["created_at"],
         );
+      }
+
+      if (response.statusCode == 202) {
+        return RegisterResult.pending();
       }
 
       if (response.statusCode == 400) {
@@ -82,8 +250,9 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return LoginResult.success(
-          token: data["token"],
-          message: data["message"],
+          accessToken: data["access_token"],
+          refreshToken: data["refresh_token"],
+          tokenType: data["token_type"] ?? "Bearer",
         );
       }
 
@@ -99,18 +268,122 @@ class ApiService {
     }
   }
 
+  // ================= REFRESH =================
+  static Future<RefreshResult> refreshTokens() async {
+    final refreshToken = await TokenStorage.getRefreshToken();
+    if (refreshToken == null) {
+      return RefreshResult.error("No refresh token");
+    }
+
+    final url = Uri.parse("${ApiConfig.baseUrl}/auth/refresh");
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"refresh_token": refreshToken}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final result = RefreshResult.success(
+          accessToken: data["access_token"],
+          refreshToken: data["refresh_token"],
+          tokenType: data["token_type"] ?? "Bearer",
+        );
+
+        // Persist the new tokens
+        await TokenStorage.saveTokens(
+          accessToken: result.accessToken!,
+          refreshToken: result.refreshToken!,
+        );
+
+        return result;
+      }
+
+      // Attempt to decode structured error information from the response body.
+      String message = "Unexpected error (${response.statusCode})";
+      try {
+        if (response.body.isNotEmpty) {
+          final errorData = jsonDecode(response.body);
+          final String? code = errorData["code"];
+          final String? serverMessage = errorData["message"];
+
+          if (code != null) {
+            if (code == "MISSING_REFRESH_TOKEN") {
+              message = "Missing refresh token";
+            } else if (code == "INVALID_REFRESH_TOKEN") {
+              message = "Invalid refresh token";
+            } else if (code == "REFRESH_TOKEN_EXPIRED") {
+              message = "Refresh token expired";
+            } else {
+              // Fall back to server-provided message, if any, for unknown codes.
+              if (serverMessage != null && serverMessage.isNotEmpty) {
+                message = serverMessage;
+              }
+            }
+          } else if (serverMessage != null && serverMessage.isNotEmpty) {
+            // No explicit code, but a message is provided.
+            message = serverMessage;
+          }
+        }
+      } catch (_) {
+        // Ignore JSON parsing errors and keep the default message.
+      }
+
+      return RefreshResult.error(message);
+    } catch (_) {
+      return RefreshResult.error("Cannot connect to server");
+    }
+  }
+
+  // ================= LOGOUT =================
+  static Future<BasicResult> logout() async {
+    try {
+      final url = Uri.parse("${ApiConfig.baseUrl}/auth/logout");
+      final response = await _authenticatedRequest(method: "POST", url: url);
+
+      // Clear tokens locally regardless of server response
+      await TokenStorage.clear();
+
+      if (response.statusCode == 200) {
+        return BasicResult.success();
+      }
+      return BasicResult.success(); // Still clear locally on error
+    } catch (_) {
+      await TokenStorage.clear();
+      return BasicResult.success();
+    }
+  }
+
+  // ================= LOGOUT ALL =================
+  static Future<BasicResult> logoutAll() async {
+    try {
+      final url = Uri.parse("${ApiConfig.baseUrl}/auth/logout-all");
+      final response = await _authenticatedRequest(method: "POST", url: url);
+
+      await TokenStorage.clear();
+
+      if (response.statusCode == 200) {
+        return BasicResult.success();
+      }
+      return BasicResult.success();
+    } catch (_) {
+      await TokenStorage.clear();
+      return BasicResult.success();
+    }
+  }
+
+  // ============================================================
+  //  PROTECTED ENDPOINTS (all use _authenticatedRequest)
+  // ============================================================
+
   // ================= PROFILE =================
-  static Future<UserResult> getCurrentUser(String token) async {
+  static Future<UserResult> getCurrentUser() async {
     final url = Uri.parse("${ApiConfig.baseUrl}/auth/me");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -134,33 +407,24 @@ class ApiService {
   }
 
   // ================= GROUP LIST =================
-  static Future<GroupListResult> displayGroup(String token) async {
+  static Future<GroupListResult> displayGroup() async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/me");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
 
-        // ✅ backend returned empty list
         if (decoded == null) {
           return GroupListResult.success([]);
         }
 
-        // ✅ backend returned []
         if (decoded is List) {
           final groups = decoded.map((e) => Group.fromJson(e)).toList();
           return GroupListResult.success(groups);
         }
 
-        // ❌ backend returned unexpected structure
         return GroupListResult.error("Invalid response format");
       }
 
@@ -180,20 +444,16 @@ class ApiService {
 
   // ================= CREATE GROUP =================
   static Future<GroupCreateResult> createGroup({
-    required String token,
     required String name,
     required String description,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/");
 
     try {
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({"name": name, "description": description}),
+      final response = await _authenticatedRequest(
+        method: "POST",
+        url: url,
+        body: {"name": name, "description": description},
       );
 
       if (response.statusCode == 201) {
@@ -218,19 +478,12 @@ class ApiService {
 
   // ================= GROUP DETAILS =================
   static Future<GroupDetailsResult> getGroupDetails({
-    required String token,
     required String groupId,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         return GroupDetailsResult.success(
@@ -257,20 +510,16 @@ class ApiService {
 
   // ================= ADD MEMBER =================
   static Future<AddMemberResult> addMembersToGroup({
-    required String token,
     required String groupId,
     required List<String> userIds,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/members");
 
     try {
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({"user_ids": userIds}),
+      final response = await _authenticatedRequest(
+        method: "POST",
+        url: url,
+        body: {"user_ids": userIds},
       );
 
       if (response.statusCode == 200) {
@@ -298,20 +547,16 @@ class ApiService {
 
   // ================= REMOVE MEMBER =================
   static Future<AddMemberResult> removeMembersFromGroup({
-    required String token,
     required String groupId,
     required List<String> userIds,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/members");
 
     try {
-      final response = await http.delete(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({"user_ids": userIds}),
+      final response = await _authenticatedRequest(
+        method: "DELETE",
+        url: url,
+        body: {"user_ids": userIds},
       );
 
       if (response.statusCode == 200) {
@@ -339,19 +584,12 @@ class ApiService {
 
   // ================= SEARCH USER =================
   static Future<UserLookupResult> searchUserByEmail({
-    required String token,
     required String email,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/users/search/email/$email");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         return UserLookupResult.success(
@@ -376,19 +614,12 @@ class ApiService {
 
   // ================= GROUP EXPENSES =================
   static Future<ExpenseListResult> getGroupExpenses({
-    required String token,
     required String groupId,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/expenses");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body);
@@ -413,20 +644,17 @@ class ApiService {
 
   // ================= CREATE EXPENSE =================
   static Future<BasicResult> createExpenseAdvanced({
-    required String token,
-    required String groupId,
     required ExpenseRequest request,
   }) async {
-    final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/expenses");
+    final url = Uri.parse(
+      "${ApiConfig.baseUrl}/groups/${request.groupId}/expenses",
+    );
 
     try {
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode(request.toJson()),
+      final response = await _authenticatedRequest(
+        method: "POST",
+        url: url,
+        body: request.toJson(),
       );
 
       if (response.statusCode == 201) return BasicResult.success();
@@ -445,19 +673,16 @@ class ApiService {
     }
   }
 
+  // ================= CREATE GUEST USER =================
   static Future<UserLookupResult> createGuestUser({
-    required String token,
     required String email,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/users/guest");
     try {
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({"email": email}),
+      final response = await _authenticatedRequest(
+        method: "POST",
+        url: url,
+        body: {"email": email},
       );
 
       if (response.statusCode == 201) {
@@ -489,19 +714,12 @@ class ApiService {
   }
 
   static Future<ExpenseDetailResult> getExpenseDetails({
-    required String token,
     required String expenseId,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/expenses/$expenseId");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -532,19 +750,12 @@ class ApiService {
 
   // ================= GROUP SETTLEMENTS =================
   static Future<SettleResult> getGroupSettlements({
-    required String token,
     required String groupId,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/settle");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body);
@@ -568,19 +779,12 @@ class ApiService {
 
   // ================= SETTLEMENT HISTORY =================
   static Future<SettleResult> getSettlementHistory({
-    required String token,
     required String groupId,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/settlements");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body);
@@ -604,19 +808,12 @@ class ApiService {
 
   // ================= SETTLEMENT DETAILS =================
   static Future<SettlementDetailResult> getSettlementDetails({
-    required String token,
     required String settlementId,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/settlements/$settlementId");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -640,20 +837,16 @@ class ApiService {
 
   // ================= UPDATE EXPENSE =================
   static Future<ExpenseDetailResult> updateExpense({
-    required String token,
     required String expenseId,
     required Map<String, dynamic> body,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/expenses/$expenseId");
 
     try {
-      final response = await http.put(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode(body),
+      final response = await _authenticatedRequest(
+        method: "PUT",
+        url: url,
+        body: body,
       );
 
       if (response.statusCode == 200) {
@@ -679,20 +872,11 @@ class ApiService {
   }
 
   // ================= DELETE EXPENSE =================
-  static Future<BasicResult> deleteExpense({
-    required String token,
-    required String expenseId,
-  }) async {
+  static Future<BasicResult> deleteExpense({required String expenseId}) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/expenses/$expenseId");
 
     try {
-      final response = await http.delete(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "DELETE", url: url);
 
       if (response.statusCode == 200) return BasicResult.success();
 
@@ -712,7 +896,6 @@ class ApiService {
 
   // ================= SETTLE PAYMENT =================
   static Future<BasicResult> settlePayment({
-    required String token,
     required String groupId,
     required String userId,
     required double amount,
@@ -721,18 +904,15 @@ class ApiService {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/settle");
 
     try {
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({
+      final response = await _authenticatedRequest(
+        method: "POST",
+        url: url,
+        body: {
           "group_id": groupId,
           "user_id": userId,
           "amount": amount,
           "title": title,
-        }),
+        },
       );
 
       if (response.statusCode == 201) return BasicResult.success();
@@ -757,19 +937,12 @@ class ApiService {
 
   // ================= USER SPENDINGS =================
   static Future<SpendingResult> getUserSpendings({
-    required String token,
     required String groupId,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/spendings");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List;

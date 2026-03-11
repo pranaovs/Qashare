@@ -52,22 +52,11 @@ class _SettlementDetailPageState extends State<SettlementDetailPage>
   }
 
   Future<void> _loadDetails() async {
-    final token = await TokenStorage.getToken();
-    if (token == null) {
-      setState(() {
-        _result = SettlementDetailResult.error("Not logged in");
-        _loading = false;
-      });
-      return;
-    }
-
     final res = await ApiService.getSettlementDetails(
-      token: token,
       settlementId: widget.settlementId,
     );
 
     if (res.errorMessage == "Session expired") {
-      await TokenStorage.clear();
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(context, "/login", (_) => false);
       return;
