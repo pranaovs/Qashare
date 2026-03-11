@@ -64,18 +64,32 @@ class ApiService {
       body: body,
     );
 
-    // If 401 or 403 → try refresh
+    // If 401 or 403, check error code to decide whether to refresh
     if (response.statusCode == 401 || response.statusCode == 403) {
-      final refreshed = await _tryRefreshTokens();
-      if (refreshed) {
-        // Retry with new access token
-        accessToken = await TokenStorage.getAccessToken();
-        response = await _rawRequest(
-          method: method,
-          url: url,
-          accessToken: accessToken!,
-          body: body,
-        );
+      String? errorCode;
+      try {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map && decoded['code'] is String) {
+          errorCode = decoded['code'] as String;
+        }
+      } catch (_) {
+        // If the body is not valid JSON or doesn't match the expected shape,
+        // we don't attempt a refresh and return the original response.
+      }
+
+      // Only attempt refresh for token-related errors
+      if (errorCode == 'EXPIRED_TOKEN' || errorCode == 'INVALID_TOKEN') {
+        final refreshed = await _tryRefreshTokens();
+        if (refreshed) {
+          // Retry with new access token
+          accessToken = await TokenStorage.getAccessToken();
+          response = await _rawRequest(
+            method: method,
+            url: url,
+            accessToken: accessToken!,
+            body: body,
+          );
+        }
       }
     }
 
