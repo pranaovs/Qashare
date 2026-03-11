@@ -1,6 +1,7 @@
 import "package:http/http.dart" as http;
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:qashare/Config/api_config.dart';
 import 'package:qashare/Config/token_storage.dart';
 import 'package:qashare/Models/add_member_results.dart';
@@ -14,11 +15,21 @@ import 'package:qashare/Models/user_models.dart';
 import 'package:qashare/Models/settle_model.dart';
 import 'package:qashare/Models/spending_model.dart';
 import 'package:qashare/Models/userlookup_model.dart';
+import 'package:qashare/main.dart';
 
 class ApiService {
   // ============================================================
   //  INTERNAL: Authenticated HTTP helpers with auto-refresh
   // ============================================================
+
+  /// Navigates to the login screen and clears the back stack.
+  /// Called when the refresh token is definitively invalid/expired.
+  static void _forceLogout() {
+    final ctx = navigatorKey.currentState;
+    if (ctx != null) {
+      ctx.pushNamedAndRemoveUntil("/login", (_) => false);
+    }
+  }
 
   /// Performs an authenticated HTTP request.
   /// If the server returns 401/403 (expired token), it will attempt to
@@ -160,6 +171,7 @@ class ApiService {
       // Only clear tokens when the refresh token is definitively invalid/expired.
       if (response.statusCode == 400 || response.statusCode == 403) {
         await TokenStorage.clear();
+        _forceLogout();
       }
       // For other non-200 statuses (e.g., 5xx), keep tokens and surface a retryable failure.
       return false;
