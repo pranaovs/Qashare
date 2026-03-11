@@ -580,7 +580,9 @@ class ApiService {
   static Future<BasicResult> createExpenseAdvanced({
     required ExpenseRequest request,
   }) async {
-    final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/expenses");
+    final url = Uri.parse(
+      "${ApiConfig.baseUrl}/groups/${request.groupId}/expenses",
+    );
 
     try {
       final response = await _authenticatedRequest(
@@ -646,19 +648,12 @@ class ApiService {
   }
 
   static Future<ExpenseDetailResult> getExpenseDetails({
-    required String token,
     required String expenseId,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/expenses/$expenseId");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -689,19 +684,12 @@ class ApiService {
 
   // ================= GROUP SETTLEMENTS =================
   static Future<SettleResult> getGroupSettlements({
-    required String token,
     required String groupId,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/settle");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body);
@@ -725,19 +713,12 @@ class ApiService {
 
   // ================= SETTLEMENT HISTORY =================
   static Future<SettleResult> getSettlementHistory({
-    required String token,
     required String groupId,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/settlements");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body);
@@ -761,19 +742,12 @@ class ApiService {
 
   // ================= SETTLEMENT DETAILS =================
   static Future<SettlementDetailResult> getSettlementDetails({
-    required String token,
     required String settlementId,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/settlements/$settlementId");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -797,20 +771,16 @@ class ApiService {
 
   // ================= UPDATE EXPENSE =================
   static Future<ExpenseDetailResult> updateExpense({
-    required String token,
     required String expenseId,
     required Map<String, dynamic> body,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/expenses/$expenseId");
 
     try {
-      final response = await http.put(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode(body),
+      final response = await _authenticatedRequest(
+        method: "PUT",
+        url: url,
+        body: body,
       );
 
       if (response.statusCode == 200) {
@@ -837,19 +807,12 @@ class ApiService {
 
   // ================= DELETE EXPENSE =================
   static Future<BasicResult> deleteExpense({
-    required String token,
     required String expenseId,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/expenses/$expenseId");
 
     try {
-      final response = await http.delete(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "DELETE", url: url);
 
       if (response.statusCode == 200) return BasicResult.success();
 
@@ -869,7 +832,6 @@ class ApiService {
 
   // ================= SETTLE PAYMENT =================
   static Future<BasicResult> settlePayment({
-    required String token,
     required String groupId,
     required String userId,
     required double amount,
@@ -878,18 +840,15 @@ class ApiService {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/settle");
 
     try {
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({
+      final response = await _authenticatedRequest(
+        method: "POST",
+        url: url,
+        body: {
           "group_id": groupId,
           "user_id": userId,
           "amount": amount,
           "title": title,
-        }),
+        },
       );
 
       if (response.statusCode == 201) return BasicResult.success();
@@ -914,19 +873,12 @@ class ApiService {
 
   // ================= USER SPENDINGS =================
   static Future<SpendingResult> getUserSpendings({
-    required String token,
     required String groupId,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/spendings");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as List;
