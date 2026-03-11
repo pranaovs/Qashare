@@ -34,9 +34,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
   }
 
   Future<void> _loadDetails() async {
-    final res = await ApiService.getGroupDetails(
-      groupId: widget.groupId,
-    );
+    final res = await ApiService.getGroupDetails(groupId: widget.groupId);
 
     final expenseRes = await ApiService.getGroupExpenses(
       groupId: widget.groupId,
@@ -377,10 +375,7 @@ class _BalanceSheet extends StatefulWidget {
   final String groupId;
   final List<Member> members;
 
-  const _BalanceSheet({
-    required this.groupId,
-    required this.members,
-  });
+  const _BalanceSheet({required this.groupId, required this.members});
 
   @override
   State<_BalanceSheet> createState() => _BalanceSheetState();
@@ -398,9 +393,7 @@ class _BalanceSheetState extends State<_BalanceSheet> {
   }
 
   Future<void> _fetchSettlements() async {
-    final res = await ApiService.getGroupSettlements(
-      groupId: widget.groupId,
-    );
+    final res = await ApiService.getGroupSettlements(groupId: widget.groupId);
 
     if (!mounted) return;
     setState(() {
@@ -649,10 +642,7 @@ class _SpendingsSheet extends StatefulWidget {
   final String groupId;
   final List<Member> members;
 
-  const _SpendingsSheet({
-    required this.groupId,
-    required this.members,
-  });
+  const _SpendingsSheet({required this.groupId, required this.members});
 
   @override
   State<_SpendingsSheet> createState() => _SpendingsSheetState();
@@ -669,9 +659,7 @@ class _SpendingsSheetState extends State<_SpendingsSheet> {
   }
 
   Future<void> _fetchSpendings() async {
-    final res = await ApiService.getUserSpendings(
-      groupId: widget.groupId,
-    );
+    final res = await ApiService.getUserSpendings(groupId: widget.groupId);
 
     if (!mounted) return;
     setState(() {

@@ -54,9 +54,7 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
   }
 
   Future<void> _loadExpense() async {
-    final res = await ApiService.getExpenseDetails(
-      expenseId: widget.expenseId,
-    );
+    final res = await ApiService.getExpenseDetails(expenseId: widget.expenseId);
 
     // JWT expired handling
     if (res.errorMessage == "Session expired") {
@@ -124,9 +122,7 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
 
     if (confirmed != true) return;
 
-    final res = await ApiService.deleteExpense(
-      expenseId: widget.expenseId,
-    );
+    final res = await ApiService.deleteExpense(expenseId: widget.expenseId);
 
     if (!mounted) return;
 

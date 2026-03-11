@@ -40,10 +40,7 @@ class RegisterResult {
   }
 
   factory RegisterResult.pending() {
-    return RegisterResult._(
-      isSuccess: true,
-      isPendingVerification: true,
-    );
+    return RegisterResult._(isSuccess: true, isPendingVerification: true);
   }
 
   factory RegisterResult.error(String message) {
@@ -122,5 +119,3 @@ class RefreshResult {
     return RefreshResult._(isSuccess: false, errorMessage: message);
   }
 }
-
-

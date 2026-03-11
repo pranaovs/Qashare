@@ -55,9 +55,7 @@ class _SettlementHistoryPageState extends State<SettlementHistoryPage>
 
   Future<void> _loadHistory() async {
     // Handle session expiry
-    final res = await ApiService.getSettlementHistory(
-      groupId: widget.groupId,
-    );
+    final res = await ApiService.getSettlementHistory(groupId: widget.groupId);
 
     if (res.errorMessage == "Session expired") {
       if (!mounted) return;

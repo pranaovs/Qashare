@@ -48,9 +48,7 @@ class _SpendingsPageState extends State<SpendingsPage>
   }
 
   Future<void> _loadSpendings() async {
-    final res = await ApiService.getUserSpendings(
-      groupId: widget.groupId,
-    );
+    final res = await ApiService.getUserSpendings(groupId: widget.groupId);
 
     if (res.errorMessage == "Session expired") {
       if (!mounted) return;

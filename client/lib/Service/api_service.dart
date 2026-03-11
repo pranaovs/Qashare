@@ -37,7 +37,10 @@ class ApiService {
     String? accessToken = await TokenStorage.getAccessToken();
     if (accessToken == null) {
       // No token at all – return a fake 401
-      return http.Response('{"code":"NO_TOKEN","message":"Not logged in"}', 401);
+      return http.Response(
+        '{"code":"NO_TOKEN","message":"Not logged in"}',
+        401,
+      );
     }
 
     // First attempt
@@ -152,11 +155,7 @@ class ApiService {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "email": email,
-          "name": name,
-          "password": password,
-        }),
+        body: jsonEncode({"email": email, "name": name, "password": password}),
       );
 
       if (response.statusCode == 201) {
@@ -810,9 +809,7 @@ class ApiService {
   }
 
   // ================= DELETE EXPENSE =================
-  static Future<BasicResult> deleteExpense({
-    required String expenseId,
-  }) async {
+  static Future<BasicResult> deleteExpense({required String expenseId}) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/expenses/$expenseId");
 
     try {

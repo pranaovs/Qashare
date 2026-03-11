@@ -134,9 +134,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
       splits: splits,
     );
 
-    final res = await ApiService.createExpenseAdvanced(
-      request: req,
-    );
+    final res = await ApiService.createExpenseAdvanced(request: req);
 
     setState(() => _loading = false);
 

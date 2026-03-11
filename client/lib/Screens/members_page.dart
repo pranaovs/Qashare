@@ -23,9 +23,7 @@ class _MembersPageState extends State<MembersPage> {
   }
 
   Future<void> _loadMembers() async {
-    final res = await ApiService.getGroupDetails(
-      groupId: widget.groupId,
-    );
+    final res = await ApiService.getGroupDetails(groupId: widget.groupId);
 
     setState(() {
       _result = res;
