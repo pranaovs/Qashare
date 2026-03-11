@@ -94,10 +94,16 @@ class ApiService {
         if (refreshed) {
           // Retry with new access token
           accessToken = await TokenStorage.getAccessToken();
+          if (accessToken == null) {
+            return http.Response(
+              '{"code":"NO_TOKEN","message":"Not logged in"}',
+              401,
+            );
+          }
           response = await _rawRequest(
             method: method,
             url: url,
-            accessToken: accessToken!,
+            accessToken: accessToken,
             body: body,
           );
         }
@@ -260,6 +266,9 @@ class ApiService {
         return LoginResult.error("Invalid request");
       if (response.statusCode == 401)
         return LoginResult.error("Wrong credentials");
+      if (response.statusCode == 403)
+        return LoginResult.error(
+            "Email not verified. Check your inbox.");
       if (response.statusCode == 500) return LoginResult.error("Server error");
 
       return LoginResult.error("Unexpected error (${response.statusCode})");

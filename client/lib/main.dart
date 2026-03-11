@@ -7,6 +7,7 @@ import 'package:qashare/Screens/settlement_history_page.dart';
 import 'package:qashare/Screens/settlementdetail_page.dart';
 import 'package:qashare/Screens/home_page.dart';
 import 'package:qashare/Screens/profile_page.dart';
+import 'package:qashare/Screens/spendings_page.dart';
 
 import 'Screens/createexpense_page.dart';
 import 'Screens/login_page.dart';
@@ -82,6 +83,16 @@ class MyApp extends StatelessWidget {
                 members: args["members"],
               );
             },
+            '/spendings': (context) {
+              final args =
+                  ModalRoute.of(context)!.settings.arguments
+                      as Map<String, dynamic>;
+              return SpendingsPage(
+                groupId: args["groupId"],
+                groupName: args["groupName"],
+                members: args["members"],
+              );
+            },
             '/settlement-details': (context) {
               final args =
                   ModalRoute.of(context)!.settings.arguments
@@ -91,7 +102,6 @@ class MyApp extends StatelessWidget {
                 members: args["members"],
               );
             },
-            // Add more routes as needed
           },
         );
       },

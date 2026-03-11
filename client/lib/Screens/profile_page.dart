@@ -42,7 +42,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _profileView() {
     final joinedDate = DateTime.fromMillisecondsSinceEpoch(
-      _result!.createdAt! * 1000,
+      (_result!.createdAt ?? 0) * 1000,
     );
 
     return Center(

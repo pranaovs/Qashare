@@ -1,3 +1,5 @@
+import 'package:qashare/Models/expense_model.dart';
+
 class ExpenseDetailResult {
   final bool isSuccess;
   final ExpenseDetail? expense;
@@ -73,26 +75,6 @@ class ExpenseDetail {
       splits: (json["splits"] as List? ?? [])
           .map((e) => ExpenseSplit.fromJson(e))
           .toList(),
-    );
-  }
-}
-
-class ExpenseSplit {
-  final String userId;
-  final double amount;
-  final bool isPaid;
-
-  ExpenseSplit({
-    required this.userId,
-    required this.amount,
-    required this.isPaid,
-  });
-
-  factory ExpenseSplit.fromJson(Map<String, dynamic> json) {
-    return ExpenseSplit(
-      userId: json["user_id"],
-      amount: (json["amount"] as num).toDouble(),
-      isPaid: json["is_paid"],
     );
   }
 }

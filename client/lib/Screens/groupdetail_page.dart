@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:qashare/Models/expense_list_model.dart';
-import 'package:qashare/Models/expense_model.dart';
 import 'package:qashare/Models/settle_model.dart';
-import 'package:qashare/Models/spending_model.dart';
 import 'package:qashare/Screens/members_page.dart';
 import '../Service/api_service.dart';
 import 'package:qashare/Models/groupdetail_model.dart';
@@ -77,7 +75,10 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => MembersPage(groupId: widget.groupId),
+                  builder: (_) => MembersPage(
+                    groupId: widget.groupId,
+                    createdBy: _result?.group?.createdBy ?? "",
+                  ),
                 ),
               );
             },
@@ -345,16 +346,6 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
             },
           );
         },
-      ),
-    );
-  }
-
-  Widget _infoTile(IconData icon, String title, String value) {
-    return Card(
-      child: ListTile(
-        leading: Icon(icon),
-        title: Text(title),
-        trailing: Text(value),
       ),
     );
   }
@@ -636,223 +627,3 @@ class _BalanceSheetState extends State<_BalanceSheet> {
   }
 }
 
-// ================= SPENDINGS BOTTOM SHEET =================
-
-class _SpendingsSheet extends StatefulWidget {
-  final String groupId;
-  final List<Member> members;
-
-  const _SpendingsSheet({required this.groupId, required this.members});
-
-  @override
-  State<_SpendingsSheet> createState() => _SpendingsSheetState();
-}
-
-class _SpendingsSheetState extends State<_SpendingsSheet> {
-  bool _loading = true;
-  SpendingResult? _result;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchSpendings();
-  }
-
-  Future<void> _fetchSpendings() async {
-    final res = await ApiService.getUserSpendings(groupId: widget.groupId);
-
-    if (!mounted) return;
-    setState(() {
-      _result = res;
-      _loading = false;
-    });
-  }
-
-  String _formatDate(int epochSecs) {
-    final dt = DateTime.fromMillisecondsSinceEpoch(epochSecs * 1000);
-    return "${dt.day}/${dt.month}/${dt.year}";
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-
-    return DraggableScrollableSheet(
-      initialChildSize: 0.55,
-      minChildSize: 0.3,
-      maxChildSize: 0.9,
-      expand: false,
-      builder: (context, scrollController) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[400],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Text("My Expenses", style: theme.textTheme.titleLarge),
-              const SizedBox(height: 4),
-              Text(
-                "Your share in each expense",
-                style: TextStyle(fontSize: 13, color: cs.outline),
-              ),
-              const SizedBox(height: 16),
-              if (_loading)
-                const Expanded(
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (!_result!.isSuccess)
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      _result!.errorMessage ?? "Failed to load",
-                      style: TextStyle(color: cs.error),
-                    ),
-                  ),
-                )
-              else if (_result!.spendings!.isEmpty)
-                const Expanded(child: Center(child: Text("No expenses yet")))
-              else
-                Expanded(
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: cs.primaryContainer,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Total you owe",
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: cs.onPrimaryContainer,
-                              ),
-                            ),
-                            Text(
-                              "\u20b9${_result!.spendings!.fold<double>(0, (sum, s) => sum + s.userAmount).toStringAsFixed(2)}",
-                              style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                                color: cs.onPrimaryContainer,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Expanded(
-                        child: ListView.separated(
-                          controller: scrollController,
-                          itemCount: _result!.spendings!.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 6),
-                          itemBuilder: (context, index) {
-                            final s = _result!.spendings![index];
-                            return Card(
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                side: BorderSide(
-                                  color: cs.outlineVariant.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                  width: 1,
-                                ),
-                              ),
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 4,
-                                ),
-                                leading: CircleAvatar(
-                                  radius: 20,
-                                  backgroundColor: s.isSettlement
-                                      ? cs.tertiaryContainer
-                                      : cs.primaryContainer,
-                                  child: Icon(
-                                    s.isSettlement
-                                        ? Icons.handshake_outlined
-                                        : Icons.receipt_long_rounded,
-                                    size: 20,
-                                    color: s.isSettlement
-                                        ? cs.onTertiaryContainer
-                                        : cs.onPrimaryContainer,
-                                  ),
-                                ),
-                                title: Text(
-                                  s.title,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                subtitle: Text(
-                                  _formatDate(s.createdAt),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: cs.outline,
-                                  ),
-                                ),
-                                trailing: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      "\u20b9${s.userAmount.toStringAsFixed(2)}",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 16,
-                                        color: cs.error,
-                                      ),
-                                    ),
-                                    Text(
-                                      "of \u20b9${s.amount.toStringAsFixed(2)}",
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: cs.outline,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                onTap: () {
-                                  Navigator.pop(context);
-                                  Navigator.pushNamed(
-                                    context,
-                                    "/expense-details",
-                                    arguments: {
-                                      "expenseId": s.expenseId,
-                                      "members": widget.members,
-                                    },
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}

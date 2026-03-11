@@ -5,8 +5,9 @@ import '../Service/api_service.dart';
 
 class MembersPage extends StatefulWidget {
   final String groupId;
+  final String createdBy;
 
-  const MembersPage({super.key, required this.groupId});
+  const MembersPage({super.key, required this.groupId, required this.createdBy});
 
   @override
   State<MembersPage> createState() => _MembersPageState();
@@ -56,7 +57,7 @@ class _MembersPageState extends State<MembersPage> {
       itemCount: members.length,
       itemBuilder: (_, i) {
         final m = members[i];
-        final isAdmin = i == 0; // first member = admin
+        final isAdmin = m.userId == widget.createdBy;
 
         return Card(
           child: ListTile(

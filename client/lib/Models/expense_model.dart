@@ -9,6 +9,14 @@ class ExpenseSplit {
     required this.isPaid,
   });
 
+  factory ExpenseSplit.fromJson(Map<String, dynamic> json) {
+    return ExpenseSplit(
+      userId: json["user_id"],
+      amount: (json["amount"] as num).toDouble(),
+      isPaid: json["is_paid"],
+    );
+  }
+
   Map<String, dynamic> toJson() => {
     "user_id": userId,
     "amount": amount,

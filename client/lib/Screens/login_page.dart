@@ -12,7 +12,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   String _serverUrl = ApiConfig.server;
 
@@ -57,7 +57,7 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Username
                   TextFormField(
-                    controller: _usernameController,
+                    controller: _emailController,
                     decoration: _inputDecoration("Email"),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -284,7 +284,7 @@ class _LoginPageState extends State<LoginPage> {
     if (!_formKey.currentState!.validate()) return;
 
     final result = await ApiService.loginUser(
-      email: _usernameController.text.trim(),
+      email: _emailController.text.trim(),
       password: _passwordController.text,
     );
 
@@ -308,7 +308,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }

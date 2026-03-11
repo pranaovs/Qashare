@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:qashare/Config/token_storage.dart';
 import 'package:qashare/Models/groupdetail_model.dart';
 import 'package:qashare/Models/settle_model.dart';
 import 'package:qashare/Service/api_service.dart';
@@ -56,12 +55,7 @@ class _SettlementDetailPageState extends State<SettlementDetailPage>
       settlementId: widget.settlementId,
     );
 
-    if (res.errorMessage == "Session expired") {
-      if (!mounted) return;
-      Navigator.pushNamedAndRemoveUntil(context, "/login", (_) => false);
-      return;
-    }
-
+    if (!mounted) return;
     setState(() {
       _result = res;
       _loading = false;

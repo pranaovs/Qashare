@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:qashare/Config/token_storage.dart';
+import 'package:qashare/Models/expense_model.dart';
 import 'package:qashare/Models/expensedetail_model.dart';
 import 'package:qashare/Models/groupdetail_model.dart';
 import 'package:qashare/Service/api_service.dart';
@@ -56,13 +56,7 @@ class _ExpenseDetailsPageState extends State<ExpenseDetailsPage>
   Future<void> _loadExpense() async {
     final res = await ApiService.getExpenseDetails(expenseId: widget.expenseId);
 
-    // JWT expired handling
-    if (res.errorMessage == "Session expired") {
-      if (!mounted) return;
-      Navigator.pushNamedAndRemoveUntil(context, "/login", (_) => false);
-      return;
-    }
-
+    if (!mounted) return;
     setState(() {
       _result = res;
       _loading = false;

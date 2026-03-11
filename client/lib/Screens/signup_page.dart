@@ -36,7 +36,6 @@ class _SignupPageState extends State<SignupPage> {
   final _formKey = GlobalKey<FormState>();
 
   final _nameController = TextEditingController();
-  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -86,20 +85,6 @@ class _SignupPageState extends State<SignupPage> {
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return "Enter your name";
-                      }
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // -------- USERNAME --------
-                  TextFormField(
-                    controller: _usernameController,
-                    decoration: _inputDecoration("Username"),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return "Enter username";
                       }
                       return null;
                     },
@@ -323,7 +308,6 @@ class _SignupPageState extends State<SignupPage> {
   @override
   void dispose() {
     _nameController.dispose();
-    _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();

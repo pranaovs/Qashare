@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:qashare/Config/token_storage.dart';
 import 'package:qashare/Models/groupdetail_model.dart';
 import 'package:qashare/Models/spending_model.dart';
 import 'package:qashare/Service/api_service.dart';
@@ -49,12 +48,6 @@ class _SpendingsPageState extends State<SpendingsPage>
 
   Future<void> _loadSpendings() async {
     final res = await ApiService.getUserSpendings(groupId: widget.groupId);
-
-    if (res.errorMessage == "Session expired") {
-      if (!mounted) return;
-      Navigator.pushNamedAndRemoveUntil(context, "/login", (_) => false);
-      return;
-    }
 
     if (!mounted) return;
     setState(() {
