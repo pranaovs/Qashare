@@ -130,10 +130,14 @@ class ApiService {
         return true;
       }
 
-      // Refresh token is invalid/expired → clear everything
-      await TokenStorage.clear();
+      // Only clear tokens when the refresh token is definitively invalid/expired.
+      if (response.statusCode == 400 || response.statusCode == 403) {
+        await TokenStorage.clear();
+      }
+      // For other non-200 statuses (e.g., 5xx), keep tokens and surface a retryable failure.
       return false;
     } catch (_) {
+      // Network or decoding error: keep tokens and allow caller to retry later.
       return false;
     }
   }
