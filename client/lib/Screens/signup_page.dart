@@ -238,6 +238,36 @@ class _SignupPageState extends State<SignupPage> {
 
   // ================= HANDLERS =================
 
+  void _showVerificationDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.mark_email_read_rounded, color: Colors.blue, size: 28),
+            SizedBox(width: 12),
+            Text("Verify Email"),
+          ],
+        ),
+        content: const Text(
+          "We've sent a verification link to your email address. Please check your inbox (and spam folder) to activate your account.",
+          style: TextStyle(fontSize: 15),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx); // Close dialog
+              Navigator.pop(context); // Go back to login
+            },
+            child: const Text("Go to Login"),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _handleSignup() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -253,13 +283,17 @@ class _SignupPageState extends State<SignupPage> {
     setState(() => _isLoading = false);
 
     if (result.isSuccess) {
-      _showSuccess("Account created successfully");
+      if (result.isPendingVerification) {
+        _showVerificationDialog();
+      } else {
+        _showSuccess("Account created successfully");
 
-      // wait a bit so user sees snackbar, then go to login
-      Future.delayed(const Duration(seconds: 1), () {
-        if (!mounted) return;
-        Navigator.pop(context);
-      });
+        // wait a bit so user sees snackbar, then go to login
+        Future.delayed(const Duration(seconds: 1), () {
+          if (!mounted) return;
+          Navigator.pop(context);
+        });
+      }
     } else {
       _showError(result.errorMessage ?? "Signup failed");
     }

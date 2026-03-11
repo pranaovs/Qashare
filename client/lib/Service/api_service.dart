@@ -170,6 +170,10 @@ class ApiService {
         );
       }
 
+      if (response.statusCode == 202) {
+        return RegisterResult.pending();
+      }
+
       if (response.statusCode == 400) {
         return RegisterResult.error("Invalid input.");
       }

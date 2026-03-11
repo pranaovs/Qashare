@@ -2,6 +2,7 @@
 
 class RegisterResult {
   final bool isSuccess;
+  final bool isPendingVerification;
   final String? errorMessage;
 
   final String? userId;
@@ -12,6 +13,7 @@ class RegisterResult {
 
   RegisterResult._({
     required this.isSuccess,
+    this.isPendingVerification = false,
     this.errorMessage,
     this.userId,
     this.name,
@@ -34,6 +36,13 @@ class RegisterResult {
       email: email,
       guest: guest,
       createdAt: createdAt,
+    );
+  }
+
+  factory RegisterResult.pending() {
+    return RegisterResult._(
+      isSuccess: true,
+      isPendingVerification: true,
     );
   }
 
