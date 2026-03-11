@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qashare/Models/expense_model.dart';
 import '../Models/groupdetail_model.dart';
-import '../Config/token_storage.dart';
 import '../Service/api_service.dart';
 
 class CreateExpensePage extends StatefulWidget {
@@ -123,13 +122,6 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
 
     setState(() => _loading = true);
 
-    final token = await TokenStorage.getToken();
-    if (token == null) {
-      _snack("Session expired. Please login again.", true);
-      setState(() => _loading = false);
-      return;
-    }
-
     final req = ExpenseRequest(
       groupId: widget.groupId,
       title: _titleController.text.trim(),
@@ -143,8 +135,6 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
     );
 
     final res = await ApiService.createExpenseAdvanced(
-      token: token,
-      groupId: widget.groupId,
       request: req,
     );
 

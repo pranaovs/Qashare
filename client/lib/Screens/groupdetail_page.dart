@@ -4,7 +4,6 @@ import 'package:qashare/Models/expense_model.dart';
 import 'package:qashare/Models/settle_model.dart';
 import 'package:qashare/Models/spending_model.dart';
 import 'package:qashare/Screens/members_page.dart';
-import '../Config/token_storage.dart';
 import '../Service/api_service.dart';
 import 'package:qashare/Models/groupdetail_model.dart';
 
@@ -35,23 +34,11 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
   }
 
   Future<void> _loadDetails() async {
-    final token = await TokenStorage.getToken();
-
-    if (token == null) {
-      setState(() {
-        _result = GroupDetailsResult.error("Not logged in");
-        _loading = false;
-      });
-      return;
-    }
-
     final res = await ApiService.getGroupDetails(
-      token: token,
       groupId: widget.groupId,
     );
 
     final expenseRes = await ApiService.getGroupExpenses(
-      token: token,
       groupId: widget.groupId,
     );
 

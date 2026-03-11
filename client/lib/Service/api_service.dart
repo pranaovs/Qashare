@@ -2,6 +2,7 @@ import "package:http/http.dart" as http;
 import 'dart:convert';
 
 import 'package:qashare/Config/api_config.dart';
+import 'package:qashare/Config/token_storage.dart';
 import 'package:qashare/Models/add_member_results.dart';
 import 'package:qashare/Models/auth_model.dart';
 import 'package:qashare/Models/expense_list_model.dart';
@@ -15,6 +16,129 @@ import 'package:qashare/Models/spending_model.dart';
 import 'package:qashare/Models/userlookup_model.dart';
 
 class ApiService {
+  // ============================================================
+  //  INTERNAL: Authenticated HTTP helpers with auto-refresh
+  // ============================================================
+
+  /// Performs an authenticated HTTP request.
+  /// If the server returns 401/403 (expired token), it will attempt to
+  /// refresh the tokens once and retry the request.
+  ///
+  /// [method]  – "GET", "POST", "DELETE", etc.
+  /// [url]     – full URL to call
+  /// [body]    – optional JSON-encodable map
+  ///
+  /// Returns the [http.Response] or throws on network error.
+  static Future<http.Response> _authenticatedRequest({
+    required String method,
+    required Uri url,
+    Map<String, dynamic>? body,
+  }) async {
+    String? accessToken = await TokenStorage.getAccessToken();
+    if (accessToken == null) {
+      // No token at all – return a fake 401
+      return http.Response('{"code":"NO_TOKEN","message":"Not logged in"}', 401);
+    }
+
+    // First attempt
+    var response = await _rawRequest(
+      method: method,
+      url: url,
+      accessToken: accessToken,
+      body: body,
+    );
+
+    // If 401 or 403 → try refresh
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      final refreshed = await _tryRefreshTokens();
+      if (refreshed) {
+        // Retry with new access token
+        accessToken = await TokenStorage.getAccessToken();
+        response = await _rawRequest(
+          method: method,
+          url: url,
+          accessToken: accessToken!,
+          body: body,
+        );
+      }
+    }
+
+    return response;
+  }
+
+  /// Raw HTTP call with Bearer token.
+  static Future<http.Response> _rawRequest({
+    required String method,
+    required Uri url,
+    required String accessToken,
+    Map<String, dynamic>? body,
+  }) async {
+    final headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $accessToken",
+    };
+
+    switch (method.toUpperCase()) {
+      case "GET":
+        return await http.get(url, headers: headers);
+      case "POST":
+        return await http.post(
+          url,
+          headers: headers,
+          body: body != null ? jsonEncode(body) : null,
+        );
+      case "DELETE":
+        return await http.delete(
+          url,
+          headers: headers,
+          body: body != null ? jsonEncode(body) : null,
+        );
+      case "PUT":
+        return await http.put(
+          url,
+          headers: headers,
+          body: body != null ? jsonEncode(body) : null,
+        );
+      default:
+        return await http.get(url, headers: headers);
+    }
+  }
+
+  /// Attempts to refresh the access token using the stored refresh token.
+  /// Returns `true` if successful (tokens are updated in storage).
+  static Future<bool> _tryRefreshTokens() async {
+    final refreshToken = await TokenStorage.getRefreshToken();
+    if (refreshToken == null) return false;
+
+    try {
+      final url = Uri.parse("${ApiConfig.baseUrl}/auth/refresh");
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"refresh_token": refreshToken}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        await TokenStorage.saveTokens(
+          accessToken: data["access_token"],
+          refreshToken: data["refresh_token"],
+        );
+        return true;
+      }
+
+      // Refresh token is invalid/expired → clear everything
+      await TokenStorage.clear();
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ============================================================
+  //  AUTH ENDPOINTS
+  // ============================================================
+
   // ================= REGISTER =================
   static Future<RegisterResult> registerUser({
     required String username,
@@ -29,9 +153,8 @@ class ApiService {
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "username": username,
-          "name": name,
           "email": email,
+          "name": name,
           "password": password,
         }),
       );
@@ -82,8 +205,9 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return LoginResult.success(
-          token: data["token"],
-          message: data["message"],
+          accessToken: data["access_token"],
+          refreshToken: data["refresh_token"],
+          tokenType: data["token_type"] ?? "Bearer",
         );
       }
 
@@ -99,18 +223,101 @@ class ApiService {
     }
   }
 
+  // ================= REFRESH =================
+  static Future<RefreshResult> refreshTokens() async {
+    final refreshToken = await TokenStorage.getRefreshToken();
+    if (refreshToken == null) {
+      return RefreshResult.error("No refresh token");
+    }
+
+    final url = Uri.parse("${ApiConfig.baseUrl}/auth/refresh");
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"refresh_token": refreshToken}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final result = RefreshResult.success(
+          accessToken: data["access_token"],
+          refreshToken: data["refresh_token"],
+          tokenType: data["token_type"] ?? "Bearer",
+        );
+
+        // Persist the new tokens
+        await TokenStorage.saveTokens(
+          accessToken: result.accessToken!,
+          refreshToken: result.refreshToken!,
+        );
+
+        return result;
+      }
+
+      if (response.statusCode == 400)
+        return RefreshResult.error("Missing refresh token");
+      if (response.statusCode == 401)
+        return RefreshResult.error("Invalid refresh token");
+      if (response.statusCode == 403)
+        return RefreshResult.error("Refresh token expired");
+      if (response.statusCode == 500)
+        return RefreshResult.error("Server error");
+
+      return RefreshResult.error("Unexpected error (${response.statusCode})");
+    } catch (_) {
+      return RefreshResult.error("Cannot connect to server");
+    }
+  }
+
+  // ================= LOGOUT =================
+  static Future<BasicResult> logout() async {
+    try {
+      final url = Uri.parse("${ApiConfig.baseUrl}/auth/logout");
+      final response = await _authenticatedRequest(method: "POST", url: url);
+
+      // Clear tokens locally regardless of server response
+      await TokenStorage.clear();
+
+      if (response.statusCode == 200) {
+        return BasicResult.success();
+      }
+      return BasicResult.success(); // Still clear locally on error
+    } catch (_) {
+      await TokenStorage.clear();
+      return BasicResult.success();
+    }
+  }
+
+  // ================= LOGOUT ALL =================
+  static Future<BasicResult> logoutAll() async {
+    try {
+      final url = Uri.parse("${ApiConfig.baseUrl}/auth/logout-all");
+      final response = await _authenticatedRequest(method: "POST", url: url);
+
+      await TokenStorage.clear();
+
+      if (response.statusCode == 200) {
+        return BasicResult.success();
+      }
+      return BasicResult.success();
+    } catch (_) {
+      await TokenStorage.clear();
+      return BasicResult.success();
+    }
+  }
+
+  // ============================================================
+  //  PROTECTED ENDPOINTS (all use _authenticatedRequest)
+  // ============================================================
+
   // ================= PROFILE =================
-  static Future<UserResult> getCurrentUser(String token) async {
+  static Future<UserResult> getCurrentUser() async {
     final url = Uri.parse("${ApiConfig.baseUrl}/auth/me");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -134,33 +341,24 @@ class ApiService {
   }
 
   // ================= GROUP LIST =================
-  static Future<GroupListResult> displayGroup(String token) async {
+  static Future<GroupListResult> displayGroup() async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/me");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
 
-        // ✅ backend returned empty list
         if (decoded == null) {
           return GroupListResult.success([]);
         }
 
-        // ✅ backend returned []
         if (decoded is List) {
           final groups = decoded.map((e) => Group.fromJson(e)).toList();
           return GroupListResult.success(groups);
         }
 
-        // ❌ backend returned unexpected structure
         return GroupListResult.error("Invalid response format");
       }
 
@@ -180,20 +378,16 @@ class ApiService {
 
   // ================= CREATE GROUP =================
   static Future<GroupCreateResult> createGroup({
-    required String token,
     required String name,
     required String description,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/");
 
     try {
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({"name": name, "description": description}),
+      final response = await _authenticatedRequest(
+        method: "POST",
+        url: url,
+        body: {"name": name, "description": description},
       );
 
       if (response.statusCode == 201) {
@@ -218,19 +412,12 @@ class ApiService {
 
   // ================= GROUP DETAILS =================
   static Future<GroupDetailsResult> getGroupDetails({
-    required String token,
     required String groupId,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         return GroupDetailsResult.success(
@@ -257,20 +444,16 @@ class ApiService {
 
   // ================= ADD MEMBER =================
   static Future<AddMemberResult> addMembersToGroup({
-    required String token,
     required String groupId,
     required List<String> userIds,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/members");
 
     try {
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({"user_ids": userIds}),
+      final response = await _authenticatedRequest(
+        method: "POST",
+        url: url,
+        body: {"user_ids": userIds},
       );
 
       if (response.statusCode == 200) {
@@ -298,20 +481,16 @@ class ApiService {
 
   // ================= REMOVE MEMBER =================
   static Future<AddMemberResult> removeMembersFromGroup({
-    required String token,
     required String groupId,
     required List<String> userIds,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/members");
 
     try {
-      final response = await http.delete(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({"user_ids": userIds}),
+      final response = await _authenticatedRequest(
+        method: "DELETE",
+        url: url,
+        body: {"user_ids": userIds},
       );
 
       if (response.statusCode == 200) {
@@ -339,19 +518,12 @@ class ApiService {
 
   // ================= SEARCH USER =================
   static Future<UserLookupResult> searchUserByEmail({
-    required String token,
     required String email,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/users/search/email/$email");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         return UserLookupResult.success(
@@ -376,19 +548,12 @@ class ApiService {
 
   // ================= GROUP EXPENSES =================
   static Future<ExpenseListResult> getGroupExpenses({
-    required String token,
     required String groupId,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/expenses");
 
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-      );
+      final response = await _authenticatedRequest(method: "GET", url: url);
 
       if (response.statusCode == 200) {
         final List data = jsonDecode(response.body);
@@ -413,20 +578,15 @@ class ApiService {
 
   // ================= CREATE EXPENSE =================
   static Future<BasicResult> createExpenseAdvanced({
-    required String token,
-    required String groupId,
     required ExpenseRequest request,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/groups/$groupId/expenses");
 
     try {
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode(request.toJson()),
+      final response = await _authenticatedRequest(
+        method: "POST",
+        url: url,
+        body: request.toJson(),
       );
 
       if (response.statusCode == 201) return BasicResult.success();
@@ -445,19 +605,16 @@ class ApiService {
     }
   }
 
+  // ================= CREATE GUEST USER =================
   static Future<UserLookupResult> createGuestUser({
-    required String token,
     required String email,
   }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}/users/guest");
     try {
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({"email": email}),
+      final response = await _authenticatedRequest(
+        method: "POST",
+        url: url,
+        body: {"email": email},
       );
 
       if (response.statusCode == 201) {

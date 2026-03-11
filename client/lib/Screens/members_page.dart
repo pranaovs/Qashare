@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:qashare/Models/userlookup_model.dart';
-import '../Config/token_storage.dart';
 import 'package:qashare/Models/groupdetail_model.dart';
 import '../Service/api_service.dart';
 
@@ -24,11 +23,7 @@ class _MembersPageState extends State<MembersPage> {
   }
 
   Future<void> _loadMembers() async {
-    final token = await TokenStorage.getToken();
-    if (token == null) return;
-
     final res = await ApiService.getGroupDetails(
-      token: token,
       groupId: widget.groupId,
     );
 
@@ -117,11 +112,7 @@ class _MembersPageState extends State<MembersPage> {
   }
 
   Future<void> _removeMember(String userId) async {
-    final token = await TokenStorage.getToken();
-    if (token == null) return;
-
     final res = await ApiService.removeMembersFromGroup(
-      token: token,
       groupId: widget.groupId,
       userIds: [userId],
     );
@@ -183,12 +174,8 @@ class _MembersPageState extends State<MembersPage> {
 
                       setLocal(() => loading = true);
 
-                      final token = await TokenStorage.getToken();
-                      if (token == null) return;
-
                       // STEP 1: Try to find existing user
                       final lookup = await ApiService.searchUserByEmail(
-                        token: token,
                         email: email,
                       );
 
@@ -201,7 +188,6 @@ class _MembersPageState extends State<MembersPage> {
                       } else {
                         // STEP 2: User not found → create guest
                         final guest = await ApiService.createGuestUser(
-                          token: token,
                           email: email,
                         );
 
@@ -219,7 +205,6 @@ class _MembersPageState extends State<MembersPage> {
 
                       // STEP 3: Add user (normal or guest) to group
                       final addResult = await ApiService.addMembersToGroup(
-                        token: token,
                         groupId: widget.groupId,
                         userIds: [user.userId],
                       );

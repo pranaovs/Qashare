@@ -291,9 +291,11 @@ class _LoginPageState extends State<LoginPage> {
     if (result.isSuccess) {
       _showSuccess("Login successful");
 
-      // Store JWT token securely via TokenStorage (FlutterSecureStorage).
-      // TODO: Consider additional hardening (e.g., biometrics or token rotation) if required.
-      await TokenStorage.saveToken(result.token!);
+      // Store both access and refresh tokens securely
+      await TokenStorage.saveTokens(
+        accessToken: result.accessToken!,
+        refreshToken: result.refreshToken!,
+      );
 
       Future.delayed(const Duration(milliseconds: 800), () {
         if (!mounted) return;
