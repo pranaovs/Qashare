@@ -649,6 +649,12 @@ class _EditExpenseSheetState extends State<_EditExpenseSheet> {
 
     setState(() => _saving = true);
 
+    final body = <String, dynamic>{
+      "title": _titleCtrl.text.trim(),
+      "description": _descCtrl.text.trim(),
+      "amount": double.tryParse(_amountCtrl.text.trim()) ?? widget.amount,
+    };
+
     final res = await ApiService.updateExpense(
       expenseId: widget.expenseId,
       body: body,
