@@ -144,7 +144,6 @@ class ApiService {
 
   // ================= REGISTER =================
   static Future<RegisterResult> registerUser({
-    required String username,
     required String name,
     required String email,
     required String password,
