@@ -59,6 +59,7 @@ type AppConfig struct {
 
 type EmailConfig struct {
 	Verification bool   `example:"true"`
+	InviteGuests bool   `example:"true"`
 	Host         string `example:"smtp.example.com"`
 	Port         int    `example:"587"`
 	Username     string `example:"user@example.com"`

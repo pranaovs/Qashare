@@ -111,6 +111,7 @@ func loadEmailConfig() EmailConfig {
 
 	config := EmailConfig{
 		Verification: getEnvBool("VERIFY_EMAIL", false),
+		InviteGuests: getEnvBool("INVITE_GUESTS", true),
 		Host:         getEnv("SMTP_HOST", ""),
 		Port:         getEnvInt("SMTP_PORT", 0),
 		Username:     getEnv("SMTP_USERNAME", ""),
@@ -119,10 +120,11 @@ func loadEmailConfig() EmailConfig {
 		Expiry:       getEnvDuration("VERIFY_EMAIL_EXPIRY", "24h"),
 	}
 
-	if config.Verification {
+	if config.Verification || config.InviteGuests {
 		if config.Host == "" || config.Port == 0 || config.Username == "" || config.Password == "" || config.From == nil {
-			slog.Error("Email verification is enabled but SMTP configuration is incomplete. Email verification disabled.")
+			slog.Error("Emailing features are enabled but SMTP configuration is incomplete. Emailing features disabled.")
 			config.Verification = false
+			config.InviteGuests = false
 		}
 	}
 	return config
