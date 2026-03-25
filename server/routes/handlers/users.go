@@ -11,6 +11,8 @@ import (
 	"github.com/pranaovs/qashare/routes/middleware"
 	"github.com/pranaovs/qashare/utils"
 
+	"github.com/pranaovs/qashare/config"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 )

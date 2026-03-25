@@ -55,15 +55,15 @@ type AppConfig struct {
 	AllowGuests    bool    `example:"true"`
 	SplitTolerance float64 `example:"0.01"`
 	EnvPath        string  `example:".env"`
+	Verification   bool    `example:"true"`
+	InviteGuests   bool    `example:"true"`
 }
 
 type EmailConfig struct {
-	Verification bool   `example:"true"`
-	InviteGuests bool   `example:"true"`
-	Host         string `example:"smtp.example.com"`
-	Port         int    `example:"587"`
-	Username     string `example:"user@example.com"`
-	Password     string `example:"password"`
-	From         *mail.Address
-	Expiry       time.Duration `example:"24h"`
+	Host     string `example:"smtp.example.com"`
+	Port     int    `example:"587"`
+	Username string `example:"user@example.com"`
+	Password string `example:"password"`
+	From     *mail.Address
+	Expiry   time.Duration `example:"24h"`
 }

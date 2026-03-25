@@ -41,6 +41,15 @@ func Load() (*Config, error) {
 	// Load App configuration
 	cfg.App = loadAppConfig(envPath)
 
+	// Validate SMTP configuration if email features are enabled
+	if cfg.App.Verification || cfg.App.InviteGuests {
+		if cfg.Email.Host == "" || cfg.Email.Port == 0 || cfg.Email.Username == "" || cfg.Email.Password == "" || cfg.Email.From == nil {
+			slog.Error("Emailing features are enabled but SMTP configuration is incomplete. Emailing features disabled.")
+			cfg.App.Verification = false
+			cfg.App.InviteGuests = false
+		}
+	}
+
 	slog.Info("Configuration loaded successfully")
 	return cfg, nil
 }
@@ -95,6 +104,8 @@ func loadAppConfig(envPath string) AppConfig {
 		AllowGuests:    getEnvBool("ALLOW_GUESTS", true),
 		SplitTolerance: getEnvFloat("SPLIT_TOLERANCE", 0.01),
 		EnvPath:        envPath,
+		Verification:   getEnvBool("VERIFY_EMAIL", false),
+		InviteGuests:   getEnvBool("INVITE_GUESTS", true),
 	}
 }
 
@@ -110,23 +121,14 @@ func loadEmailConfig() EmailConfig {
 	}
 
 	config := EmailConfig{
-		Verification: getEnvBool("VERIFY_EMAIL", false),
-		InviteGuests: getEnvBool("INVITE_GUESTS", true),
-		Host:         getEnv("SMTP_HOST", ""),
-		Port:         getEnvInt("SMTP_PORT", 0),
-		Username:     getEnv("SMTP_USERNAME", ""),
-		Password:     getEnv("SMTP_PASSWORD", ""),
-		From:         fromAddr,
-		Expiry:       getEnvDuration("VERIFY_EMAIL_EXPIRY", "24h"),
+		Host:     getEnv("SMTP_HOST", ""),
+		Port:     getEnvInt("SMTP_PORT", 0),
+		Username: getEnv("SMTP_USERNAME", ""),
+		Password: getEnv("SMTP_PASSWORD", ""),
+		From:     fromAddr,
+		Expiry:   getEnvDuration("VERIFY_EMAIL_EXPIRY", "24h"),
 	}
 
-	if config.Verification || config.InviteGuests {
-		if config.Host == "" || config.Port == 0 || config.Username == "" || config.Password == "" || config.From == nil {
-			slog.Error("Emailing features are enabled but SMTP configuration is incomplete. Emailing features disabled.")
-			config.Verification = false
-			config.InviteGuests = false
-		}
-	}
 	return config
 }
 

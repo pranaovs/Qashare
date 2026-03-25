@@ -4,21 +4,24 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/apperrors"
+	"github.com/pranaovs/qashare/config"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/models"
 	"github.com/pranaovs/qashare/routes/apierrors"
 	"github.com/pranaovs/qashare/routes/middleware"
 	"github.com/pranaovs/qashare/utils"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type MeHandler struct {
-	pool *pgxpool.Pool
+	pool      *pgxpool.Pool
+	appConfig config.AppConfig
 }
 
-func NewMeHandler(pool *pgxpool.Pool) *MeHandler {
-	return &MeHandler{pool: pool}
+func NewMeHandler(pool *pgxpool.Pool, appConfig config.AppConfig) *MeHandler {
+	return &MeHandler{pool: pool, appConfig: appConfig}
 }
 
 // Me godoc
