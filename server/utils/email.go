@@ -96,7 +96,7 @@ func SendVerificationEmail(to string, token uuid.UUID, expiry time.Duration) err
 }
 
 // SendGuestsInvitationEmail sends an invitation email to the given email id
-func SendGuestsInvitationEmail(to string, from mail.Address, token uuid.UUID) error {
+func SendGuestsInvitationEmail(to string, from mail.Address) error {
 	// Sanitize and validate the recipient email to prevent header injection.
 	safeTo, err := sanitizeEmailAddress(to)
 	if err != nil {
@@ -105,7 +105,7 @@ func SendGuestsInvitationEmail(to string, from mail.Address, token uuid.UUID) er
 
 	subject := "Qashare - Invitation to join an expense group"
 
-	link := fmt.Sprintf(apiCfg.PublicURL)
+	link := apiCfg.PublicURL
 
 	body := fmt.Sprintf(
 		"<html><body>"+
@@ -131,7 +131,7 @@ func SendGuestsInvitationEmail(to string, from mail.Address, token uuid.UUID) er
 
 	err = smtp.SendMail(emailCfg.Host+":"+fmt.Sprint(emailCfg.Port), auth, emailCfg.From.Address, []string{safeTo}, []byte(msg))
 	if err != nil {
-		slog.Error("Failed to send verification email", "to", safeTo, "error", err)
+		slog.Error("Failed to send invitation email", "to", safeTo, "error", err)
 		return ErrEmailSendFailed.WithError(err)
 	}
 
