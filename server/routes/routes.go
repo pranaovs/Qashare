@@ -31,7 +31,7 @@ func RegisterRoutes(basepath string, router *gin.Engine, pool *pgxpool.Pool, jwt
 
 	RegisterAuthRoutes(baseGroup.Group("/auth"), pool, jwtConfig, emailConfig, apiConfig)
 	RegisterMeRoutes(baseGroup.Group("/me"), pool, jwtConfig)
-	RegisterUsersRoutes(baseGroup.Group("/users"), pool, jwtConfig)
+	RegisterUsersRoutes(baseGroup.Group("/users"), pool, jwtConfig, appConfig)
 	RegisterGroupsRoutes(baseGroup.Group("/groups"), pool, jwtConfig, appConfig)
 	RegisterExpensesRoutes(baseGroup.Group("/expenses"), pool, jwtConfig, appConfig)
 	RegisterSettlementsRoutes(baseGroup.Group("/settlements"), pool, jwtConfig, appConfig)

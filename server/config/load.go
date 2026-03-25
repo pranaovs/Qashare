@@ -92,6 +92,7 @@ func loadAppConfig(envPath string) AppConfig {
 	return AppConfig{
 		Debug:          getEnvBool("DEBUG", false),
 		DisableSwagger: getEnvBool("DISABLE_SWAGGER", false),
+		AllowGuests:    getEnvBool("ALLOW_GUESTS", true),
 		SplitTolerance: getEnvFloat("SPLIT_TOLERANCE", 0.01),
 		EnvPath:        envPath,
 	}

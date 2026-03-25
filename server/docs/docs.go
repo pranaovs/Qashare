@@ -2421,7 +2421,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "EXPIRED_TOKEN: Access token has expired",
+                        "description": "EXPIRED_TOKEN: Access token has expired | GUESTS_DISABLED: Guest user creation is disabled",
                         "schema": {
                             "$ref": "#/definitions/apierrors.AppError"
                         }
