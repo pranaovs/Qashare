@@ -52,6 +52,7 @@ type JWTConfig struct {
 type AppConfig struct {
 	Debug          bool    `example:"false"`
 	DisableSwagger bool    `example:"false"`
+	AllowGuests    bool    `example:"true"`
 	SplitTolerance float64 `example:"0.01"`
 	EnvPath        string  `example:".env"`
 }
