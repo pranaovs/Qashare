@@ -119,13 +119,13 @@ func (h *UsersHandler) SearchByEmail(c *gin.Context) {
 // @Success 201 {object} models.User "Guest user successfully created"
 // @Failure 400 {object} apierrors.AppError "BAD_REQUEST: Invalid request body format or missing required fields | BAD_EMAIL: Invalid email format"
 // @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
-// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
+// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | GUESTS_DISABLED: Guest user creation is disabled"
 // @Failure 409 {object} apierrors.AppError "EMAIL_EXISTS: An account with this email already exists"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
 // @Router /v1/users/guest [post]
 func (h *UsersHandler) RegisterGuest(c *gin.Context) {
 	if !h.appConfig.AllowGuests {
-		utils.SendError(c, apierrors.ErrUserNotFound)
+		utils.SendError(c, apierrors.ErrGuestsDisabled)
 		return
 	}
 
