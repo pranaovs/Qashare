@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"html"
 	"log/slog"
 	"net/mail"
 	"net/smtp"
@@ -34,8 +35,10 @@ func sanitizeEmailAddress(email string) (string, error) {
 	return safeEmail, nil
 }
 
-var emailCfg config.EmailConfig
-var apiCfg config.APIConfig
+var (
+	emailCfg config.EmailConfig
+	apiCfg   config.APIConfig
+)
 
 // InitEmail initializes the email package with the given configuration.
 // Must be called before any email sending functions.
@@ -111,13 +114,17 @@ func SendGuestsInvitationEmail(to string, from mail.Address) error {
 
 	link := apiCfg.PublicURL
 
+	safeName := html.EscapeString(from.Name)
+	safeFromAddr := html.EscapeString(from.Address)
+	safeLink := html.EscapeString(link)
+
 	body := fmt.Sprintf(
 		"<html><body>"+
 			"<p>%s (%s) has invited you to join a shared expense group on Qashare</p>"+
 			"<p>Click to join</p>"+
 			"<p><a href=\"%s\">Join Now</a></p>"+
 			"</body></html>",
-		from.Name, from.Address, link,
+		safeName, safeFromAddr, safeLink,
 	)
 
 	msg := fmt.Sprintf(
