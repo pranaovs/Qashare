@@ -3,8 +3,10 @@ package utils
 import (
 	"fmt"
 	"log/slog"
+	"net/mail"
 	"net/smtp"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/config"
@@ -32,6 +34,16 @@ func sanitizeEmailAddress(email string) (string, error) {
 	return safeEmail, nil
 }
 
+var emailCfg config.EmailConfig
+var apiCfg config.APIConfig
+
+// InitEmail initializes the email package with the given configuration.
+// Must be called before any email sending functions.
+func InitEmail(emailConfig config.EmailConfig, apiConfig config.APIConfig) {
+	emailCfg = emailConfig
+	apiCfg = apiConfig
+}
+
 // ErrEmailSendFailed indicates that the verification email could not be sent
 var ErrEmailSendFailed = &UtilsError{
 	Code:    "EMAIL_SEND_FAILED",
@@ -39,7 +51,7 @@ var ErrEmailSendFailed = &UtilsError{
 }
 
 // SendVerificationEmail sends a link-based verification email to the given address.
-func SendVerificationEmail(emailConfig config.EmailConfig, apiConfig config.APIConfig, to string, token uuid.UUID) error {
+func SendVerificationEmail(to string, token uuid.UUID, expiry time.Duration) error {
 	// Sanitize and validate the recipient email to prevent header injection.
 	safeTo, err := sanitizeEmailAddress(to)
 	if err != nil {
@@ -48,7 +60,7 @@ func SendVerificationEmail(emailConfig config.EmailConfig, apiConfig config.APIC
 
 	subject := "Qashare - Verify your email address"
 
-	link := fmt.Sprintf("%s%s/v1/auth/verify?token=%s", apiConfig.PublicURL, apiConfig.BasePath, token.String())
+	link := fmt.Sprintf("%s%s/v1/auth/verify?token=%s", apiCfg.PublicURL, apiCfg.BasePath, token.String())
 
 	body := fmt.Sprintf(
 		"<html><body>"+
@@ -58,7 +70,7 @@ func SendVerificationEmail(emailConfig config.EmailConfig, apiConfig config.APIC
 			"<p>If you did not create an account, you can ignore this email.</p>"+
 			"<p>This link expires in %s.</p>"+
 			"</body></html>",
-		link, emailConfig.Expiry,
+		link, expiry,
 	)
 
 	msg := fmt.Sprintf(
@@ -69,12 +81,55 @@ func SendVerificationEmail(emailConfig config.EmailConfig, apiConfig config.APIC
 			"Content-Type: text/html; charset=\"UTF-8\"\r\n"+
 			"\r\n"+
 			"%s",
-		sanitizeHeader(emailConfig.From.String()), safeTo, subject, body,
+		sanitizeHeader(emailCfg.From.String()), safeTo, subject, body,
 	)
 
-	auth := smtp.PlainAuth("", emailConfig.Username, emailConfig.Password, emailConfig.Host)
+	auth := smtp.PlainAuth("", emailCfg.Username, emailCfg.Password, emailCfg.Host)
 
-	err = smtp.SendMail(emailConfig.Host+":"+fmt.Sprint(emailConfig.Port), auth, emailConfig.From.Address, []string{safeTo}, []byte(msg))
+	err = smtp.SendMail(emailCfg.Host+":"+fmt.Sprint(emailCfg.Port), auth, emailCfg.From.Address, []string{safeTo}, []byte(msg))
+	if err != nil {
+		slog.Error("Failed to send verification email", "to", safeTo, "error", err)
+		return ErrEmailSendFailed.WithError(err)
+	}
+
+	return nil
+}
+
+// SendGuestsInvitationEmail sends an invitation email to the given email id
+func SendGuestsInvitationEmail(to string, from mail.Address, token uuid.UUID) error {
+	// Sanitize and validate the recipient email to prevent header injection.
+	safeTo, err := sanitizeEmailAddress(to)
+	if err != nil {
+		return ErrEmailSendFailed.WithError(err)
+	}
+
+	subject := "Qashare - Invitation to join an expense group"
+
+	link := fmt.Sprintf(apiCfg.PublicURL)
+
+	body := fmt.Sprintf(
+		"<html><body>"+
+			"<p>%s (%s) has invited you to join a shared expense group on Qashare</p>"+
+			"<p>Click to join</p>"+
+			"<p><a href=\"%s\">Join Now</a></p>"+
+			"</body></html>",
+		from.Name, from.Address, link,
+	)
+
+	msg := fmt.Sprintf(
+		"From: %s\r\n"+
+			"To: %s\r\n"+
+			"Subject: %s\r\n"+
+			"MIME-Version: 1.0\r\n"+
+			"Content-Type: text/html; charset=\"UTF-8\"\r\n"+
+			"\r\n"+
+			"%s",
+		sanitizeHeader(emailCfg.From.String()), safeTo, subject, body,
+	)
+
+	auth := smtp.PlainAuth("", emailCfg.Username, emailCfg.Password, emailCfg.Host)
+
+	err = smtp.SendMail(emailCfg.Host+":"+fmt.Sprint(emailCfg.Port), auth, emailCfg.From.Address, []string{safeTo}, []byte(msg))
 	if err != nil {
 		slog.Error("Failed to send verification email", "to", safeTo, "error", err)
 		return ErrEmailSendFailed.WithError(err)

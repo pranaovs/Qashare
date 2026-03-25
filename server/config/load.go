@@ -99,13 +99,14 @@ func loadJWTConfig() JWTConfig {
 
 func loadAppConfig(envPath string) AppConfig {
 	return AppConfig{
-		Debug:          getEnvBool("DEBUG", false),
-		DisableSwagger: getEnvBool("DISABLE_SWAGGER", false),
-		AllowGuests:    getEnvBool("ALLOW_GUESTS", true),
-		SplitTolerance: getEnvFloat("SPLIT_TOLERANCE", 0.01),
-		EnvPath:        envPath,
-		Verification:   getEnvBool("VERIFY_EMAIL", false),
-		InviteGuests:   getEnvBool("INVITE_GUESTS", true),
+		Debug:             getEnvBool("DEBUG", false),
+		DisableSwagger:    getEnvBool("DISABLE_SWAGGER", false),
+		AllowGuests:       getEnvBool("ALLOW_GUESTS", true),
+		SplitTolerance:    getEnvFloat("SPLIT_TOLERANCE", 0.01),
+		EnvPath:           envPath,
+		Verification:      getEnvBool("VERIFY_EMAIL", false),
+		InviteGuests:      getEnvBool("INVITE_GUESTS", true),
+		VerifyEmailExpiry: getEnvDuration("VERIFY_EMAIL_EXPIRY", "24h"),
 	}
 }
 
@@ -126,7 +127,6 @@ func loadEmailConfig() EmailConfig {
 		Username: getEnv("SMTP_USERNAME", ""),
 		Password: getEnv("SMTP_PASSWORD", ""),
 		From:     fromAddr,
-		Expiry:   getEnvDuration("VERIFY_EMAIL_EXPIRY", "24h"),
 	}
 
 	return config

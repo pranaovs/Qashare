@@ -10,7 +10,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func RegisterRoutes(basepath string, router *gin.Engine, pool *pgxpool.Pool, jwtConfig config.JWTConfig, emailConfig config.EmailConfig, apiConfig config.APIConfig, appConfig config.AppConfig) {
+func RegisterRoutes(basepath string, router *gin.Engine, pool *pgxpool.Pool, jwtConfig config.JWTConfig, appConfig config.AppConfig) {
 	router.RedirectTrailingSlash = true
 	router.RedirectFixedPath = true
 	router.RemoveExtraSlash = true
@@ -29,7 +29,7 @@ func RegisterRoutes(basepath string, router *gin.Engine, pool *pgxpool.Pool, jwt
 	// Create a base route group
 	baseGroup := router.Group(basepath + "/v1")
 
-	RegisterAuthRoutes(baseGroup.Group("/auth"), pool, appConfig, jwtConfig, emailConfig, apiConfig)
+	RegisterAuthRoutes(baseGroup.Group("/auth"), pool, appConfig, jwtConfig)
 	RegisterMeRoutes(baseGroup.Group("/me"), pool, appConfig, jwtConfig)
 	RegisterUsersRoutes(baseGroup.Group("/users"), pool, jwtConfig, appConfig)
 	RegisterGroupsRoutes(baseGroup.Group("/groups"), pool, appConfig, jwtConfig)
