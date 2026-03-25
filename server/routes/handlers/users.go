@@ -158,20 +158,22 @@ func (h *UsersHandler) RegisterGuest(c *gin.Context) {
 		return
 	}
 
-	// Send invitation email to guests if enabled
-	if h.appConfig.InviteGuests {
-		invitingUser, err := db.GetUser(c.Request.Context(), h.pool, userID)
-		if err != nil {
-			// slog instead of utils.SendError to not send the email error to api clients
-			slog.Error("Failed to look up inviting user for invitation email",
-				"userID", userID, "error", err)
-		} else {
-			if err := utils.SendGuestsInvitationEmail(email, mail.Address{Name: invitingUser.Name, Address: invitingUser.Email}); err != nil {
-				slog.Error("Failed to send guest invitation email",
-					"to", email, "from", invitingUser.Email, "error", err)
+	go func() {
+		// Send invitation email to guests if enabled
+		if h.appConfig.InviteGuests {
+			invitingUser, err := db.GetUser(c.Request.Context(), h.pool, userID)
+			if err != nil {
+				// slog instead of utils.SendError to not send the email error to api clients
+				slog.Error("Failed to look up inviting user for invitation email",
+					"userID", userID, "error", err)
+			} else {
+				if err := utils.SendGuestsInvitationEmail(email, mail.Address{Name: invitingUser.Name, Address: invitingUser.Email}); err != nil {
+					slog.Error("Failed to send guest invitation email",
+						"to", email, "from", invitingUser.Email, "error", err)
+				}
 			}
 		}
-	}
+	}()
 
 	utils.SendJSON(c, http.StatusCreated, user)
 }
