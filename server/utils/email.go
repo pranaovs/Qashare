@@ -95,7 +95,11 @@ func SendVerificationEmail(to string, token uuid.UUID, expiry time.Duration) err
 	return nil
 }
 
-// SendGuestsInvitationEmail sends an invitation email to the given email id
+// SendGuestsInvitationEmail attempts to send an invitation email to the given
+// recipient email address. The inviter's details in `from` are used only in the
+// email content; the actual SMTP sender is the configured emailCfg.From
+// address. This is a best-effort helper and returns ErrEmailSendFailed if
+// sending the email fails.
 func SendGuestsInvitationEmail(to string, from mail.Address) error {
 	// Sanitize and validate the recipient email to prevent header injection.
 	safeTo, err := sanitizeEmailAddress(to)
