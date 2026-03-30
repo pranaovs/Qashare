@@ -7,6 +7,7 @@ import (
 	"net/mail"
 	"net/smtp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -38,13 +39,16 @@ func sanitizeEmailAddress(email string) (string, error) {
 var (
 	emailCfg config.EmailConfig
 	apiCfg   config.APIConfig
+	initOnce sync.Once
 )
 
 // InitEmail initializes the email package with the given configuration.
 // Must be called before any email sending functions.
 func InitEmail(emailConfig config.EmailConfig, apiConfig config.APIConfig) {
-	emailCfg = emailConfig
-	apiCfg = apiConfig
+	initOnce.Do(func() {
+		emailCfg = emailConfig
+		apiCfg = apiConfig
+	})
 }
 
 // ErrEmailSendFailed indicates that the verification email could not be sent
