@@ -105,7 +105,7 @@ func loadAppConfig(envPath string) AppConfig {
 		SplitTolerance:    getEnvFloat("SPLIT_TOLERANCE", 0.01),
 		EnvPath:           envPath,
 		Verification:      getEnvBool("VERIFY_EMAIL", false),
-		InviteGuests:      getEnvBool("INVITE_GUESTS", true),
+		InviteGuests:      getEnvBool("INVITE_GUESTS", false),
 		VerifyEmailExpiry: getEnvDuration("VERIFY_EMAIL_EXPIRY", "24h"),
 	}
 }
