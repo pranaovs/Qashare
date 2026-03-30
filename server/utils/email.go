@@ -68,6 +68,7 @@ func SendVerificationEmail(to string, token uuid.UUID, expiry time.Duration) err
 	subject := "Qashare - Verify your email address"
 
 	link := fmt.Sprintf("%s%s/v1/auth/verify?token=%s", apiCfg.PublicURL, apiCfg.BasePath, token.String())
+	safeLink := html.EscapeString(link)
 
 	body := fmt.Sprintf(
 		"<html><body>"+
@@ -77,7 +78,7 @@ func SendVerificationEmail(to string, token uuid.UUID, expiry time.Duration) err
 			"<p>If you did not create an account, you can ignore this email.</p>"+
 			"<p>This link expires in %s.</p>"+
 			"</body></html>",
-		link, FormatDuration(expiry),
+		safeLink, FormatDuration(expiry),
 	)
 
 	msg := fmt.Sprintf(
