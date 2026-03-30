@@ -77,7 +77,7 @@ func SendVerificationEmail(to string, token uuid.UUID, expiry time.Duration) err
 			"<p>If you did not create an account, you can ignore this email.</p>"+
 			"<p>This link expires in %s.</p>"+
 			"</body></html>",
-		link, expiry,
+		link, FormatDuration(expiry),
 	)
 
 	msg := fmt.Sprintf(
