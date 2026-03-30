@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"context"
+	"log/slog"
 	"net/http"
+	"net/mail"
 
 	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/apperrors"
@@ -155,6 +158,28 @@ func (h *UsersHandler) RegisterGuest(c *gin.Context) {
 		}))
 		return
 	}
+
+	// Copy values needed by the goroutine before the handler returns,
+	// because gin recycles *gin.Context and the request context is
+	// cancelled once the handler exits.
+	bgCtx := context.Background()
+	pool := h.pool
+	inviteGuests := h.appConfig.InviteGuests
+
+	go func() {
+		if inviteGuests {
+			invitingUser, err := db.GetUser(bgCtx, pool, userID)
+			if err != nil {
+				slog.Error("Failed to look up inviting user for invitation email",
+					"userID", userID, "error", err)
+			} else {
+				if err := utils.SendGuestsInvitationEmail(email, mail.Address{Name: invitingUser.Name, Address: invitingUser.Email}); err != nil {
+					slog.Error("Failed to send guest invitation email",
+						"to", email, "from", invitingUser.Email, "error", err)
+				}
+			}
+		}
+	}()
 
 	utils.SendJSON(c, http.StatusCreated, user)
 }

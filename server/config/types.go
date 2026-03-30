@@ -50,19 +50,20 @@ type JWTConfig struct {
 
 // AppConfig holds general application configuration
 type AppConfig struct {
-	Debug          bool    `example:"false"`
-	DisableSwagger bool    `example:"false"`
-	AllowGuests    bool    `example:"true"`
-	SplitTolerance float64 `example:"0.01"`
-	EnvPath        string  `example:".env"`
+	Debug             bool          `example:"false"`
+	DisableSwagger    bool          `example:"false"`
+	AllowGuests       bool          `example:"true"`
+	SplitTolerance    float64       `example:"0.01"`
+	EnvPath           string        `example:".env"`
+	Verification      bool          `example:"true"`
+	InviteGuests      bool          `example:"true"`
+	VerifyEmailExpiry time.Duration `example:"24h"`
 }
 
 type EmailConfig struct {
-	Verification bool   `example:"true"`
-	Host         string `example:"smtp.example.com"`
-	Port         int    `example:"587"`
-	Username     string `example:"user@example.com"`
-	Password     string `example:"password"`
-	From         *mail.Address
-	Expiry       time.Duration `example:"24h"`
+	Host     string `example:"smtp.example.com"`
+	Port     int    `example:"587"`
+	Username string `example:"user@example.com"`
+	Password string `example:"password"`
+	From     *mail.Address
 }

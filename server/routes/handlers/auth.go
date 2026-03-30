@@ -17,14 +17,13 @@ import (
 )
 
 type AuthHandler struct {
-	pool        *pgxpool.Pool
-	jwtConfig   config.JWTConfig
-	emailConfig config.EmailConfig
-	apiConfig   config.APIConfig
+	pool      *pgxpool.Pool
+	appConfig config.AppConfig
+	jwtConfig config.JWTConfig
 }
 
-func NewAuthHandler(pool *pgxpool.Pool, jwtConfig config.JWTConfig, emailConfig config.EmailConfig, apiConfig config.APIConfig) *AuthHandler {
-	return &AuthHandler{pool: pool, jwtConfig: jwtConfig, emailConfig: emailConfig, apiConfig: apiConfig}
+func NewAuthHandler(pool *pgxpool.Pool, appConfig config.AppConfig, jwtConfig config.JWTConfig) *AuthHandler {
+	return &AuthHandler{pool: pool, appConfig: appConfig, jwtConfig: jwtConfig}
 }
 
 // Register godoc
@@ -81,13 +80,13 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 	user.PasswordHash = &passwordHash
 
-	if h.emailConfig.Verification {
+	if h.appConfig.Verification {
 		user.EmailVerified = false
 	} else {
 		user.EmailVerified = true
 	}
 
-	verificationToken, err := db.CreateUser(c.Request.Context(), h.pool, &user, h.emailConfig.Expiry)
+	verificationToken, err := db.CreateUser(c.Request.Context(), h.pool, &user, h.appConfig.VerifyEmailExpiry)
 	if err != nil {
 		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 			db.ErrDuplicateKey: apierrors.ErrEmailAlreadyExists,
@@ -96,8 +95,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	// Send verification email if verification is enabled
-	if h.emailConfig.Verification {
-		err = utils.SendVerificationEmail(h.emailConfig, h.apiConfig, user.Email, verificationToken)
+	if h.appConfig.Verification {
+		err = utils.SendVerificationEmail(user.Email, verificationToken, h.appConfig.VerifyEmailExpiry)
 		if err != nil {
 			utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
 				utils.ErrEmailSendFailed: apierrors.ErrInternalServer,
@@ -194,7 +193,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	if h.emailConfig.Verification && !emailVerified {
+	if h.appConfig.Verification && !emailVerified {
 		utils.SendError(c, apierrors.ErrEmailNotVerified)
 		return
 	}

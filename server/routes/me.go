@@ -9,8 +9,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func RegisterMeRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, jwtConfig config.JWTConfig) {
-	handler := handlers.NewMeHandler(pool)
+func RegisterMeRoutes(router *gin.RouterGroup, pool *pgxpool.Pool, appConfig config.AppConfig, jwtConfig config.JWTConfig) {
+	handler := handlers.NewMeHandler(pool, appConfig)
 	router.Use(middleware.RequireAuth(jwtConfig))
 
 	router.GET("/", handler.Me)
