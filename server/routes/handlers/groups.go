@@ -89,53 +89,6 @@ func (h *GroupsHandler) Create(c *gin.Context) {
 	utils.SendJSON(c, http.StatusCreated, created)
 }
 
-// ListUser godoc
-// @Summary List user's groups
-// @Description Get all groups the logged in user is a member of
-// @Tags groups
-// @Produce json
-// @Security BearerAuth
-// @Deprecated
-// @Success 200 {array} models.Group "Returns list of groups the user is a member of"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
-// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
-// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /v1/groups/me [get]
-func (h *GroupsHandler) ListUser(c *gin.Context) {
-	userID := middleware.MustGetUserID(c)
-
-	groups, err := db.MemberOfGroups(c.Request.Context(), h.pool, userID)
-	if err != nil {
-		utils.SendError(c, err)
-		return
-	}
-	utils.SendJSON(c, http.StatusOK, groups)
-}
-
-// ListAdmin godoc
-// @Summary List groups user administers
-// @Description Get all groups that the authenticated user created (is admin of)
-// @Tags groups
-// @Produce json
-// @Security BearerAuth
-// @Deprecated
-// @Success 200 {array} models.Group "Returns list of groups the user is admin of"
-// @Failure 401 {object} apierrors.AppError "INVALID_TOKEN: Access token is invalid"
-// @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired"
-// @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
-// @Router /v1/groups/admin [get]
-func (h *GroupsHandler) ListAdmin(c *gin.Context) {
-	userID := middleware.MustGetUserID(c)
-	groups, err := db.OwnerOfGroups(c.Request.Context(), h.pool, userID)
-	if err != nil {
-		utils.SendError(c, apperrors.MapError(err, map[error]*apierrors.AppError{
-			db.ErrNotFound: apierrors.ErrUserNotFound,
-		}))
-		return
-	}
-	utils.SendJSON(c, http.StatusOK, groups)
-}
-
 // Get godoc
 // @Summary Get group details
 // @Description Get detailed information about a group
