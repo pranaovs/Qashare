@@ -340,4 +340,3 @@ func (h *AuthHandler) LogoutAll(c *gin.Context) {
 
 	utils.SendOK(c, "logged out from all devices")
 }
-
