@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/config"
+	v1 "github.com/pranaovs/qashare/routes/v1"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -26,15 +27,8 @@ func RegisterRoutes(basepath string, router *gin.Engine, pool *pgxpool.Pool, jwt
 		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 
-	// Create a base route group
-	baseGroup := router.Group(basepath + "/v1")
-
-	RegisterAuthRoutes(baseGroup.Group("/auth"), pool, appConfig, jwtConfig)
-	RegisterMeRoutes(baseGroup.Group("/me"), pool, appConfig, jwtConfig)
-	RegisterUsersRoutes(baseGroup.Group("/users"), pool, appConfig, jwtConfig)
-	RegisterGroupsRoutes(baseGroup.Group("/groups"), pool, appConfig, jwtConfig)
-	RegisterExpensesRoutes(baseGroup.Group("/expenses"), pool, appConfig, jwtConfig)
-	RegisterSettlementsRoutes(baseGroup.Group("/settlements"), pool, appConfig, jwtConfig)
+	// v1 routes
+	v1.RegisterRoutes(router.Group(basepath+"/v1"), pool, appConfig, jwtConfig)
 }
 
 // HealthCheck godoc

@@ -1,4 +1,4 @@
-package handlers
+package v1
 
 import (
 	"bytes"
@@ -8,13 +8,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/apperrors"
+	"github.com/pranaovs/qashare/config"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/models"
 	"github.com/pranaovs/qashare/routes/apierrors"
 	"github.com/pranaovs/qashare/routes/middleware"
 	"github.com/pranaovs/qashare/utils"
-
-	"github.com/pranaovs/qashare/config"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -132,7 +131,7 @@ func (h *ExpensesHandler) Create(c *gin.Context) {
 	}
 
 	// Sort splits to match consistent ordering (is_paid DESC, user_id ASC)
-	sortExpenseSplits(expense.Splits)
+	SortExpenseSplits(expense.Splits)
 
 	utils.SendJSON(c, http.StatusCreated, expense)
 }
@@ -242,7 +241,7 @@ func (h *ExpensesHandler) Update(c *gin.Context) {
 	}
 
 	// Sort splits to match consistent ordering (is_paid DESC, user_id ASC)
-	sortExpenseSplits(payload.Splits)
+	SortExpenseSplits(payload.Splits)
 
 	utils.SendJSON(c, http.StatusOK, payload)
 }
@@ -366,8 +365,8 @@ func (h *ExpensesHandler) Patch(c *gin.Context) {
 	utils.SendJSON(c, http.StatusOK, expense)
 }
 
-// sortExpenseSplits sorts splits by is_paid DESC then user_id ASC for consistent ordering.
-func sortExpenseSplits(splits []models.ExpenseSplit) {
+// SortExpenseSplits sorts splits by is_paid DESC then user_id ASC for consistent ordering.
+func SortExpenseSplits(splits []models.ExpenseSplit) {
 	sort.Slice(splits, func(i, j int) bool {
 		if splits[i].IsPaid != splits[j].IsPaid {
 			return splits[i].IsPaid // true (paid) before false (owed)

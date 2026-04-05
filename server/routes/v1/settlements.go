@@ -1,4 +1,4 @@
-package handlers
+package v1
 
 import (
 	"math"
@@ -6,13 +6,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/apperrors"
+	"github.com/pranaovs/qashare/config"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/models"
 	"github.com/pranaovs/qashare/routes/apierrors"
 	"github.com/pranaovs/qashare/routes/middleware"
 	"github.com/pranaovs/qashare/utils"
-
-	"github.com/pranaovs/qashare/config"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -83,7 +82,7 @@ func (h *GroupsHandler) GetSettlements(c *gin.Context) {
 
 	settlements := make([]models.Settlement, len(history))
 	for i, exp := range history {
-		settlements[i] = expenseToSettlement(exp, userID)
+		settlements[i] = ExpenseToSettlement(exp, userID)
 	}
 
 	utils.SendData(c, settlements)
@@ -171,14 +170,14 @@ func (h *SettlementsHandler) Create(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusCreated, expenseToSettlement(expense, userID))
+	utils.SendJSON(c, http.StatusCreated, ExpenseToSettlement(expense, userID))
 }
 
-// expenseToSettlement converts an ExpenseDetails to a Settlement response.
+// ExpenseToSettlement converts an ExpenseDetails to a Settlement response.
 // Amount sign is relative to the given userID:
 //   - Positive: userID was the payer (is_paid=true) — userID paid/is owed by the other user
 //   - Negative: userID was the receiver (is_paid=false) — the other user paid/is owed by userID
-func expenseToSettlement(expense models.ExpenseDetails, userID uuid.UUID) models.Settlement {
+func ExpenseToSettlement(expense models.ExpenseDetails, userID uuid.UUID) models.Settlement {
 	if len(expense.Splits) < 2 {
 		return models.Settlement{
 			CreatedAt:    expense.CreatedAt,
@@ -230,7 +229,7 @@ func expenseToSettlement(expense models.ExpenseDetails, userID uuid.UUID) models
 func (h *SettlementsHandler) Get(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	expense := middleware.MustGetExpense(c)
-	utils.SendData(c, expenseToSettlement(expense, userID))
+	utils.SendData(c, ExpenseToSettlement(expense, userID))
 }
 
 // Update godoc
@@ -329,7 +328,7 @@ func (h *SettlementsHandler) Update(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, expenseToSettlement(updated, userID))
+	utils.SendJSON(c, http.StatusOK, ExpenseToSettlement(updated, userID))
 }
 
 // Patch godoc
@@ -407,7 +406,7 @@ func (h *SettlementsHandler) Patch(c *gin.Context) {
 		return
 	}
 
-	utils.SendJSON(c, http.StatusOK, expenseToSettlement(expense, userID))
+	utils.SendJSON(c, http.StatusOK, ExpenseToSettlement(expense, userID))
 }
 
 // Delete godoc
