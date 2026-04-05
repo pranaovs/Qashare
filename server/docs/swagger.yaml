@@ -958,6 +958,7 @@ paths:
       - groups
   /v1/groups/{id}/expenses:
     get:
+      deprecated: true
       description: Get all expenses of a group
       parameters:
       - description: Group ID
@@ -1259,6 +1260,7 @@ paths:
       - settlements
   /v1/groups/{id}/settlements:
     get:
+      deprecated: true
       description: Get all settlement transactions where the authenticated user is
         a participant (payer or receiver)
       parameters:
@@ -1300,6 +1302,7 @@ paths:
       - settlements
   /v1/groups/{id}/spendings:
     get:
+      deprecated: true
       description: Get all expenses where the authenticated user owes money in a specific
         group, with the user's owed amount per expense
       parameters:

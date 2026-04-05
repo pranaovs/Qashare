@@ -993,6 +993,7 @@
                     "expenses"
                 ],
                 "summary": "List group expenses",
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -1425,6 +1426,7 @@
                     "settlements"
                 ],
                 "summary": "Get settlement history for the current user in the group",
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -1486,6 +1488,7 @@
                     "groups"
                 ],
                 "summary": "Get user expenses in group",
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",

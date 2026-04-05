@@ -374,6 +374,7 @@ func (h *GroupsHandler) RemoveMembers(c *gin.Context) {
 // @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED: The authenticated user is not a member of the group"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error - unexpected database error"
+// @Deprecated Use /v2/groups/{id}/spendings instead (paginated)
 // @Router /v1/groups/{id}/spendings [get]
 func (h *GroupsHandler) GetSpendings(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)

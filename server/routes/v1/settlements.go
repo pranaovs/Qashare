@@ -67,6 +67,7 @@ func (h *GroupsHandler) GetSettle(c *gin.Context) {
 // @Failure 403 {object} apierrors.AppError "EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED: The authenticated user is not a member of the specified group"
 // @Failure 404 {object} apierrors.AppError "GROUP_NOT_FOUND: The specified group does not exist"
 // @Failure 500 {object} apierrors.AppError "Internal server error"
+// @Deprecated Use /v2/groups/{id}/settlements instead (paginated)
 // @Router /v1/groups/{id}/settlements [get]
 func (h *GroupsHandler) GetSettlements(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)

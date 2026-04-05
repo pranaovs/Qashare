@@ -1001,6 +1001,7 @@ const docTemplate = `{
                     "expenses"
                 ],
                 "summary": "List group expenses",
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -1433,6 +1434,7 @@ const docTemplate = `{
                     "settlements"
                 ],
                 "summary": "Get settlement history for the current user in the group",
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
@@ -1494,6 +1496,7 @@ const docTemplate = `{
                     "groups"
                 ],
                 "summary": "Get user expenses in group",
+                "deprecated": true,
                 "parameters": [
                     {
                         "type": "string",
