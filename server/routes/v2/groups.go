@@ -1,9 +1,12 @@
 package v2
 
 import (
+	"net/http"
+
 	"github.com/pranaovs/qashare/config"
 	"github.com/pranaovs/qashare/db"
 	"github.com/pranaovs/qashare/models"
+	"github.com/pranaovs/qashare/routes/apierrors"
 	"github.com/pranaovs/qashare/routes/middleware"
 	v1 "github.com/pranaovs/qashare/routes/v1"
 	"github.com/pranaovs/qashare/utils"
@@ -42,17 +45,27 @@ func (h *GroupsHandler) GetExpenses(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	groupID := middleware.MustGetGroupID(c)
 
-	// TODO: Implement cursor-based pagination using db.GetExpensesPaginated
-	// For now, return all expenses wrapped in paginated response format
-	expenses, err := db.GetExpenses(c.Request.Context(), h.pool, groupID, userID)
+	cursor, err := parseCursor(c)
+	if err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest.Msg("invalid cursor format"))
+		return
+	}
+
+	expenses, hasNext, err := db.GetExpensesPaginated(c.Request.Context(), h.pool, groupID, userID, cursor, h.pageSize)
 	if err != nil {
 		utils.SendError(c, err)
 		return
 	}
 
-	utils.SendData(c, models.PaginatedResponse[models.Expense]{
+	var nextCursor *uuid.UUID
+	if hasNext && len(expenses) > 0 {
+		last := expenses[len(expenses)-1].ExpenseID
+		nextCursor = &last
+	}
+
+	utils.SendJSON(c, http.StatusOK, models.PaginatedResponse[models.Expense]{
 		Data:       expenses,
-		Pagination: models.PaginationMeta{},
+		Pagination: models.PaginationMeta{NextCursor: nextCursor, HasNext: hasNext},
 	})
 }
 
@@ -75,9 +88,13 @@ func (h *GroupsHandler) GetSettlements(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	groupID := middleware.MustGetGroupID(c)
 
-	// TODO: Implement cursor-based pagination using db.GetSettlementsPaginated
-	// For now, return all settlements wrapped in paginated response format
-	history, err := db.GetSettlements(c.Request.Context(), h.pool, userID, groupID)
+	cursor, err := parseCursor(c)
+	if err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest.Msg("invalid cursor format"))
+		return
+	}
+
+	history, hasNext, err := db.GetSettlementsPaginated(c.Request.Context(), h.pool, userID, groupID, cursor, h.pageSize)
 	if err != nil {
 		utils.SendError(c, err)
 		return
@@ -88,9 +105,15 @@ func (h *GroupsHandler) GetSettlements(c *gin.Context) {
 		settlements[i] = v1.ExpenseToSettlement(exp, userID)
 	}
 
-	utils.SendData(c, models.PaginatedResponse[models.Settlement]{
+	var nextCursor *uuid.UUID
+	if hasNext && len(history) > 0 {
+		last := history[len(history)-1].ExpenseID
+		nextCursor = &last
+	}
+
+	utils.SendJSON(c, http.StatusOK, models.PaginatedResponse[models.Settlement]{
 		Data:       settlements,
-		Pagination: models.PaginationMeta{},
+		Pagination: models.PaginationMeta{NextCursor: nextCursor, HasNext: hasNext},
 	})
 }
 
@@ -113,20 +136,26 @@ func (h *GroupsHandler) GetSpendings(c *gin.Context) {
 	userID := middleware.MustGetUserID(c)
 	groupID := middleware.MustGetGroupID(c)
 
-	// TODO: Implement cursor-based pagination using db.GetUserSpendingPaginated
-	// For now, return all spendings wrapped in paginated response format
-	expenses, err := db.GetUserSpending(c.Request.Context(), h.pool, userID, groupID)
+	cursor, err := parseCursor(c)
+	if err != nil {
+		utils.SendError(c, apierrors.ErrBadRequest.Msg("invalid cursor format"))
+		return
+	}
+
+	expenses, hasNext, err := db.GetUserSpendingPaginated(c.Request.Context(), h.pool, userID, groupID, cursor, h.pageSize)
 	if err != nil {
 		utils.SendError(c, err)
 		return
 	}
 
-	utils.SendData(c, models.PaginatedResponse[models.UserExpense]{
+	var nextCursor *uuid.UUID
+	if hasNext && len(expenses) > 0 {
+		last := expenses[len(expenses)-1].ExpenseID
+		nextCursor = &last
+	}
+
+	utils.SendJSON(c, http.StatusOK, models.PaginatedResponse[models.UserExpense]{
 		Data:       expenses,
-		Pagination: models.PaginationMeta{},
+		Pagination: models.PaginationMeta{NextCursor: nextCursor, HasNext: hasNext},
 	})
 }
-
-// keep compiler happy — parseCursor and uuid will be used when pagination is implemented
-var _ = parseCursor
-var _ uuid.UUID

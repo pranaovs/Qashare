@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/pranaovs/qashare/models"
@@ -399,6 +400,73 @@ func GetExpenses(ctx context.Context, pool *pgxpool.Pool, groupID, userID uuid.U
 	return expenses, nil
 }
 
+// GetExpensesPaginated retrieves expenses for a group with cursor-based pagination.
+// The cursor is an expense_id; results after that expense (in created_at DESC, expense_id DESC order) are returned.
+// Pass nil cursor for the first page. Returns (expenses, hasNext, error).
+func GetExpensesPaginated(ctx context.Context, pool *pgxpool.Pool, groupID, userID uuid.UUID, cursor *uuid.UUID, limit int) ([]models.Expense, bool, error) {
+	if groupID == uuid.Nil {
+		return nil, false, ErrInvalidInput.Msg("group id missing")
+	}
+	if userID == uuid.Nil {
+		return nil, false, ErrInvalidInput.Msg("user id missing")
+	}
+
+	args := []any{groupID, userID}
+	cursorClause := ""
+	if cursor != nil {
+		cursorClause = `AND (created_at, expense_id) < ((SELECT created_at FROM expenses WHERE expense_id = $3), $3)`
+		args = append(args, *cursor)
+	}
+
+	query := `SELECT expense_id, group_id, added_by, title, description,
+			extract(epoch from created_at)::bigint,
+			extract(epoch from transacted_at)::bigint,
+			amount, is_incomplete_amount, is_incomplete_split,
+			is_settlement, is_private, latitude, longitude
+		FROM expenses
+		WHERE group_id = $1
+			AND is_settlement = false
+			AND (
+				is_private = false
+				OR added_by = $2
+				OR expense_id IN (SELECT expense_id FROM expense_splits WHERE user_id = $2)
+			)
+			` + cursorClause + `
+		ORDER BY created_at DESC, expense_id DESC
+		LIMIT ` + strconv.Itoa(limit+1)
+
+	rows, err := pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, false, err
+	}
+	defer rows.Close()
+
+	expenses := make([]models.Expense, 0, limit)
+	for rows.Next() {
+		var expense models.Expense
+		err = rows.Scan(
+			&expense.ExpenseID, &expense.GroupID, &expense.AddedBy,
+			&expense.Title, &expense.Description, &expense.CreatedAt,
+			&expense.TransactedAt, &expense.Amount, &expense.IsIncompleteAmount,
+			&expense.IsIncompleteSplit, &expense.IsSettlement, &expense.IsPrivate,
+			&expense.Latitude, &expense.Longitude,
+		)
+		if err != nil {
+			return nil, false, err
+		}
+		expenses = append(expenses, expense)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, false, err
+	}
+
+	hasNext := len(expenses) > limit
+	if hasNext {
+		expenses = expenses[:limit]
+	}
+	return expenses, hasNext, nil
+}
+
 // GetUserSpending retrieves all expenses where the user owes money in a group.
 // Each returned UserExpense includes the expense details and the user's owed amount.
 func GetUserSpending(ctx context.Context, pool *pgxpool.Pool, userID, groupID uuid.UUID) ([]models.UserExpense, error) {
@@ -475,4 +543,71 @@ func GetUserSpending(ctx context.Context, pool *pgxpool.Pool, userID, groupID uu
 	}
 
 	return expenses, nil
+}
+
+// GetUserSpendingPaginated retrieves expenses where the user owes money with cursor-based pagination.
+// Pass nil cursor for the first page. Returns (expenses, hasNext, error).
+func GetUserSpendingPaginated(ctx context.Context, pool *pgxpool.Pool, userID, groupID uuid.UUID, cursor *uuid.UUID, limit int) ([]models.UserExpense, bool, error) {
+	if userID == uuid.Nil {
+		return nil, false, ErrInvalidInput.Msg("user id missing")
+	}
+	if groupID == uuid.Nil {
+		return nil, false, ErrInvalidInput.Msg("group id missing")
+	}
+
+	args := []any{groupID, userID}
+	cursorClause := ""
+	if cursor != nil {
+		cursorClause = `AND (e.created_at, e.expense_id) < ((SELECT created_at FROM expenses WHERE expense_id = $3), $3)`
+		args = append(args, *cursor)
+	}
+
+	query := `SELECT
+			e.expense_id, e.group_id, e.added_by, e.title, e.description,
+			extract(epoch from e.created_at)::bigint,
+			extract(epoch from e.transacted_at)::bigint,
+			e.amount, es.amount AS user_amount,
+			e.is_incomplete_amount, e.is_incomplete_split,
+			e.is_settlement, e.is_private, e.latitude, e.longitude
+		FROM expenses e
+		JOIN expense_splits es ON e.expense_id = es.expense_id
+		WHERE e.group_id = $1
+			AND es.user_id = $2
+			AND es.is_paid = false
+			AND e.is_settlement = false
+			` + cursorClause + `
+		ORDER BY e.created_at DESC, e.expense_id DESC
+		LIMIT ` + strconv.Itoa(limit+1)
+
+	rows, err := pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, false, err
+	}
+	defer rows.Close()
+
+	expenses := make([]models.UserExpense, 0, limit)
+	for rows.Next() {
+		var expense models.UserExpense
+		err = rows.Scan(
+			&expense.ExpenseID, &expense.GroupID, &expense.AddedBy,
+			&expense.Title, &expense.Description, &expense.CreatedAt,
+			&expense.TransactedAt, &expense.Amount, &expense.UserAmount,
+			&expense.IsIncompleteAmount, &expense.IsIncompleteSplit,
+			&expense.IsSettlement, &expense.IsPrivate,
+			&expense.Latitude, &expense.Longitude,
+		)
+		if err != nil {
+			return nil, false, err
+		}
+		expenses = append(expenses, expense)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, false, err
+	}
+
+	hasNext := len(expenses) > limit
+	if hasNext {
+		expenses = expenses[:limit]
+	}
+	return expenses, hasNext, nil
 }

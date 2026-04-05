@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"sort"
+	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -263,4 +264,107 @@ func GetSettlements(ctx context.Context, pool *pgxpool.Pool, userID, groupID uui
 	}
 
 	return results, nil
+}
+
+// GetSettlementsPaginated retrieves settlement expenses with cursor-based pagination.
+// Pagination is applied at the expense level (not split level), then splits are joined.
+// Pass nil cursor for the first page. Returns (settlements, hasNext, error).
+func GetSettlementsPaginated(ctx context.Context, pool *pgxpool.Pool, userID, groupID uuid.UUID, cursor *uuid.UUID, limit int) ([]models.ExpenseDetails, bool, error) {
+	if groupID == uuid.Nil {
+		return nil, false, ErrInvalidInput.Msg("group id missing")
+	}
+	if userID == uuid.Nil {
+		return nil, false, ErrInvalidInput.Msg("user id missing")
+	}
+
+	args := []any{groupID, userID}
+	cursorClause := ""
+	if cursor != nil {
+		cursorClause = `AND (e.created_at, e.expense_id) < ((SELECT created_at FROM expenses WHERE expense_id = $3), $3)`
+		args = append(args, *cursor)
+	}
+
+	// CTE paginates at the expense level, then we join splits for the selected expenses.
+	// Fetch limit+1 expenses to detect hasNext.
+	query := `WITH paginated AS (
+			SELECT e.expense_id, e.created_at
+			FROM expenses e
+			WHERE e.group_id = $1
+				AND e.is_settlement = true
+				AND e.expense_id IN (SELECT expense_id FROM expense_splits WHERE user_id = $2)
+				` + cursorClause + `
+			ORDER BY e.created_at DESC, e.expense_id DESC
+			LIMIT ` + strconv.Itoa(limit+1) + `
+		)
+		SELECT e.expense_id, e.group_id, e.added_by, e.title, e.description,
+			extract(epoch from e.created_at)::bigint,
+			extract(epoch from e.transacted_at)::bigint,
+			e.amount, e.is_incomplete_amount, e.is_incomplete_split,
+			e.is_settlement, e.is_private, e.latitude, e.longitude,
+			es.user_id, es.amount, es.is_paid
+		FROM paginated p
+		JOIN expenses e ON e.expense_id = p.expense_id
+		JOIN expense_splits es ON e.expense_id = es.expense_id
+		ORDER BY p.created_at DESC, p.expense_id DESC, es.is_paid DESC, es.user_id`
+
+	rows, err := pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, false, err
+	}
+	defer rows.Close()
+
+	expenseMap := make(map[uuid.UUID]*models.ExpenseDetails)
+	var order []uuid.UUID
+
+	for rows.Next() {
+		var exp models.Expense
+		var splitUserID *uuid.UUID
+		var splitAmount *float64
+		var splitIsPaid *bool
+
+		err = rows.Scan(
+			&exp.ExpenseID, &exp.GroupID, &exp.AddedBy, &exp.Title,
+			&exp.Description, &exp.CreatedAt, &exp.TransactedAt, &exp.Amount,
+			&exp.IsIncompleteAmount, &exp.IsIncompleteSplit, &exp.IsSettlement, &exp.IsPrivate,
+			&exp.Latitude, &exp.Longitude,
+			&splitUserID, &splitAmount, &splitIsPaid,
+		)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if _, exists := expenseMap[exp.ExpenseID]; !exists {
+			expenseMap[exp.ExpenseID] = &models.ExpenseDetails{
+				Expense: exp,
+				Splits:  make([]models.ExpenseSplit, 0),
+			}
+			order = append(order, exp.ExpenseID)
+		}
+
+		if splitUserID != nil {
+			expenseMap[exp.ExpenseID].Splits = append(expenseMap[exp.ExpenseID].Splits, models.ExpenseSplit{
+				ExpenseID: exp.ExpenseID,
+				UserID:    *splitUserID,
+				Amount:    *splitAmount,
+				IsPaid:    *splitIsPaid,
+			})
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, false, err
+	}
+
+	// hasNext is based on distinct expense count, not row count
+	hasNext := len(order) > limit
+	if hasNext {
+		order = order[:limit]
+	}
+
+	results := make([]models.ExpenseDetails, 0, len(order))
+	for _, id := range order {
+		results = append(results, *expenseMap[id])
+	}
+
+	return results, hasNext, nil
 }
