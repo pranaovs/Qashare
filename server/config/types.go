@@ -50,14 +50,15 @@ type JWTConfig struct {
 
 // AppConfig holds general application configuration
 type AppConfig struct {
-	Debug             bool          `example:"false"`
-	DisableSwagger    bool          `example:"false"`
-	AllowGuests       bool          `example:"true"`
-	SplitTolerance    float64       `example:"0.01"`
-	EnvPath           string        `example:".env"`
-	Verification      bool          `example:"true"`
-	InviteGuests      bool          `example:"true"`
-	VerifyEmailExpiry time.Duration `example:"24h"`
+	Debug              bool          `example:"false"`
+	DisableSwagger     bool          `example:"false"`
+	AllowGuests        bool          `example:"true"`
+	SplitTolerance     float64       `example:"0.01"`
+	EnvPath            string        `example:".env"`
+	Verification       bool          `example:"true"`
+	InviteGuests       bool          `example:"true"`
+	VerifyEmailExpiry  time.Duration `example:"24h"`
+	PaginationPageSize int           `example:"20"`
 }
 
 type EmailConfig struct {

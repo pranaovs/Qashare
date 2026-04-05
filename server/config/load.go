@@ -99,14 +99,15 @@ func loadJWTConfig() JWTConfig {
 
 func loadAppConfig(envPath string) AppConfig {
 	return AppConfig{
-		Debug:             getEnvBool("DEBUG", false),
-		DisableSwagger:    getEnvBool("DISABLE_SWAGGER", false),
-		AllowGuests:       getEnvBool("ALLOW_GUESTS", true),
-		SplitTolerance:    getEnvFloat("SPLIT_TOLERANCE", 0.01),
-		EnvPath:           envPath,
-		Verification:      getEnvBool("VERIFY_EMAIL", false),
-		InviteGuests:      getEnvBool("INVITE_GUESTS", false),
-		VerifyEmailExpiry: getEnvDuration("VERIFY_EMAIL_EXPIRY", "24h"),
+		Debug:              getEnvBool("DEBUG", false),
+		DisableSwagger:     getEnvBool("DISABLE_SWAGGER", false),
+		AllowGuests:        getEnvBool("ALLOW_GUESTS", true),
+		SplitTolerance:     getEnvFloat("SPLIT_TOLERANCE", 0.01),
+		EnvPath:            envPath,
+		Verification:       getEnvBool("VERIFY_EMAIL", false),
+		InviteGuests:       getEnvBool("INVITE_GUESTS", false),
+		VerifyEmailExpiry:  getEnvDuration("VERIFY_EMAIL_EXPIRY", "24h"),
+		PaginationPageSize: getEnvInt("PAGINATION_PAGE_SIZE", 20),
 	}
 }
 

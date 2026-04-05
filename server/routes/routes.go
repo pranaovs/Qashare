@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/config"
 	v1 "github.com/pranaovs/qashare/routes/v1"
+	v2 "github.com/pranaovs/qashare/routes/v2"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -29,6 +30,9 @@ func RegisterRoutes(basepath string, router *gin.Engine, pool *pgxpool.Pool, jwt
 
 	// v1 routes
 	v1.RegisterRoutes(router.Group(basepath+"/v1"), pool, appConfig, jwtConfig)
+
+	// v2 routes (paginated list endpoints)
+	v2.RegisterRoutes(router.Group(basepath+"/v2"), pool, appConfig, jwtConfig)
 }
 
 // HealthCheck godoc

@@ -167,6 +167,40 @@ definitions:
       user_id:
         type: string
     type: object
+  models.PaginatedResponse-models_Expense:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.Expense'
+        type: array
+      pagination:
+        $ref: '#/definitions/models.PaginationMeta'
+    type: object
+  models.PaginatedResponse-models_Settlement:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.Settlement'
+        type: array
+      pagination:
+        $ref: '#/definitions/models.PaginationMeta'
+    type: object
+  models.PaginatedResponse-models_UserExpense:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.UserExpense'
+        type: array
+      pagination:
+        $ref: '#/definitions/models.PaginationMeta'
+    type: object
+  models.PaginationMeta:
+    properties:
+      has_next:
+        type: boolean
+      next_cursor:
+        type: string
+    type: object
   models.Settlement:
     properties:
       amount:
@@ -1857,6 +1891,144 @@ paths:
       summary: Search user by email
       tags:
       - users
+  /v2/groups/{id}/expenses:
+    get:
+      description: Get expenses of a group with cursor-based pagination
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Cursor (expense_id) for next page. Omit for first page.
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of expenses
+          schema:
+            $ref: '#/definitions/models.PaginatedResponse-models_Expense'
+        "400":
+          description: 'BAD_REQUEST: Invalid cursor format'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "401":
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED:
+            The authenticated user is not a member of the group'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'GROUP_NOT_FOUND: The specified group does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: List group expenses (paginated)
+      tags:
+      - expenses
+  /v2/groups/{id}/settlements:
+    get:
+      description: Get settlement history with cursor-based pagination
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Cursor (expense_id) for next page. Omit for first page.
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of settlements
+          schema:
+            $ref: '#/definitions/models.PaginatedResponse-models_Settlement'
+        "400":
+          description: 'BAD_REQUEST: Invalid cursor format'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "401":
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED:
+            The authenticated user is not a member of the group'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'GROUP_NOT_FOUND: The specified group does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Get settlement history (paginated)
+      tags:
+      - settlements
+  /v2/groups/{id}/spendings:
+    get:
+      description: Get expenses where user owes money with cursor-based pagination
+      parameters:
+      - description: Group ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Cursor (expense_id) for next page. Omit for first page.
+        in: query
+        name: cursor
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of user expenses
+          schema:
+            $ref: '#/definitions/models.PaginatedResponse-models_UserExpense'
+        "400":
+          description: 'BAD_REQUEST: Invalid cursor format'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "401":
+          description: 'INVALID_TOKEN: Access token is invalid'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "403":
+          description: 'EXPIRED_TOKEN: Access token has expired | USERS_NOT_RELATED:
+            The authenticated user is not a member of the group'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "404":
+          description: 'GROUP_NOT_FOUND: The specified group does not exist'
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/apierrors.AppError'
+      security:
+      - BearerAuth: []
+      summary: Get user expenses in group (paginated)
+      tags:
+      - groups
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.
