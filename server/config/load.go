@@ -57,9 +57,9 @@ func Load() (*Config, error) {
 func loadAPIConfig() APIConfig {
 	return APIConfig{
 		BasePath:       getEnv("API_BASE_PATH", "/api"),
-		PublicURL:      getEnv("API_PUBLIC_URL", "http://localhost:8080"),
+		PublicURL:      getEnv("API_PUBLIC_URL", "http://localhost:5000"),
 		BindAddr:       getEnv("API_BIND_ADDR", "0.0.0.0"),
-		BindPort:       getEnvPort("API_BIND_PORT", 8080),
+		BindPort:       getEnvPort("API_BIND_PORT", 5000),
 		TrustedProxies: getEnvList("API_TRUSTED_PROXIES", nil),
 	}
 }
