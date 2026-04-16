@@ -626,4 +626,3 @@ class _BalanceSheetState extends State<_BalanceSheet> {
     );
   }
 }
-

@@ -267,8 +267,7 @@ class ApiService {
       if (response.statusCode == 401)
         return LoginResult.error("Wrong credentials");
       if (response.statusCode == 403)
-        return LoginResult.error(
-            "Email not verified. Check your inbox.");
+        return LoginResult.error("Email not verified. Check your inbox.");
       if (response.statusCode == 500) return LoginResult.error("Server error");
 
       return LoginResult.error("Unexpected error (${response.statusCode})");

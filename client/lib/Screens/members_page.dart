@@ -7,7 +7,11 @@ class MembersPage extends StatefulWidget {
   final String groupId;
   final String createdBy;
 
-  const MembersPage({super.key, required this.groupId, required this.createdBy});
+  const MembersPage({
+    super.key,
+    required this.groupId,
+    required this.createdBy,
+  });
 
   @override
   State<MembersPage> createState() => _MembersPageState();
