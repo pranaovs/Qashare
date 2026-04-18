@@ -60,14 +60,14 @@ To set up the project locally, follow these instructions for both the client and
 
 #### Server (Backend)
 
-<!-- [![Go CI](https://github.com/pranaovs/Qashare/actions/workflows/go-ci.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/go-ci.yml) -->
+[![Go CI](https://codeberg.org/pranaovs/Qashare/badges/workflows/go-ci.yml/badge.svg?logo=go&label=Go%20CI&branch=main)](https://codeberg.org/pranaovs/Qashare/actions?workflow=go-ci.yml)
 
 - Go >= 1.25.3 (test for lower)
 - PostgreSQL database
 
 #### Client (Flutter App)
 
-<!-- [![Flutter CI](https://github.com/pranaovs/Qashare/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/flutter-ci.yml) -->
+[![Flutter CI](https://codeberg.org/pranaovs/Qashare/badges/workflows/flutter-ci.yml/badge.svg?logo=flutter&label=Flutter%20CI&branch=main)](https://codeberg.org/pranaovs/Qashare/actions?workflow=flutter-ci.yml)
 
 - Flutter SDK >= 3.9.2 (test for lower)
 - Dart SDK (included with Flutter)
@@ -108,7 +108,8 @@ To set up the project locally, follow these instructions for both the client and
 
 #### Running the Server with Docker
 
-<!-- [![Container Build](https://github.com/pranaovs/Qashare/actions/workflows/container-release.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/container-release.yml) -->
+
+[![Container Build badge](https://codeberg.org/pranaovs/Qashare/badges/workflows/container-build.yml/badge.svg?logo=docker&label=Container%20Build&branch=main)](https://codeberg.org/pranaovs/Qashare/actions?workflow=container-build.yml)
 
 1. Download and edit the [`docker-compose.yml`](https://codeberg.org/pranaovs/Qashare/src/branch/main/server/docker-compose.yml) file to set your environment variables.
 
@@ -140,7 +141,7 @@ To set up the project locally, follow these instructions for both the client and
 
 ## API Documentation
 
-<!-- [![Swagger Synced](https://github.com/pranaovs/Qashare/actions/workflows/swagger-check.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/swagger-check.yml) -->
+[![Swagger Synced Badge](https://codeberg.org/pranaovs/Qashare/badges/workflows/swagger-check.yml/badge.svg?logo=swagger&label=Docs%20Synced&branch=main)](https://codeberg.org/pranaovs/Qashare/actions?workflow=swagger-check.yml)
 
 The Qashare API is documented using Swagger/OpenAPI. You can access the Swagger UI by navigating to:
 <https://qashare.pranaovs.me/swagger/index.html>
@@ -184,9 +185,11 @@ Contributions are what make the open source community such an amazing place to l
 If you have a suggestion that would make this better, please fork the repo and create a pull request.
 Don't forget to give the project a star! Thanks again!
 
+This project follows [Semantic Commit Messages](https://gist.github.com/joshbuchea/6f47e86d2510bce28f8e7f42ae84c716) for the commits.
+
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+3. Commit your Changes (`git commit -m 'feat(category): Add some AmazingFeature'`)
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
@@ -209,13 +212,15 @@ Repo Link: [https://codeberg.org/pranaovs/Qashare](https://codeberg.org/pranaovs
 
 - [othneildrew (README Template)](https://github.com/othneildrew/Best-README-Template)
 
+
 <!-- MARKDOWN LINKS & IMAGES -->
-[stars-badge]: https://img.shields.io/gitea/stars/pranaovs/Qashare?gitea_url=https://codeberg.org&logo=codeberg
+<!-- [stars-badge]: https://img.shields.io/gitea/stars/pranaovs/Qashare?gitea_url=https://codeberg.org&logo=codeberg -->
+[stars-badge]: https://codeberg.org/pranaovs/Qashare/badges/stars.svg?logo=codeberg&style=social
 [stars-url]: https://codeberg.org/pranaovs/Qashare/stars
 [stars-github-badge]: https://img.shields.io/github/stars/pranaovs/Qashare
 [stars-github-url]: https://github.com/pranaovs/Qashare/stargazers
 [last-commit-badge]: https://img.shields.io/gitea/last-commit/pranaovs/Qashare?gitea_url=https://codeberg.org
-[issues-badge]: https://img.shields.io/gitea/issues/open/pranaovs/Qashare?gitea_url=https://codeberg.org
+[issues-badge]: https://codeberg.org/pranaovs/Qashare/badges/issues/open.svg
 [issues-url]: https://codeberg.org/pranaovs/Qashare/issues
 [license-badge]: https://img.shields.io/badge/License-AGPL_v3-red.svg
 [license-url]: https://codeberg.org/pranaovs/Qashare/src/branch/main/LICENSE
