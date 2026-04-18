@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://github.com/pranaovs/qashare">  </a>
+  <a href="https://codeberg.org/pranaovs/Qashare">  </a>
 
 <h1 align="center">Qashare</h1>
 
@@ -7,19 +7,16 @@
     A (mobile) app to track shared expenses and split bills easily.
 
 [![Stargazers][stars-badge]][stars-url]
-[![Forks][forks-badge]][forks-url]
-[![Discussions][discussions-badge]][discussions-url]
+[![Stargazers][stars-github-badge]][stars-github-url]
 [![Issues][issues-badge]][issues-url]
-[![Container Build][container-build-badge]][container-build-url]
 ![Last Commit Badge][last-commit-badge]
 [![AGPL-3.0 License][license-badge]][license-url]
 
 
   </p>
     <p align="center">
-    <a href="https://github.com/pranaovs/qashare"></a>
-    <a href="https://github.com/pranaovs/qashare/issues">Report Bug</a>
-    <a href="https://github.com/pranaovs/qashare/wiki">View Docs</a>
+    <a href="https://codeberg.org/pranaovs/Qashare/issues">Report Bug</a>
+    <a href="https://codeberg.org/pranaovs/Qashare/wiki">View Docs</a>
   </p>
 </div>
 
@@ -63,14 +60,14 @@ To set up the project locally, follow these instructions for both the client and
 
 #### Server (Backend)
 
-[![Go CI](https://github.com/pranaovs/Qashare/actions/workflows/go-ci.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/go-ci.yml)
+<!-- [![Go CI](https://github.com/pranaovs/Qashare/actions/workflows/go-ci.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/go-ci.yml) -->
 
 - Go >= 1.25.3 (test for lower)
 - PostgreSQL database
 
 #### Client (Flutter App)
 
-[![Flutter CI](https://github.com/pranaovs/Qashare/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/flutter-ci.yml)
+<!-- [![Flutter CI](https://github.com/pranaovs/Qashare/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/flutter-ci.yml) -->
 
 - Flutter SDK >= 3.9.2 (test for lower)
 - Dart SDK (included with Flutter)
@@ -80,13 +77,13 @@ To set up the project locally, follow these instructions for both the client and
 1. Clone the repo
 
    ```sh
-   git clone https://github.com/pranaovs/qashare.git
+   git clone https://codeberg.org/pranaovs/Qashare.git
    ```
 
 2. Switch to the directory
 
     ```sh
-    cd qashare
+    cd Qashare
     ```
 
 #### Running the Server
@@ -111,9 +108,9 @@ To set up the project locally, follow these instructions for both the client and
 
 #### Running the Server with Docker
 
-[![Container Build](https://github.com/pranaovs/Qashare/actions/workflows/container-release.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/container-release.yml)
+<!-- [![Container Build](https://github.com/pranaovs/Qashare/actions/workflows/container-release.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/container-release.yml) -->
 
-1. Download and edit the [`docker-compose.yml`](https://github.com/pranaovs/Qashare/blob/main/server/docker-compose.yml) file to set your environment variables.
+1. Download and edit the [`docker-compose.yml`](https://codeberg.org/pranaovs/Qashare/src/branch/main/server/docker-compose.yml) file to set your environment variables.
 
 2. Run Docker Compose
 
@@ -143,7 +140,7 @@ To set up the project locally, follow these instructions for both the client and
 
 ## API Documentation
 
-[![Swagger Synced](https://github.com/pranaovs/Qashare/actions/workflows/swagger-check.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/swagger-check.yml)
+<!-- [![Swagger Synced](https://github.com/pranaovs/Qashare/actions/workflows/swagger-check.yml/badge.svg)](https://github.com/pranaovs/Qashare/actions/workflows/swagger-check.yml) -->
 
 The Qashare API is documented using Swagger/OpenAPI. You can access the Swagger UI by navigating to:
 <https://qashare.pranaovs.me/swagger/index.html>
@@ -195,40 +192,36 @@ Don't forget to give the project a star! Thanks again!
 
 ## License
 
-Distributed under the AGPL-3.0 License. See [`LICENSE`](https://github.com/pranaovs/qashare/blob/main/LICENSE) for more information.
+Distributed under the AGPL-3.0 License. See [`LICENSE`][license-url] for more information.
 
 ## Maintainers
 
-- Sasvat S R ([client/](https://github.com/pranaovs/Qashare/tree/main/client)) - [@sasvat007](https://github.com/sasvat007)
-- Pranaov S ([server/](https://github.com/pranaovs/Qashare/tree/main/server)) - [@pranaovs](https://github.com/pranaovs)
+- Sasvat S R ([client/](https://codeberg.org/pranaovs/Qashare/src/branch/main/server)) - [@sasvat](https://codeberg.org/sasvat)
+- Pranaov S ([server/](https://codeberg.org/pranaovs/Qashare/src/branch/main/server)) - [@pranaovs](https://codeberg.org/pranaovs)
 
 ## Contact
 
-Pranaov S - [@pranaovs](mailto:contact.anoinihooqaq@pranaovs.me)
+Pranaov S - [@pranaovs](mailto:qashare.contact@pranaovs.me)
 
-Repo Link: [https://github.com/pranaovs/qashare](https://github.com/pranaovs/qashare)
+Repo Link: [https://codeberg.org/pranaovs/Qashare](https://codeberg.org/pranaovs/Qashare)
 
 ## Acknowledgments
 
 - [othneildrew (README Template)](https://github.com/othneildrew/Best-README-Template)
 
 <!-- MARKDOWN LINKS & IMAGES -->
-[forks-badge]: https://img.shields.io/github/forks/pranaovs/qashare
-[forks-url]: https://github.com/pranaovs/qashare/network/members
-[stars-badge]: https://img.shields.io/github/stars/pranaovs/qashare
-[stars-url]: https://github.com/pranaovs/qashare/stargazers
-[last-commit-badge]: https://img.shields.io/github/last-commit/pranaovs/qashare/main
-[issues-badge]: https://img.shields.io/github/issues/pranaovs/qashare
-[issues-url]: https://github.com/pranaovs/qashare/issues
-[discussions-badge]: https://img.shields.io/github/discussions/pranaovs/qashare
-[discussions-url]: https://github.com/pranaovs/qashare/discussions
-[license-badge]: https://img.shields.io/github/license/pranaovs/qashare
-[license-url]: https://github.com/pranaovs/qashare/blob/main/LICENSE
+[stars-badge]: https://img.shields.io/gitea/stars/pranaovs/Qashare?gitea_url=https://codeberg.org&logo=codeberg
+[stars-url]: https://codeberg.org/pranaovs/Qashare/stars
+[stars-github-badge]: https://img.shields.io/github/stars/pranaovs/Qashare
+[stars-github-url]: https://github.com/pranaovs/Qashare/stargazers
+[last-commit-badge]: https://img.shields.io/gitea/last-commit/pranaovs/Qashare?gitea_url=https://codeberg.org
+[issues-badge]: https://img.shields.io/gitea/issues/open/pranaovs/Qashare?gitea_url=https://codeberg.org
+[issues-url]: https://codeberg.org/pranaovs/Qashare/issues
+[license-badge]: https://img.shields.io/badge/License-AGPL_v3-red.svg
+[license-url]: https://codeberg.org/pranaovs/Qashare/src/branch/main/LICENSE
 [flutter-badge]: https://img.shields.io/badge/Flutter-027DFD?logo=flutter&logoColor=white
 [flutter-url]: https://flutter.dev/
 [go-badge]: https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white
 [go-url]: https://go.dev/
 [postgresql-badge]: https://img.shields.io/badge/PostgreSQL-316192?logo=postgresql&logoColor=white
 [postgresql-url]: https://www.postgresql.org/
-[container-build-badge]: https://github.com/pranaovs/Qashare/actions/workflows/container-release.yml/badge.svg
-[container-build-url]:https://github.com/pranaovs/Qashare/pkgs/container/qashare
