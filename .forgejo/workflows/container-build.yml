@@ -8,6 +8,9 @@ on:
     # Triggers on any pushed tags (e.g., v1.0.0)
     tags:
       - "v*"
+    paths:
+      - "server/**"
+      - ".forgejo/workflows/container-build.yml"
 
 jobs:
   build-and-push:
