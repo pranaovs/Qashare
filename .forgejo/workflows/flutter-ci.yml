@@ -1,0 +1,67 @@
+name: Flutter CI
+
+on:
+  push:
+    paths:
+      - "client/**"
+      - ".forgejo/workflows/flutter-ci.yml"
+  pull_request:
+    paths:
+      - "client/**"
+      - ".forgejo/workflows/flutter-ci.yml"
+
+jobs:
+  ci:
+    name: Format, Test & Build APK
+    runs-on: self-hosted-medium
+
+    container:
+      image: codeberg.org/pranaovs/flutter-ci:stable
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # Directly created volumes for this so dont need caching
+
+      # - name: Cache pub dependencies
+      #   uses: actions/cache@v5
+      #   with:
+      #     path: ~/.pub-cache
+      #     key: ${{ runner.os }}-pub-${{ hashFiles('client/pubspec.lock') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-pub-
+      #
+      # - name: Cache Gradle
+      #   uses: actions/cache@v5
+      #   with:
+      #     path: |
+      #       ~/.gradle/caches
+      #       ~/.gradle/wrapper
+      #     key: gradle-${{ runner.os }}-${{ hashFiles('client/android/**/*.gradle*', 'client/android/gradle.properties', 'client/android/gradle/wrapper/gradle-wrapper.properties') }}
+      #     restore-keys: |
+      #       gradle-${{ runner.os }}-
+
+      - name: Download dependencies
+        working-directory: client
+        run: flutter pub get
+
+      - name: Check formatting
+        working-directory: client
+        run: dart format . --set-exit-if-changed
+        continue-on-error: true
+
+      - name: Run tests
+        working-directory: client
+        run: flutter test --reporter expanded
+
+      - name: Build APK
+        working-directory: client
+        run: flutter build apk --debug
+
+      # - name: Upload APK artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: qashare-debug-${{ github.sha }}
+      #     path: client/build/app/outputs/flutter-apk/app-debug.apk
+      #     retention-days: 7

@@ -1,0 +1,73 @@
+name: Go CI
+
+on:
+  push:
+    paths:
+      - "server/**"
+      - ".forgejo/workflows/go-ci.yml"
+  pull_request:
+    paths:
+      - "server/**"
+      - ".forgejo/workflows/go-ci.yml"
+
+jobs:
+  ci:
+    name: Format, Test & Build
+    runs-on: self-hosted
+
+    container:
+      image: codeberg.org/pranaovs/go-ci:alpine
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            /go/pkg/mod
+            /root/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('server/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Download dependencies
+        working-directory: server
+        run: |
+          go mod download
+          go mod verify
+
+      - name: Check formatting
+        working-directory: server
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "Files not formatted: $unformatted"
+            exit 1
+          fi
+        continue-on-error: true
+
+      - name: Vet code
+        working-directory: server
+        run: go vet ./...
+
+      - name: Swagger docs check
+        working-directory: server
+        run: |
+          swag init --quiet
+          if [ -n "$(git status --porcelain docs/)" ]; then
+            echo "Error: Swagger documentation is out of sync with code changes."
+            echo "Please run 'swag init' in the server directory locally and commit the result."
+            git diff docs/
+            exit 1
+          fi
+        continue-on-error: true
+
+      - name: Run tests
+        working-directory: server
+        run: go test -v ./...
+
+      - name: Build
+        working-directory: server
+        run: go build -v ./...
