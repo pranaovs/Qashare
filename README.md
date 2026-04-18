@@ -141,8 +141,6 @@ To set up the project locally, follow these instructions for both the client and
 
 ## API Documentation
 
-[![Swagger Synced Badge](https://codeberg.org/pranaovs/Qashare/badges/workflows/swagger-check.yml/badge.svg?logo=swagger&label=Docs%20Synced&branch=main)](https://codeberg.org/pranaovs/Qashare/actions?workflow=swagger-check.yml)
-
 The Qashare API is documented using Swagger/OpenAPI. You can access the Swagger UI by navigating to:
 <https://qashare.pranaovs.me/swagger/index.html>
 
