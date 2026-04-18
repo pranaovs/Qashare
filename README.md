@@ -196,7 +196,7 @@ Distributed under the AGPL-3.0 License. See [`LICENSE`][license-url] for more in
 
 ## Maintainers
 
-- Sasvat S R ([client/](https://codeberg.org/pranaovs/Qashare/src/branch/main/server)) - [@sasvat](https://codeberg.org/sasvat)
+- Sasvat S R ([client/](https://codeberg.org/pranaovs/Qashare/src/branch/main/client)) - [@sasvat](https://codeberg.org/sasvat)
 - Pranaov S ([server/](https://codeberg.org/pranaovs/Qashare/src/branch/main/server)) - [@pranaovs](https://codeberg.org/pranaovs)
 
 ## Contact
