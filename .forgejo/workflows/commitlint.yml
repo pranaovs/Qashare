@@ -14,13 +14,16 @@ jobs:
       image: node:alpine
 
     steps:
+      - name: Install git
+        run: apk add git
+
+      - name: Install commitlint
+        run: npm install -g @commitlint/cli @commitlint/config-conventional
+
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-
-      - name: Install Commitlint
-        run: npm install -g @commitlint/cli @commitlint/config-conventional
 
       - name: Lint commit
         run: |
