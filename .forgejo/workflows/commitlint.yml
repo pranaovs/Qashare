@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
 
 jobs:
   check-commit:
@@ -20,6 +22,10 @@ jobs:
       - name: Install Commitlint
         run: npm install -g @commitlint/cli @commitlint/config-conventional
 
-      - name: Lint Latest Commit Message
+      - name: Lint commit
         run: |
-          echo "${{ github.event.head_commit.message }}" | commitlint
+          if [ "${{ forgejo.event_name }}" == "pull_request" ]; then
+            echo "${{ forgejo.event.pull_request.title }}" | commitlint
+          else
+            echo "${{ forgejo.event.head_commit.message }}" | commitlint
+          fi
