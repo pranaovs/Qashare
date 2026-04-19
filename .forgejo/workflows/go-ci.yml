@@ -12,7 +12,7 @@ on:
 
 jobs:
   ci:
-    name: Format, Test & Build
+    name: Format, Test & Build Go
     runs-on: self-hosted
 
     container:
@@ -51,18 +51,6 @@ jobs:
       - name: Vet code
         working-directory: server
         run: go vet ./...
-
-      - name: Swagger docs check
-        working-directory: server
-        run: |
-          swag init --quiet
-          if [ -n "$(git status --porcelain docs/)" ]; then
-            echo "Error: Swagger documentation is out of sync with code changes."
-            echo "Please run 'swag init' in the server directory locally and commit the result."
-            git diff docs/
-            exit 1
-          fi
-        continue-on-error: true
 
       - name: Run tests
         working-directory: server

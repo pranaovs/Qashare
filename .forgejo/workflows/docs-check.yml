@@ -1,0 +1,34 @@
+name: Docs Check
+
+on:
+  push:
+    paths:
+      - "server/**"
+      - ".forgejo/workflows/swagger-check.yml"
+  pull_request:
+    paths:
+      - "server/**"
+      - ".forgejo/workflows/swagger-check.yml"
+
+jobs:
+  ci:
+    name: Check Docs Sync
+    runs-on: self-hosted
+
+    container:
+      image: codeberg.org/pranaovs/go-ci:alpine
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Swagger docs check
+        working-directory: server
+        run: |
+          swag init --quiet
+          if [ -n "$(git status --porcelain docs/)" ]; then
+            echo "Error: Swagger documentation is out of sync with code changes."
+            echo "Please run 'swag init' in the server directory locally and commit the result."
+            git diff docs/
+            exit 1
+          fi
