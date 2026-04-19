@@ -4,7 +4,7 @@ services:
     container_name: qashare
     restart: unless-stopped
     ports:
-      - 8080:8080
+      - 8080:5000
     # WARNING: Default DB credentials are for development only.
     # In production, override DB_USER, DB_PASSWORD, and DB_NAME via
     # environment variables or Docker secrets.

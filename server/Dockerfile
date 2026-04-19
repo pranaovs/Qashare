@@ -19,7 +19,7 @@ WORKDIR /app
 COPY --from=builder /build/qashare /app/qashare
 COPY --from=builder /build/migrations /app/migrations
 
-EXPOSE 8080
+EXPOSE 5000
 
 USER nonroot:nonroot
 
