@@ -71,7 +71,6 @@ jobs:
 
           labels: ${{ steps.meta.outputs.labels }}
           tags: ${{ steps.meta.outputs.tags }}
-          extra-args: "--network=host"
 
       - name: Push to registry
         uses: redhat-actions/push-to-registry@v2
