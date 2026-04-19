@@ -26,9 +26,13 @@ jobs:
           fetch-depth: 1
 
       - name: Lint commit
+        env:
+          EVENT_NAME: ${{ forgejo.event_name }}
+          PR_TITLE: ${{ forgejo.event.pull_request.title }}
+          COMMIT_MESSAGE: ${{ forgejo.event.head_commit.message }}
         run: |
-          if [ "${{ forgejo.event_name }}" == "pull_request" ]; then
-            echo "${{ forgejo.event.pull_request.title }}" | commitlint
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            echo "$PR_TITLE" | commitlint
           else
-            echo "${{ forgejo.event.head_commit.message }}" | commitlint
+            echo "$COMMIT_MESSAGE" | commitlint
           fi
