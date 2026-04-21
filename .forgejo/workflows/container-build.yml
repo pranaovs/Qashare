@@ -54,7 +54,7 @@ jobs:
             latest=false
           sep-tags: " "
           tags: |
-            type=ref,event=branch
+            type=ref,event=branch,enable=${{ forgejo.event_name != 'pull_request' }}
             type=raw,value=pr-${{ forgejo.event.pull_request.number }},enable=${{ forgejo.event_name == 'pull_request' }}
             type=semver,pattern={{version}},value=${{ forgejo.ref_name }},enable=${{ startsWith(forgejo.ref, 'refs/tags/v') }}
             type=semver,pattern={{major}}.{{minor}},value=${{ forgejo.ref_name }},enable=${{ startsWith(forgejo.ref, 'refs/tags/v') }}
