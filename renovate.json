@@ -1,0 +1,41 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "dependencyDashboard": true,
+  "labels": [
+    "dependencies",
+    "renovate"
+  ],
+  "pinDigests": true,
+  "postUpdateOptions": [
+    "gomodTidy"
+  ],
+  "packageRules": [
+    {
+      "description": "Automerge minor updates",
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "digest"
+      ],
+      "automerge": true
+    },
+    {
+      "matchPaths": [
+        "client/**"
+      ],
+      "groupName": "flutter dependencies",
+      "commitMessagePrefix": "chore(client):"
+    },
+    {
+      "matchPaths": [
+        "server/**"
+      ],
+      "groupName": "go dependencies",
+      "commitMessagePrefix": "chore(server):"
+    }
+  ]
+}
