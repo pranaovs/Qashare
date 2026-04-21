@@ -4,6 +4,7 @@
     "config:recommended"
   ],
   "dependencyDashboard": true,
+  "prHourlyLimit": 5,
   "labels": [
     "dependencies",
     "renovate"
@@ -21,7 +22,8 @@
         "pin",
         "digest"
       ],
-      "automerge": true
+      "automerge": true,
+      "stabilityDays": 3
     },
     {
       "matchPaths": [
