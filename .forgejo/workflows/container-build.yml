@@ -4,10 +4,14 @@ on:
   push:
     # Triggers on any push to any branch
     branches:
-      - "**"
+      - "main"
     # Triggers on any pushed tags (e.g., v1.0.0)
     tags:
       - "v*"
+    paths:
+      - "server/**"
+      - ".forgejo/workflows/container-build.yml"
+  pull_request:
     paths:
       - "server/**"
       - ".forgejo/workflows/container-build.yml"

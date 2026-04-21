@@ -2,6 +2,8 @@ name: Go CI
 
 on:
   push:
+    branches:
+      - main
     paths:
       - "server/**"
       - ".forgejo/workflows/go-ci.yml"

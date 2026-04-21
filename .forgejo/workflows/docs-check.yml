@@ -2,6 +2,8 @@ name: Docs Check
 
 on:
   push:
+    branches:
+      - main
     paths:
       - "server/**"
       - ".forgejo/workflows/swagger-check.yml"
