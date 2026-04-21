@@ -1,0 +1,33 @@
+name: Renovate Bot
+
+on:
+  push:
+  schedule:
+    # 21:30 UTC = 03:00 IST
+    - cron: "30 21 * * *"
+  # Allow manual triggers from the Codeberg Actions UI
+  workflow_dispatch:
+
+jobs:
+  renovate:
+    name: Renovate Bump PRs
+    runs-on: self-hosted-dedicated
+
+    container:
+      image: ghcr.io/renovatebot/renovate
+
+    steps:
+      - name: Run Renovate
+        env:
+          RENOVATE_PLATFORM: forgejo
+          RENOVATE_ENDPOINT: https://codeberg.org/api/v1
+
+          RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+          GITHUB_COM_TOKEN: ${{ secrets.RENOVATE_GH_TOKEN }}
+
+          RENOVATE_AUTODISCOVER: "false"
+
+          RENOVATE_REPOSITORIES: ${{ forgejo.repository }}
+
+          LOG_LEVEL: info
+        run: renovate
