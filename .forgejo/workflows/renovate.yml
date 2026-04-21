@@ -1,7 +1,6 @@
 name: Renovate Bot
 
 on:
-  push:
   schedule:
     # 21:30 UTC = 03:00 IST
     - cron: "30 21 * * *"
