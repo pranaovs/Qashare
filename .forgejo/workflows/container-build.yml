@@ -1,4 +1,5 @@
 name: Container Release
+enable-email-notifications: true
 
 on:
   push:

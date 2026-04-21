@@ -1,4 +1,5 @@
 name: Renovate Bot
+enable-email-notifications: true
 
 on:
   schedule:
