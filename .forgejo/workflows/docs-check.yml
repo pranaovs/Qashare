@@ -18,7 +18,7 @@ jobs:
     runs-on: self-hosted
 
     container:
-      image: codeberg.org/pranaovs/go-ci:alpine
+      image: codeberg.org/pranaovs/go-ci:latest
 
     steps:
       - name: Checkout repository
