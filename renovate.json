@@ -26,6 +26,17 @@
       "stabilityDays": 3
     },
     {
+      "description": "Don't pin digests for docker-compose.yml",
+      "packageRules": [
+        {
+          "matchFileNames": [
+            "server/docker-compose.yml"
+          ],
+          "pinDigests": false
+        }
+      ]
+    },
+    {
       "matchPaths": [
         "client/**"
       ],
