@@ -8,7 +8,7 @@ jobs:
   delete-tag:
     runs-on: self-hosted
     container:
-      image: alpine/curl:latest
+      image: alpine/curl:latest@sha256:dc61c4dbdf3ba6d83094fdb12e7e4757c684413a2f7a1162e43d2af00a6222c7
     steps:
       - name: Delete PR Tag from Registry
         run: |

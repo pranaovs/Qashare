@@ -18,11 +18,11 @@ jobs:
     runs-on: self-hosted
 
     container:
-      image: codeberg.org/pranaovs/go-ci:latest
+      image: codeberg.org/pranaovs/go-ci:latest@sha256:4bc5f1737e12deb278bacb470bb3c85b731670b506e13e0991140f84b7e7e16c
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       # - name: Setup cache
       #   uses: actions/cache@v5
