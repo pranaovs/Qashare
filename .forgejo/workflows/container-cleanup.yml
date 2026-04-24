@@ -17,6 +17,6 @@ jobs:
 
           echo "Deleting tag $TAG_NAME from package ${{ forgejo.event.repository.name }} from owner ${{ forgejo.repository_owner }} in registry ${{ vars.REGISTRY }}"
 
-          curl -f -X DELETE \
+          curl -f --no-progress-meter -X DELETE \
             -H "Authorization: token ${{ secrets.REGISTRY_PASS }}" \
             "https://${{ vars.REGISTRY }}/api/v1/packages/${{ forgejo.repository_owner }}/container/${{ forgejo.event.repository.name }}/$TAG_NAME"
