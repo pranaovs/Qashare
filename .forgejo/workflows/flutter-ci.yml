@@ -18,11 +18,11 @@ jobs:
     runs-on: self-hosted-medium
 
     container:
-      image: codeberg.org/pranaovs/flutter-ci:latest
+      image: codeberg.org/pranaovs/flutter-ci:latest@sha256:168f11c15bedff572b868be55fdd202ab8e1d39b09c928509e8fdf07fafa0e16
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       # Directly created volumes for this so dont need caching
 
