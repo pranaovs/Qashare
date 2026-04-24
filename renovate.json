@@ -37,14 +37,20 @@
         "client/**"
       ],
       "groupName": "flutter dependencies",
-      "commitMessagePrefix": "chore(client):"
+      "commitMessagePrefix": "chore(client):",
+      "labels": [
+        "client"
+      ]
     },
     {
       "matchFileNames": [
         "server/**"
       ],
       "groupName": "go dependencies",
-      "commitMessagePrefix": "chore(server):"
+      "commitMessagePrefix": "chore(server):",
+      "labels": [
+        "server"
+      ]
     }
   ]
 }
