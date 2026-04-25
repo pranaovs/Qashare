@@ -23,6 +23,7 @@
         "digest"
       ],
       "automerge": true,
+      "automergeStrategy": "fast-forward",
       "minimumReleaseAge": "3 days"
     },
     {
