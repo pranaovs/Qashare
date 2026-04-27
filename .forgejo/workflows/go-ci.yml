@@ -18,7 +18,7 @@ jobs:
     runs-on: self-hosted
 
     container:
-      image: codeberg.org/pranaovs/go-ci:latest@sha256:4bc5f1737e12deb278bacb470bb3c85b731670b506e13e0991140f84b7e7e16c
+      image: codeberg.org/pranaovs/go-ci:latest@sha256:f4129fd085810baaf6966b2de56722852b758e85722e414e1ead564b700d5393
 
     steps:
       - name: Checkout repository
