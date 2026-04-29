@@ -17,6 +17,19 @@ jobs:
 
           echo "Deleting tag $TAG_NAME from package ${{ forgejo.event.repository.name }} from owner ${{ forgejo.repository_owner }} in registry ${{ vars.REGISTRY }}"
 
-          curl -f --no-progress-meter -X DELETE \
+          HTTP_STATUS=$(curl --no-progress-meter -o /dev/null -w "%{http_code}" -X DELETE \
             -H "Authorization: token ${{ secrets.REGISTRY_PASS }}" \
-            "https://${{ vars.REGISTRY }}/api/v1/packages/${{ forgejo.repository_owner }}/container/${{ forgejo.event.repository.name }}/$TAG_NAME"
+            "https://${{ vars.REGISTRY }}/api/v1/packages/${{ forgejo.repository_owner }}/container/${{ forgejo.event.repository.name }}/$TAG_NAME")
+
+          case "$HTTP_STATUS" in
+            204)
+              echo "Deleted PR tag: $TAG_NAME"
+              ;;
+            404)
+              echo "PR tag not found: $TAG_NAME"
+              ;;
+            *)
+              echo "Failed to delete PR tag $TAG_NAME: HTTP $HTTP_STATUS"
+              exit 1
+              ;;
+          esac
