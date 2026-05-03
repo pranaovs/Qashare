@@ -4,6 +4,8 @@
     "config:recommended"
   ],
   "dependencyDashboard": true,
+  "rebaseWhen": "behind-base-branch",
+  "internalChecksFilter": "none",
   "prHourlyLimit": 5,
   "labels": [
     "dependencies",
