@@ -17,16 +17,23 @@
   ],
   "packageRules": [
     {
-      "description": "Automerge minor updates",
+      "description": "Automerge minor/patch updates after stability delay",
       "matchUpdateTypes": [
         "minor",
         "patch",
-        "pin",
-        "digest"
+        "pin"
       ],
       "automerge": true,
       "automergeStrategy": "fast-forward",
       "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "Automerge docker digest updates immediately",
+      "matchUpdateTypes": [
+        "digest"
+      ],
+      "automerge": true,
+      "automergeStrategy": "fast-forward"
     },
     {
       "description": "Don't pin digests for docker-compose.yml",
