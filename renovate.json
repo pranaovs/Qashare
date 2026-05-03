@@ -4,9 +4,16 @@
     "config:recommended"
   ],
   "dependencyDashboard": true,
-  "rebaseWhen": "behind-base-branch",
   "internalChecksFilter": "none",
   "prHourlyLimit": 5,
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "minimumReleaseAge": "0 days",
+    "labels": [
+      "security"
+    ]
+  },
   "labels": [
     "dependencies",
     "renovate"
