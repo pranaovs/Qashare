@@ -10,6 +10,8 @@
   "vulnerabilityAlerts": {
     "enabled": true,
     "minimumReleaseAge": "0 days",
+    "automerge": true,
+    "automergeStrategy": "fast-forward",
     "labels": [
       "security"
     ]
