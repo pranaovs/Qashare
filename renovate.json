@@ -6,6 +6,7 @@
   "dependencyDashboard": true,
   "internalChecksFilter": "none",
   "prHourlyLimit": 5,
+  "rebaseWhen": "conflicted",
   "osvVulnerabilityAlerts": true,
   "vulnerabilityAlerts": {
     "enabled": true,
