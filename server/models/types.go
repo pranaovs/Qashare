@@ -100,3 +100,9 @@ type UserExpense struct {
 	Expense
 	UserAmount float64 `json:"user_amount"` // Amount user paid/owes for this expense
 }
+
+type HealthCheck struct {
+	Status string `json:"status" example:"ok"`
+	Name   string `json:"name" example:"Qashare"`
+	App    string `json:"app" example:"Qashare"`
+}

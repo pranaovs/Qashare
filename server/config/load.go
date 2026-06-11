@@ -107,6 +107,7 @@ func loadAppConfig(envPath string) AppConfig {
 		Verification:      getEnvBool("VERIFY_EMAIL", false),
 		InviteGuests:      getEnvBool("INVITE_GUESTS", false),
 		VerifyEmailExpiry: getEnvDuration("VERIFY_EMAIL_EXPIRY", "24h"),
+		CustomName:        getEnv("CUSTOM_NAME", "Qashare"),
 	}
 }
 

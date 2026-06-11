@@ -6,7 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pranaovs/qashare/config"
+	"github.com/pranaovs/qashare/models"
 	v1 "github.com/pranaovs/qashare/routes/v1"
+	"github.com/pranaovs/qashare/utils"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -17,7 +19,9 @@ func RegisterRoutes(basepath string, router *gin.Engine, pool *pgxpool.Pool, jwt
 	router.RemoveExtraSlash = true
 
 	// Health check
-	router.GET(basepath+"/health", HealthCheck)
+	router.GET(basepath+"/health", func(c *gin.Context) {
+		HealthCheck(c, appConfig)
+	})
 
 	// Swagger documentation
 	if !appConfig.DisableSwagger {
@@ -36,8 +40,12 @@ func RegisterRoutes(basepath string, router *gin.Engine, pool *pgxpool.Pool, jwt
 // @Description Check if the API is running
 // @Tags health
 // @Produce plain
-// @Success 200 {string} string "ok"
+// @Success 200 {object} models.HealthCheck "Returns server health status"
 // @Router /health [get]
-func HealthCheck(c *gin.Context) {
-	c.String(http.StatusOK, "ok")
+func HealthCheck(c *gin.Context, appConfig config.AppConfig) {
+	utils.SendData(c, models.HealthCheck{
+		Status: "ok",
+		Name:   appConfig.CustomName,
+		App:    "Qashare",
+	})
 }

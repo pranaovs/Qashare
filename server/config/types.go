@@ -58,6 +58,7 @@ type AppConfig struct {
 	Verification      bool          `example:"true"`
 	InviteGuests      bool          `example:"true"`
 	VerifyEmailExpiry time.Duration `example:"24h"`
+	CustomName        string        `example:"Qashare"`
 }
 
 type EmailConfig struct {

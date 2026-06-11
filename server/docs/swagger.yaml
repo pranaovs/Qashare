@@ -167,6 +167,18 @@ definitions:
       user_id:
         type: string
     type: object
+  models.HealthCheck:
+    properties:
+      app:
+        example: Qashare
+        type: string
+      name:
+        example: Qashare
+        type: string
+      status:
+        example: ok
+        type: string
+    type: object
   models.Settlement:
     properties:
       amount:
@@ -275,9 +287,9 @@ paths:
       - text/plain
       responses:
         "200":
-          description: ok
+          description: Returns server health status
           schema:
-            type: string
+            $ref: '#/definitions/models.HealthCheck'
       summary: Health check endpoint
       tags:
       - health

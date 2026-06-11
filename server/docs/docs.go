@@ -34,9 +34,9 @@ const docTemplate = `{
                 "summary": "Health check endpoint",
                 "responses": {
                     "200": {
-                        "description": "ok",
+                        "description": "Returns server health status",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.HealthCheck"
                         }
                     }
                 }
@@ -2601,6 +2601,23 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "string"
+                }
+            }
+        },
+        "models.HealthCheck": {
+            "type": "object",
+            "properties": {
+                "app": {
+                    "type": "string",
+                    "example": "Qashare"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Qashare"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ok"
                 }
             }
         },
